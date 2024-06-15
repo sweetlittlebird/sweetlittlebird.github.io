@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-06-16T00:18:59+09:00</updated><id>/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] 테라폼 기본 사용법 1/3</title><link href="/posts/2024-06-11-T101-Study-Terraform-Week-1/" rel="alternate" type="text/html" title="[T101 4기] 테라폼 기본 사용법 1/3" /><published>2024-06-11T23:41:18+09:00</published><updated>2024-06-11T23:41:18+09:00</updated><id>/posts/T101%20Study%20-%20Terraform%20Week%201</id><content type="html" xml:base="/posts/2024-06-11-T101-Study-Terraform-Week-1/"><![CDATA[<h1 id="들어가며">들어가며</h1>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-06-16T01:36:28+09:00</updated><id>/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] 테라폼 기본 사용법 1/3</title><link href="/posts/2024-06-11-T101-Study-Terraform-Week-1/" rel="alternate" type="text/html" title="[T101 4기] 테라폼 기본 사용법 1/3" /><published>2024-06-11T23:41:18+09:00</published><updated>2024-06-11T23:41:18+09:00</updated><id>/posts/T101%20Study%20-%20Terraform%20Week%201</id><content type="html" xml:base="/posts/2024-06-11-T101-Study-Terraform-Week-1/"><![CDATA[<h1 id="들어가며">들어가며</h1>
 
 <p>앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다.
 이번 글의 주제는 테라폼의 기본 사용법이며 “테라폼으로 시작하는 IaC” 책을 기준으로 정리하였습니다.</p>
@@ -672,7 +672,129 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   </li>
 </ul>
 
-<h1 id="도전과제">도전과제</h1>
+<h1 id="실습">실습</h1>
+
+<h2 id="aws에-배포하기">AWS에 배포하기</h2>
+
+<ul>
+  <li>
+    <p>AWS를 사용하기 위해 awscli 설치</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew <span class="nb">install </span>awscli 
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>AWS CLI의 로그인 credentials 설정</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>aws configure
+
+<span class="c"># access key, secret key, 기본 region 입력</span>
+</code></pre></div>    </div>
+
+    <p>서울 리전을 사용하기 위해 <code class="language-plaintext highlighter-rouge">ap-northeast-2</code>를 입력하였습니다.</p>
+  </li>
+  <li>
+    <p>AWS CLI를 사용하여 최신 ubuntu 22.04 AMI 이미지 얻기</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>aws ec2 describe-images <span class="nt">--owners</span> 099720109477 <span class="se">\</span>
+  <span class="nt">--filters</span> <span class="s2">"Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"</span> <span class="s2">"Name=state,Values=available"</span> <span class="se">\</span>
+  <span class="nt">--query</span> <span class="s1">'Images|sort_by(@, &amp;CreationDate)[-1].[ImageId, Name]'</span> <span class="nt">--output</span> text
+  
+<span class="c"># (결과)</span>
+<span class="c"># ami-0bcdae8006538619a   ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20240614</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>환경 변수에 AMI ID 저장</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">TF_VAR_ami_id</span><span class="o">=</span><span class="s2">"ami-0bcdae8006538619a"</span>
+</code></pre></div>    </div>
+
+    <p>이렇게 <code class="language-plaintext highlighter-rouge">TF_VAR_</code>를 붙여서 환경변수를 셋팅하면 .tf 파일에서 해당 변수를 사용할 수 있습니다.</p>
+  </li>
+  <li>
+    <p>main.tf 파일 생성</p>
+
+    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="nx">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+  <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+<span class="p">}</span>
+  
+<span class="c1"># TF_VAR_ami_id 환경변수를 사용하기 위해 선언. var.ami_id 와 같이 사용 가능</span>
+<span class="nx">variable</span> <span class="s2">"ami_id"</span> <span class="p">{</span> <span class="p">}</span>  
+  
+<span class="nx">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"example"</span> <span class="p">{</span>
+  <span class="nx">ami</span>                    <span class="p">=</span> <span class="s2">"${var.ami_id}"</span>
+  <span class="nx">instance_type</span>          <span class="p">=</span> <span class="s2">"t2.micro"</span>
+  <span class="nx">vpc_security_group_ids</span> <span class="p">=</span> <span class="p">[</span><span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">instance</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span>
+  
+  <span class="nx">user_data</span> <span class="p">=</span> <span class="o">&lt;&lt;-</span><span class="no">EOF</span><span class="sh">
+              #!/bin/bash
+              echo "Hello, T101 Study 9090" &gt; index.html
+              nohup busybox httpd -f -p 9090 &amp;
+</span><span class="no">              EOF
+  
+</span>  <span class="nx">user_data_replace_on_change</span> <span class="p">=</span> <span class="kc">true</span>
+  
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"Single-WebSrv"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="nx">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"instance"</span> <span class="p">{</span>
+  <span class="nx">name</span> <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">security_group_name</span>
+  
+  <span class="nx">ingress</span> <span class="p">{</span>
+    <span class="nx">from_port</span>   <span class="p">=</span> <span class="mi">9090</span>
+    <span class="nx">to_port</span>     <span class="p">=</span> <span class="mi">9090</span>
+    <span class="nx">protocol</span>    <span class="p">=</span> <span class="s2">"tcp"</span>
+    <span class="nx">cidr_blocks</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"0.0.0.0/0"</span><span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="nx">variable</span> <span class="s2">"security_group_name"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The name of the security group"</span>
+  <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+  <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"terraform-example-instance"</span>
+<span class="p">}</span>
+  
+<span class="nx">output</span> <span class="s2">"public_ip"</span> <span class="p">{</span>
+  <span class="nx">value</span>       <span class="p">=</span> <span class="nx">aws_instance</span><span class="p">.</span><span class="nx">example</span><span class="p">.</span><span class="nx">public_ip</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The public IP of the Instance"</span>
+<span class="p">}</span> 
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>plan 확인 후 apply</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>terraform plan
+<span class="c"># plan 확인</span>
+terraform apply <span class="nt">-auto-approve</span>
+</code></pre></div>    </div>
+
+    <p>다음과 같이 32초 가량 소요 후 최종적으로 생성된 인스턴스의 public ip를 확인 할 수 있습니다.</p>
+
+    <p><img src="/assets/2024/20240616_terraform_apply_1.png" alt="terraform apply 화면" /></p>
+
+    <p>AWS 콘솔에서도 아래와 같이 잘 생성된 EC2 인스턴스와 보안 그룹이 생성된것을 확인 할 수 있었습니다.</p>
+
+    <p><img src="/assets/2024/20240616_terraform_apply_2.png" alt="AWS 콘솔에서 EC2 인스턴스 확인" /></p>
+
+    <p>물론 접속도 잘 됩니다.</p>
+
+    <p><img src="/assets/2024/20240616_terraform_apply_3.png" alt="크롬에서 접속 확인" /></p>
+  </li>
+  <li>
+    <p>destroy 를 사용하여 리소스 삭제</p>
+
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>terraform destroy 
+</code></pre></div>    </div>
+
+    <p>삭제도 잘 되었습니다. :)</p>
+
+    <p><img src="/assets/2024/20240616_terraform_destroy.png" alt="destroy 확인" /></p>
+  </li>
+</ul>
 
 <h2 id="도전과제-3-lifecycle의-precondition">도전과제 3 <strong>lifecycle의 precondition</strong></h2>
 <ul>
@@ -731,4 +853,4 @@ terraform plan <span class="nt">-var</span><span class="o">=</span><span class="
 <p>이상과 같이 첫주차에는 테라폼 설치에서 부터 <code class="language-plaintext highlighter-rouge">lifecycle</code> 까지 스터디 하였습니다. 
 생각보다 외워야 하는 부분이 많아서 나중에 다시 확인하기 위해 키워드 위주로 정리하여 보았습니다.
 HCL을 통해 선언적으로 .tf 파일을 만들면 알아서 계획을 만들고 프로비저닝 해준다니 참 똑똑한 도구인것 같습니다. 
-앞으로 배우는 내용들도 재밌을 것 같습니다.</p>]]></content><author><name></name></author><category term="terraform" /><category term="qwe," /><category term="qweqe" /><summary type="html"><![CDATA[앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다. 이번 글의 주제는 테라폼의 기본 사용법이며 "테라폼으로 시작하는 IaC" 책을 기준으로 정리하였습니다.]]></summary></entry></feed>
+앞으로 배우는 내용들도 재밌을것 같아 기대됩니다.</p>]]></content><author><name></name></author><category term="terraform" /><category term="qwe," /><category term="qweqe" /><summary type="html"><![CDATA[앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다. 이번 글의 주제는 테라폼의 기본 사용법이며 "테라폼으로 시작하는 IaC" 책을 기준으로 정리하였습니다.]]></summary></entry></feed>
