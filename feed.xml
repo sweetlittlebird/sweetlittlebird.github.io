@@ -1,4 +1,1482 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-06-16T01:36:28+09:00</updated><id>/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] 테라폼 기본 사용법 1/3</title><link href="/posts/2024-06-11-T101-Study-Terraform-Week-1/" rel="alternate" type="text/html" title="[T101 4기] 테라폼 기본 사용법 1/3" /><published>2024-06-11T23:41:18+09:00</published><updated>2024-06-11T23:41:18+09:00</updated><id>/posts/T101%20Study%20-%20Terraform%20Week%201</id><content type="html" xml:base="/posts/2024-06-11-T101-Study-Terraform-Week-1/"><![CDATA[<h1 id="들어가며">들어가며</h1>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-06-23T00:53:51+09:00</updated><id>/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] 테라폼 기본 사용법 2/3</title><link href="/posts/2024-06-23-T101-Study-Terraform-Week-2/" rel="alternate" type="text/html" title="[T101 4기] 테라폼 기본 사용법 2/3" /><published>2024-06-23T00:52:00+09:00</published><updated>2024-06-23T00:52:00+09:00</updated><id>/posts/T101%20Study%20-%20Terraform%20Week%202</id><content type="html" xml:base="/posts/2024-06-23-T101-Study-Terraform-Week-2/"><![CDATA[<ul id="toc" class="section-nav">
+</ul>
+
+<h1 id="들어가며">들어가며</h1>
+
+<p>테라폼 기초 입문 실습 스터디 2주차 입니다.
+1주차에 이어 테라폼의 기본 사용법에 대해 실습해보려 합니다.
+이번 주에도 “테라폼으로 시작하는 IaC” 책을 기준으로 정리하였습니다.</p>
+
+<blockquote>
+  <p><img src="/assets/2024/20240614_terraform_book.jpg" alt="테라폼으로 시작하는 IaC" /></p>
+
+  <p><a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a></p>
+</blockquote>
+
+<h1 id="hcl-계속">HCL (계속)</h1>
+
+<p>지난주에 이어서 HCL(HashiCorp Configuration Language) 의 문법에 대해 알아보겠습니다.</p>
+
+<h2 id="테라폼-블록">테라폼 블록</h2>
+
+<h3 id="data-블록">data 블록</h3>
+
+<ul>
+  <li>데이터 소스는 테라폼으로 정의되지 않은 외부 리소스와 저장된 정보를 참조할때 사용합니다.</li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">data</code> 블록 선언 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">data</span> <span class="s2">"&lt;프로바이더이름_리소스유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+      <span class="err">&lt;인수&gt;</span> <span class="p">=</span> <span class="err">&lt;값&gt;</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <p>이때 인수는 데이터 소스를 참조할때 사용할 인수이며 아래의 “데이터 소스 참조 방법”에서의 속성과는 다른 값입니다.
+  이 인수로 참조된 데이터의 속성 값을 아래의 방법으로 가져올 수 있습니다.</p>
+  </li>
+  <li>
+    <p>데이터 소스 참조 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 데이터 소스 참조</span>
+  <span class="k">data</span><span class="err">.&lt;프로바이더이름</span><span class="nx">_</span><span class="err">리소스유형&gt;.&lt;이름&gt;.&lt;속성&gt;</span>  
+</code></pre></div>    </div>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">data</code> 블록 사용 예시
+    <ol>
+      <li>현재 region에서 사용가능한 availability zone 정보를 가져오기
+        <ul>
+          <li>main.tf</li>
+        </ul>
+
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c1"># main.tf</span>
+ <span class="k">data</span> <span class="s2">"aws_availability_zones"</span> <span class="s2">"available_zones"</span> <span class="p">{</span>
+     <span class="nx">state</span> <span class="p">=</span> <span class="s2">"available"</span>   <span class="c1"># 현재 region에서 사용가능한 availability zone 정보를 가져오기</span>
+ <span class="p">}</span>
+</code></pre></div>        </div>
+
+        <ul>
+          <li>실행 결과 확인</li>
+        </ul>
+
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c"># main.tf 적용</span>
+ <span class="nv">$ </span>terraform init <span class="o">&amp;&amp;</span> terraform plan <span class="o">&amp;&amp;</span> terraform apply <span class="nt">-auto-approve</span>
+      
+ <span class="c"># state 확인</span>
+ <span class="nv">$ </span>terraform state list      
+ <span class="c"># =&gt; data.aws_availability_zones.available_zones</span>
+      
+ <span class="c"># 테라폼 콘솔에서 확인</span>
+ <span class="nv">$ </span>terraform console
+ <span class="o">&gt;</span> <span class="c"># &lt;확인하고 싶은 속성&gt; </span>
+ <span class="o">&gt;</span> data.aws_availability_zones.available_zones       <span class="c"># =&gt; ...</span>
+ <span class="o">&gt;</span> data.aws_availability_zones.available_zones.id    <span class="c"># =&gt; "ap-northeast-2"</span>
+ <span class="o">&gt;</span> data.aws_availability_zones.available_zones.names <span class="c"># =&gt; AZ 이름 목록...</span>
+ <span class="o">&gt;</span> data.aws_availability_zones.available_zones.zone_ids <span class="c"># =&gt; AZ ID 목록...</span>
+      
+ <span class="c"># tip. echo &lt;확인하고 싶은 속성&gt; || terraform console 로 값 확인</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available_zones"</span> | terraform console     <span class="c"># =&gt; ...</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available_zones.id"</span> | terraform console   <span class="c"># =&gt; "ap-northeast-2"</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available_zones.names"</span> | terraform console <span class="c"># =&gt; AZ 이름 목록...</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available_zones.zone_ids"</span> | terraform console <span class="c"># =&gt; AZ ID 목록...</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available_zones.zone_ids[0]"</span> | terraform console <span class="c"># =&gt; "apne2-az1"</span>
+</code></pre></div>        </div>
+      </li>
+      <li>로컬 파일의 내용 읽기
+        <ul>
+          <li>main.tf</li>
+        </ul>
+
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c1"># main.tf</span>
+ <span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+     <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"Hello world!!"</span>
+     <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
+ <span class="p">}</span>
+        
+ <span class="k">data</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+     <span class="nx">filename</span> <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">filename</span>
+ <span class="p">}</span>
+        
+ <span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+     <span class="nx">content</span>  <span class="p">=</span> <span class="k">data</span><span class="p">.</span><span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">content</span>
+     <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
+ <span class="p">}</span>
+</code></pre></div>        </div>
+
+        <ul>
+          <li>
+            <p>실행 결과 확인</p>
+
+            <svg width="389pt" height="44pt" viewBox="0.00 0.00 389.00 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
+  <title>G</title>
+  <polygon fill="white" stroke="none" points="-4,4 -4,-40 385,-40 385,4 -4,4" />
+  <!-- data.local_file.abc -->
+  <g id="node1" class="node">
+  <title>data.local_file.abc</title>
+  <polygon fill="none" stroke="black" points="254,-36 130,-36 130,0 254,0 254,-36" />
+  <text text-anchor="middle" x="192" y="-12.2" font-family="sans-serif" font-size="14.00">data.local_file.abc</text>
+  </g>
+  <!-- local_file.abc -->
+  <g id="node2" class="node">
+  <title>local_file.abc</title>
+  <polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
+  <text text-anchor="middle" x="47" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.abc</text>
+  </g>
+  <!-- data.local_file.abc&#45;&gt;local_file.abc -->
+  <g id="edge1" class="edge">
+  <title>data.local_file.abc&#45;&gt;local_file.abc</title>
+  <path fill="none" stroke="black" d="M129.53,-18C121.59,-18 113.49,-18 105.62,-18" />
+  <polygon fill="black" stroke="black" points="105.82,-14.5 95.82,-18 105.82,-21.5 105.82,-14.5" />
+  </g>
+  <!-- local_file.def -->
+  <g id="node3" class="node">
+  <title>local_file.def</title>
+  <polygon fill="none" stroke="black" points="381,-36 290,-36 290,0 381,0 381,-36" />
+  <text text-anchor="middle" x="335.5" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.def</text>
+  </g>
+  <!-- local_file.def&#45;&gt;data.local_file.abc -->
+  <g id="edge2" class="edge">
+  <title>local_file.def&#45;&gt;data.local_file.abc</title>
+  <path fill="none" stroke="black" d="M289.73,-18C282.08,-18 273.96,-18 265.8,-18" />
+  <polygon fill="black" stroke="black" points="265.81,-14.5 255.81,-18 265.81,-21.5 265.81,-14.5" />
+  </g>
+  </g>
+  </svg>
+          </li>
+        </ul>
+
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c"># main.tf 적용</span>
+ <span class="nv">$ </span>terraform init <span class="o">&amp;&amp;</span> terraform plan <span class="o">&amp;&amp;</span> terraform apply <span class="nt">-auto-approve</span>
+        
+ <span class="c"># state 확인</span>
+ <span class="nv">$ </span>terraform state list      
+ <span class="c"># =&gt; data.local_file.abc</span>
+ <span class="c">#    local_file.abc</span>
+ <span class="c">#    local_file.def</span>
+        
+ <span class="c"># graph 확인</span>
+ <span class="nv">$ </span>terraform graph <span class="o">&gt;</span> graph.dot
+       
+ <span class="c"># 데이터 소스 참조 확인</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.local_file.abc.content"</span> | terraform console
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
+</ul>
+
+<h3 id="variable-블록">variable 블록</h3>
+
+<ul>
+  <li>변수(variable)블록은 인프라를 구성하는데 필요한 속성 값을 정의해 코드의 변경 없이 여러 인프라를 생성하는데 사용합니다.</li>
+  <li>테라폼에서의 variable 블록을 입력 변수, 즉 input variable라 합니다.</li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">variable</code> 블록 선언 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+      <span class="err">&lt;인수&gt;</span> <span class="p">=</span> <span class="err">&lt;값&gt;</span>
+      <span class="err">&lt;메타변수&gt;</span> <span class="p">=</span> <span class="err">&lt;메타변수</span> <span class="err">값&gt;</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">source</code>, <code class="language-plaintext highlighter-rouge">version</code>, <code class="language-plaintext highlighter-rouge">providers</code> 등의 예약어는 변수이름으로 사용할 수 없습니다.</li>
+    </ul>
+  </li>
+  <li>
+    <p>변수 참조 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 변수 참조</span>
+  <span class="kd">var</span><span class="err">.&lt;이름&gt;</span>
+  
+  <span class="c1"># 배열인 경우 [&lt;인덱스&gt;] 로 참조</span>
+  <span class="kd">var</span><span class="err">.&lt;이름&gt;</span><span class="p">[</span><span class="err">&lt;인덱스&gt;</span><span class="p">]</span>
+  
+  <span class="c1"># 배열의 10번째 항목 참조 예시</span>
+  <span class="kd">var</span><span class="err">.&lt;이름&gt;</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>  
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="variable-블록에서-사용-가능한-메타변수">variable 블록에서 사용 가능한 메타변수</h4>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">variable</code> 블록에서는 다음의 메타변수를 사용 가능합니다.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>메타변수</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>default</td>
+      <td>기본값을 지정합니다. 기본값도 없고, 다른 방법들로 지정되지 않으면 대화식으로 사용자에게 묻습니다.</td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>변수 유형을 지정합니다.</td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>입력변수의 설명을 기입합니다.</td>
+    </tr>
+    <tr>
+      <td>validation</td>
+      <td>변수의 제약 조건을 부여하고 유효성 검사 규칙을 정의합니다. <a href="https://honglab.tistory.com/217">참고</a></td>
+    </tr>
+    <tr>
+      <td>sensitive</td>
+      <td>비밀번호 등의 민감한 변수임을 표시하고 출력문에서 값 노출을 제한합니다. <a href="https://daaa0555.tistory.com/371">참고</a></td>
+    </tr>
+    <tr>
+      <td>nullable</td>
+      <td>변수에 값이 없어도 됨을 지정합니다.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="입력-변수-유형">입력 변수 유형</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>유형</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>string</td>
+      <td>문자열을 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>number</td>
+      <td>숫자를 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>bool</td>
+      <td>true, false의 불리언 값을 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>list(<유형>)</유형></td>
+      <td>리스트를 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>map(<유형>)</유형></td>
+      <td>맵을 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>set(<유형>)</유형></td>
+      <td>집합을 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>object({<인수 이름="">=<유형>, ...})</유형></인수></td>
+      <td>객체를 나타냅니다.</td>
+    </tr>
+    <tr>
+      <td>tuple([<유형>, ...])</유형></td>
+      <td>튜플을 나타냅니다.</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>입력 변수 사용 예시
+    <ol>
+      <li><code class="language-plaintext highlighter-rouge">number</code> 변수 예시
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"number"</span> <span class="p">{</span>
+   <span class="nx">type</span>    <span class="p">=</span> <span class="nx">number</span>
+   <span class="nx">default</span> <span class="p">=</span> <span class="mi">10</span>
+  <span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">list</code> 변수 예시
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"list"</span> <span class="p">{</span>
+   <span class="nx">type</span>    <span class="p">=</span> <span class="nx">list</span>
+   <span class="nx">default</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+  <span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">list</code>의 값으로 number로 받는 조건 결합 예시
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"list"</span> <span class="p">{</span>
+   <span class="nx">type</span>        <span class="p">=</span> <span class="nx">list</span><span class="p">(</span><span class="nx">number</span><span class="p">)</span>
+   <span class="nx">default</span>     <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+   <span class="c1"># default = [1, "two", 3] 과 같이 지정된 number 타입이 아닌 경우 오류 발생       </span>
+  <span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>모든 값이 string 인 map 예시
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"map"</span> <span class="p">{</span>
+   <span class="nx">type</span>    <span class="p">=</span> <span class="nx">map</span><span class="p">(</span><span class="nx">string</span><span class="p">)</span>
+   <span class="nx">default</span> <span class="p">=</span> <span class="p">{</span>
+       <span class="nx">key1</span> <span class="p">=</span> <span class="s2">"value1"</span>
+       <span class="nx">key2</span> <span class="p">=</span> <span class="s2">"value2"</span>
+   <span class="p">}</span>
+  <span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">object</code> 변수를 사용하여 복잡한 구조적 유형 (structural type) 작성 예시
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"object_example"</span> <span class="p">{</span>
+   <span class="nx">type</span> <span class="p">=</span> <span class="nx">object</span><span class="p">({</span>
+       <span class="nx">name</span>    <span class="p">=</span> <span class="nx">string</span>
+       <span class="nx">age</span>     <span class="p">=</span> <span class="nx">number</span>
+       <span class="nx">tags</span>    <span class="p">=</span> <span class="nx">list</span><span class="p">(</span><span class="nx">string</span><span class="p">)</span>
+       <span class="nx">enabled</span> <span class="p">=</span> <span class="nx">bool</span>
+   <span class="p">})</span>
+        
+   <span class="nx">default</span> <span class="p">=</span> <span class="p">{</span>
+       <span class="nx">name</span>    <span class="p">=</span> <span class="s2">"value1"</span>
+       <span class="nx">age</span>     <span class="p">=</span> <span class="mi">42</span>
+       <span class="nx">tags</span>    <span class="p">=</span> <span class="p">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">]</span>
+       <span class="nx">enabled</span> <span class="p">=</span> <span class="kc">true</span>
+   <span class="p">}</span>
+  <span class="p">}</span> 
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
+</ul>
+
+<h4 id="유효성-검사">유효성 검사</h4>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">variable</code> 선언시 변수 타입 이외에도 사용자 지정 유효성 검사를 추가할 수 있습니다.</li>
+  <li>
+    <p>유효성 검사 작성 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">variable</span> <span class="s2">"image_id"</span> <span class="p">{</span>
+    <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+    <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The id of the machine image (AMI) to use for the server."</span>
+    
+    <span class="nx">validation</span> <span class="p">{</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">image_id</span><span class="p">)</span> <span class="err">&gt;</span> <span class="mi">4</span>    <span class="c1"># true 또는 false를 반환하는 규칙 </span>
+      <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"The image_id value must exceed 4."</span> <span class="c1"># false일 때 출력할 오류 메시지</span>
+    <span class="p">}</span>
+    
+    <span class="nx">validation</span> <span class="p">{</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">can</span><span class="p">(</span><span class="nx">regex</span><span class="p">(</span><span class="s2">"^ami-"</span><span class="p">,</span> <span class="kd">var</span><span class="p">.</span><span class="nx">image_id</span><span class="p">))</span>  <span class="c1"># 정규 표현식을 사용한 예시</span>
+      <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"The image_id value must starting with </span><span class="se">\"</span><span class="s2">ami-</span><span class="se">\"</span><span class="s2">."</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">variable</code> 블록 내부에 <code class="language-plaintext highlighter-rouge">validation</code> 블록을 넣고, 그 안에 <code class="language-plaintext highlighter-rouge">condition</code>과 <code class="language-plaintext highlighter-rouge">error_message</code>를 지정합니다.</li>
+      <li><code class="language-plaintext highlighter-rouge">condition</code> : 유효성 검사 조건을 지정합니다.</li>
+      <li><code class="language-plaintext highlighter-rouge">error_message</code> : 조건이 만족하지 않을 때 출력할 오류 메시지를 지정합니다.</li>
+      <li>확인
+        <ul>
+          <li>아래와 같이 조건에 맞지 않는 ami 입력시 유효성 검사를 만족하지 못하여 오류 메시지가 출력되는것을 확인할 수 있습니다.
+            <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nv">$ </span>terraform plan
+  <span class="c"># =&gt; var.image_id</span>
+  <span class="c">#      The id of the machine image (AMI) to use for the server.</span>
+  <span class="c">#    </span>
+  <span class="c">#      Enter a value: ami</span>
+  <span class="c">#    ...</span>
+  <span class="c">#    </span>
+  <span class="c">#    The image_id value must exceed 4.</span>
+  <span class="c">#    </span>
+  <span class="c">#    This was checked by the validation rule at main.tf:5,7-17.</span>
+  <span class="c">#</span>
+  <span class="c">#    ...    </span>
+  <span class="c">#    </span>
+  <span class="c">#    The image_id value must starting with "ami-".</span>
+  <span class="c">#    </span>
+  <span class="c">#    This was checked by the validation rule at main.tf:10,7-17.</span>
+</code></pre></div>            </div>
+          </li>
+          <li>유효성 검사 조건을 만족하는 ami-1234 입력시 정상적으로 실행됩니다.
+            <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nv">$ </span>terraform plan
+  <span class="c"># =&gt; var.image_id</span>
+  <span class="c">#    The id of the machine image (AMI) to use for the server.</span>
+  <span class="c">#    </span>
+  <span class="c">#    Enter a value: ami-1234</span>
+  <span class="c">#    </span>
+  <span class="c">#    local_file.abc: Refreshing state... [id=3ee66cf7a43f216ff7060c2bd85758424f7f18b3]</span>
+  <span class="c">#    </span>
+  <span class="c">#    No changes. Your infrastructure matches the configuration.</span>
+  <span class="c">#    </span>
+  <span class="c">#    Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed.        </span>
+</code></pre></div>            </div>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="sensitive-메타변수를-사용한-민감한-변수값-처리">sensitive 메타변수를 사용한 민감한 변수값 처리</h4>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">sensitive = true</code>를 <code class="language-plaintext highlighter-rouge">variable</code> 블록에 넣어서 해당 변수가 민감한 값을 갖고 있음을 지정할 수 있습니다.</li>
+  <li>
+    <p>민감한 변수값은 출력문에서 노출되지 않고 <code class="language-plaintext highlighter-rouge">(sensitive value)</code> 라는 내용으로 감춰집니다.</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># main.tf</span>
+  <span class="k">variable</span> <span class="s2">"my_password"</span> <span class="p">{</span>
+      <span class="nx">default</span> <span class="p">=</span> <span class="s2">"supersecret"</span>
+      <span class="nx">sensitive</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="p">}</span> 
+    
+  <span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <span class="nx">content</span>  <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">my_password</span>
+    <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li>확인
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c"># 1. terraform apply 실행시 my_password 변수값이 민감한 값으로 처리되어 출력됩니다.</span>
+  <span class="nv">$ </span>terraform apply <span class="nt">--auto-approve</span>
+  <span class="c"># =&gt; ...</span>
+  <span class="c">#          + content              = (sensitive value)</span>
+  <span class="c">#    ...</span>
+      
+  <span class="c"># 2. terraform console로 확인시에도 민감한 값으로 필터링 되어 출력됩니다.</span>
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+  <span class="c"># =&gt; (sensitive value)</span>
+      
+  <span class="c"># 3. 파일 내용은 실제 값으로 들어갑니다.</span>
+  <span class="nv">$ </span><span class="nb">cat </span>abc.txt 
+  <span class="c"># =&gt; supersecret</span>
+      
+  <span class="c"># 4. terraform.tfstate 파일은 실제값이 들어가 있습니다. .tfstate 파일을 안전하게 관리해야 할 필요가 있습니다.</span>
+  <span class="nv">$ </span><span class="nb">cat </span>terraform.tfstate| <span class="nb">grep</span> <span class="s2">"content"</span>
+  <span class="c"># =&gt; "content": "supersecret",</span>
+</code></pre></div>        </div>
+        <ul>
+          <li><code class="language-plaintext highlighter-rouge">terraform.tfstate</code> 에서는 sensitive 값이 노출되므로 주의해야 합니다. <code class="language-plaintext highlighter-rouge">terraform.tfstate</code> 파일을 안전하게 관리하는 방법은 다음의 방법 등이 있습니다.
+            <ol>
+              <li>AWS S3 등의 외부 스토리지에 저장하고, 권한을 제한</li>
+              <li>민감한 정보를 <code class="language-plaintext highlighter-rouge">variable</code>를 사용하지 않고 다른 방법으로 (예) 파일 등) 넘기거나, 일시적으로 사용하고 즉시 변경할 수 있는 경우 사용</li>
+              <li>민감한 정보는 Terraform에 넘길때 암호화 하여 사용하고, provisioning시 복호화하여 사용</li>
+            </ol>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="변수-입력-방식과-우선-순위">변수 입력 방식과 우선 순위</h4>
+
+<ul>
+  <li>변수 입력 방식은 다음과 같습니다. 아래로 갈 수록 우선순위가 높아집니다.
+    <ol>
+      <li>실행 후 대화식 입력
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="c"># =&gt; var.my_var</span>
+ <span class="c">#    Enter a value: abcd</span>
+      
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "abcd"</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">variable</code> 블록에 <code class="language-plaintext highlighter-rouge">default</code>로 지정된 값
+        <ul>
+          <li><code class="language-plaintext highlighter-rouge">main.tf</code> 작성
+            <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># main.tf</span>
+  <span class="k">variable</span> <span class="s2">"my_var"</span> <span class="p">{</span>
+      <span class="nx">default</span> <span class="p">=</span> <span class="s2">"default value"</span>
+  <span class="p">}</span>
+</code></pre></div>            </div>
+          </li>
+          <li>실행
+            <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+  <span class="c"># =&gt; ...</span>
+  <span class="c"># =&gt; Apply complete! Resources: 1 added, 0 changed, 1 destroyed.</span>
+         
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+  <span class="c"># =&gt; "default value"</span>
+</code></pre></div>            </div>
+          </li>
+        </ul>
+      </li>
+      <li>환경 변수로 입력
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">export </span><span class="nv">TF_VAR_my_var</span><span class="o">=</span><span class="s2">"환경변수"</span>
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "환경변수"</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">terraform.tfvars</code> 파일을 통해 변수 파일로 입력
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'my_var = "terraform.tfvars 값"'</span> <span class="o">&gt;</span> terraform.tfvars
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "terraform.tfvars 값"</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">terraform.tfvars.json</code> 파일을 통해 변수 파일로 입력
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'{ "my_var": "terraform.tfvars.json 값" }'</span> <span class="o">&gt;</span> terraform.tfvars.json
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "terraform.tfvars.json 값"</span>
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">*.auto.tfvars</code> 또는 <code class="language-plaintext highlighter-rouge">*.auto.tfvars.json</code> 을 통해 변수 파일로 입력
+        <ul>
+          <li>단, 파일명의 정렬 순서에 따라 <code class="language-plaintext highlighter-rouge">*.auto.tfvars</code> 파일간의 우선순위기 적용됩니다.</li>
+        </ul>
+
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'my_var = "eeee.auto.tfvars 값"'</span> <span class="o">&gt;</span> eeee.auto.tfvars
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "eeee.auto.tfvars 값"</span>
+
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'my_var = "zzzz.auto.tfvars 값"'</span> <span class="o">&gt;</span> zzzz.auto.tfvars
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "zzzz.auto.tfvars 값"</span>
+
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'my_var = "aaaa.auto.tfvars 값"'</span> <span class="o">&gt;</span> aaaa.auto.tfvars
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "zzzz.auto.tfvars 값"</span>
+</code></pre></div>        </div>
+        <ul>
+          <li>위의 예제에서 보는것과 같이 정렬 순서에서 뒤로 갈 수록 우선순위가 높아집니다. z가 a나 e 보다 뒤이기 때문에 zzzz.auto.tfvars 값이 우선하게 적용됩니다.</li>
+        </ul>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">terraform apply</code> 시 <code class="language-plaintext highlighter-rouge">-var</code> 또는 <code class="language-plaintext highlighter-rouge">-var-file</code>로 파일 지정 명령행 인수 사용
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span> <span class="nt">-var</span><span class="o">=</span><span class="s1">'my_var=명령행 인수 값'</span> <span class="nt">-var</span><span class="o">=</span><span class="s2">"addtional_var=추가 변수 값"</span>
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "명령행 인수 값"</span>
+     
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'my_var="-var-file 값"'</span> <span class="o">&gt;</span> varfiletest.txt
+ <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span> <span class="nt">-var-file</span><span class="o">=</span>varfiletest.txt
+ <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+ <span class="c"># =&gt; "-var-file 값"</span>
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
+</ul>
+
+<h3 id="locals-지역-값-블록">locals 지역 값 블록</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">locals</code> 블록은 테라폼 코드 내에서 재사용 가능한 지역 변수를 정의할 때 사용합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">variable</code> 과는 달리 선언된 모듈 내에서만 사용 가능하며, 실행시에 입력받을 수 없습니다.</li>
+  <li>단점으로는 실제 값에 대한 추적이 어려워 질 수 있다는 점입니다.</li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">locals</code> 블록 선언 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nx">locals</span> <span class="p">{</span>
+      <span class="err">&lt;인수&gt;</span> <span class="p">=</span> <span class="err">&lt;값&gt;</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">source</code>, <code class="language-plaintext highlighter-rouge">version</code>, <code class="language-plaintext highlighter-rouge">providers</code> 등의 예약어는 변수이름으로 사용할 수 없습니다.</li>
+    </ul>
+  </li>
+  <li>
+    <p>참조 방법</p>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 변수 참조</span>
+  <span class="kd">local</span><span class="err">.&lt;이름&gt;</span>
+  
+  <span class="c1"># 배열인 경우 [&lt;인덱스&gt;] 로 참조</span>
+  <span class="kd">local</span><span class="err">.&lt;이름&gt;</span><span class="p">[</span><span class="err">&lt;인덱스&gt;</span><span class="p">]</span>
+  
+  <span class="c1"># 배열의 10번째 항목 참조 예시</span>
+  <span class="kd">local</span><span class="err">.&lt;이름&gt;</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>  
+</code></pre></div>    </div>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">locals</code> 블록 사용 예시
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">main.tf</code> 작성
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># main.tf</span>
+  <span class="k">variable</span> <span class="s2">"prefix"</span> <span class="p">{</span>
+      <span class="nx">type</span>    <span class="p">=</span> <span class="nx">string</span>
+      <span class="nx">default</span> <span class="p">=</span> <span class="s2">"hello"</span>
+  <span class="p">}</span>
+    
+  <span class="nx">locals</span> <span class="p">{</span>
+      <span class="nx">name</span> <span class="p">=</span> <span class="s2">"terraform"</span>
+      <span class="nx">content</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">prefix</span><span class="k">}</span><span class="s2"> </span><span class="k">${</span><span class="kd">local</span><span class="p">.</span><span class="nx">name</span><span class="k">}</span><span class="s2">"</span>
+      <span class="nx">my_info</span> <span class="p">=</span> <span class="p">{</span>
+          <span class="nx">age</span> <span class="p">=</span> <span class="mi">20</span>
+          <span class="nx">region</span> <span class="p">=</span> <span class="s2">"KR"</span>
+      <span class="p">}</span>
+      <span class="nx">my_nums</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
+  <span class="p">}</span>
+    
+  <span class="nx">locals</span> <span class="p">{</span>
+      <span class="nx">my_string</span> <span class="p">=</span> <span class="s2">"string </span><span class="k">${</span><span class="kd">local</span><span class="p">.</span><span class="nx">content</span><span class="k">}</span><span class="s2">"</span>
+      <span class="c1"># content = "content2" # 위의 locals에 등록되어서 로컬변수명이 중복되어 오류가 발생합니다.    </span>
+  <span class="p">}</span>
+      
+  <span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+      <span class="nx">content</span>  <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">content</span>
+      <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
+  <span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>실행 결과 확인
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+        
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local_file.abc.content"</span> | terraform console
+  <span class="c"># =&gt; "hello terraform"</span>
+    
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"local.my_string"</span> | terraform console
+  <span class="c"># =&gt; "string hello terraform"</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="output-출력-값-블록">output 출력 값 블록</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">output</code> 블록은 테라폼 코드 프로비저닝 수행 후 결과 속성 값을 확인하는 용도로 사용합니다.</li>
+  <li>출력 값은 다음의 용도로 사용할 수 있습니다.
+    <ul>
+      <li>루트 모듈에서 사용자가 확인하고자 하는 특정 속성 출력</li>
+      <li>자식 모듈의 특정값을 정의하고 루트 모듈에서 결과를 참조</li>
+      <li>루트 모듈 간의 결과를 원격으로 읽기 위한 접근 요소</li>
+    </ul>
+  </li>
+  <li>output 블록 선언 방법
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">output</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+      <span class="nx">value</span> <span class="p">=</span> <span class="err">&lt;값&gt;</span>
+      <span class="err">&lt;메타변수&gt;</span> <span class="p">=</span> <span class="err">&lt;메타변수</span> <span class="err">값&gt;</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="output-블록에서-사용-가능한-메타변수">output 블록에서 사용 가능한 메타변수</h4>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">output</code> 블록에서는 다음의 메타변수를 사용 가능합니다.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>메타변수</th>
+          <th>설명</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>description</td>
+          <td>출력값의 설명을 기입합니다.</td>
+        </tr>
+        <tr>
+          <td>sensitive</td>
+          <td>비밀번호 등의 민감한 값임을 표시하고 출력문에서 값 노출을 제한합니다.</td>
+        </tr>
+        <tr>
+          <td>depends_on</td>
+          <td>value에 담길 값이 종속성이 있는 경우 지정하면 생성 순서가 조정됩니다.</td>
+        </tr>
+        <tr>
+          <td>precondition</td>
+          <td>출력전에 지정된 조건을 검증합니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <p>출력 값 사용 예시</p>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># main.tf</span>
+  <span class="nx">locals</span> <span class="p">{</span>
+    <span class="nx">content</span> <span class="p">=</span> <span class="s2">"local content"</span>
+  <span class="p">}</span>
+    
+  <span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">local</span><span class="p">.</span><span class="nx">content</span><span class="k">}</span><span class="s2">"</span>
+    <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
+  <span class="p">}</span>
+    
+  <span class="k">output</span> <span class="s2">"file_id"</span> <span class="p">{</span>
+    <span class="nx">value</span> <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">id</span>
+    <span class="nx">depends_on</span> <span class="p">=</span> <span class="p">[</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span> <span class="p">]</span>
+  <span class="p">}</span>
+    
+  <span class="k">output</span> <span class="s2">"file_abspath"</span> <span class="p">{</span>
+    <span class="nx">value</span> <span class="p">=</span> <span class="nx">abspath</span><span class="p">(</span><span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">filename</span><span class="p">)</span>
+    <span class="nx">description</span> <span class="p">=</span> <span class="s2">"파일의 절대 경로"</span>
+  <span class="p">}</span>
+    
+  <span class="k">output</span> <span class="s2">"local_content"</span> <span class="p">{</span>
+    <span class="nx">value</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">content</span>
+    <span class="nx">sensitive</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="p">}</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li>실행 결과</li>
+    </ul>
+
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nx">$</span> <span class="k">terraform</span> <span class="nx">apply</span> <span class="nx">-auto-approve</span>
+  <span class="c1"># =&gt; ...</span>
+  <span class="c1">#    Outputs:</span>
+  <span class="c1">#    </span>
+  <span class="c1">#    file_abspath = ".../week-2/mytest7-output/abc.txt"</span>
+  <span class="c1">#    file_id = "094f587b52451d1d5f3ef42a921fc877d8b18c1b"</span>
+  <span class="c1">#    local_content = &lt;sensitive&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="반복문-12">반복문 (1/2)</h2>
+
+<ul>
+  <li>list 형태의 값 목록이나 Key-Value 형태의 맵을 항목 만큼 반복하여 인프라 구성 정의를 항목 개수만큼 반복적으로 작성하지 않고,
+  반복문을 사용하여 간단하게 작성할 수 있습니다.</li>
+  <li>테라폼의 HCL에는 <code class="language-plaintext highlighter-rouge">count</code>와 <code class="language-plaintext highlighter-rouge">for_each</code> 두 가지 반복문이 있습니다.</li>
+  <li>이번 주차에는 <code class="language-plaintext highlighter-rouge">count</code> 반복문에 대해 알아보았습니다.</li>
+</ul>
+
+<h3 id="count-반복문">count 반복문</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">count</code>는 프로그래밍 언어의 <code class="language-plaintext highlighter-rouge">for</code>문 처럼 정수값만큼 반복합니다.</li>
+  <li>기본 적인 사용법은 아래와 같습니다.</li>
+</ul>
+
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">resource</span> <span class="s2">"&lt;프로바이더이름_리소스유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+    <span class="nx">count</span> <span class="p">=</span> <span class="err">&lt;반복횟수&gt;</span>
+    <span class="nx">content</span> <span class="p">=</span> <span class="s2">"Index = </span><span class="k">${</span><span class="nx">count</span><span class="p">.</span><span class="nx">index</span><span class="k">}</span><span class="s2">"</span> <span class="c1"># count.index 로 현재 반복 인덱스를 참조</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>위의 코드에서 <code class="language-plaintext highlighter-rouge">count</code> 횟수 만큼 반복해서 resource나 모듈을 생성합니다.</li>
+  <li><code class="language-plaintext highlighter-rouge">count</code>의 반복횟수 참고값은 <code class="language-plaintext highlighter-rouge">count.index</code>를 통해 확인할 수 있으며, 0부터 시작해서 1씩 증가합니다.</li>
+  <li>사용 예제
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">variable</span> <span class="s2">"fruits"</span> <span class="p">{</span>
+  <span class="nx">type</span> <span class="p">=</span> <span class="nx">list</span>
+  <span class="nx">default</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"apple"</span><span class="p">,</span> <span class="s2">"banana"</span><span class="p">,</span> <span class="s2">"kiwi"</span><span class="p">]</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"fruit_files"</span> <span class="p">{</span>
+  <span class="nx">count</span> <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">fruits</span><span class="p">)</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/i_love_</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">fruits</span><span class="p">[</span><span class="nx">count</span><span class="p">.</span><span class="nx">index</span><span class="p">]</span><span class="k">}</span><span class="s2">.txt"</span>
+  <span class="nx">content</span> <span class="p">=</span> <span class="s2">"I love </span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">fruits</span><span class="p">[</span><span class="nx">count</span><span class="p">.</span><span class="nx">index</span><span class="p">]</span><span class="k">}</span><span class="s2">!"</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>실행 결과
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">$</span> <span class="k">terraform</span> <span class="nx">apply</span> <span class="nx">-auto-approve</span>
+     
+<span class="nx">$</span> <span class="nx">ls</span> <span class="nx">-1</span>
+<span class="c1"># =&gt; i_love_apple.txt</span>
+<span class="c1">#    i_love_banana.txt</span>
+<span class="c1">#    i_love_kiwi.txt</span>
+    
+<span class="nx">$</span> <span class="nx">cat</span> <span class="nx">i_love_apple</span><span class="err">.</span><span class="nx">txt</span>
+<span class="c1"># =&gt; I love apple!</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="도전과제">도전과제</h2>
+
+<h3 id="도전과제-1-리전-내에서-사용-가능한-가용영역-목록-가져오기를-사용한-vpc-리소스-생성-실습-진행">도전과제 1. 리전 내에서 사용 가능한 가용영역 목록 가져오기를 사용한 VPC 리소스 생성 실습 진행</h3>
+<ul>
+  <li>가용영역 목록을 가져와서 VPC를 만들고, 사용 가능한 첫번째 가용영역에 subnet을 만드는 실습을 진행하였습니다.</li>
+  <li>소스
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">data</span> <span class="s2">"aws_availability_zones"</span> <span class="s2">"available"</span> <span class="p">{</span>
+  <span class="nx">state</span> <span class="p">=</span> <span class="s2">"available"</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_vpc"</span> <span class="s2">"peter_vpc"</span> <span class="p">{</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.0.0.0/16"</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"challenge1 vpc"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_subnet"</span> <span class="s2">"peter_subnet"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span> <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">availability_zone</span> <span class="p">=</span> <span class="k">data</span><span class="p">.</span><span class="nx">aws_availability_zones</span><span class="p">.</span><span class="nx">available</span><span class="p">.</span><span class="nx">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.0.1.0/24"</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"challenge1 subnet"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+</code></pre></div>    </div>
+  </li>
+  <li>실행 결과
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    aws_vpc.peter_vpc: Creating...</span>
+<span class="c">#    aws_vpc.peter_vpc: Creation complete after 1s [id=vpc-0e6762235c588581b]</span>
+<span class="c">#    aws_subnet.peter_subnet: Creating...</span>
+<span class="c">#    aws_subnet.peter_subnet: Creation complete after 0s [id=subnet-06888df37bc01ab4c]</span>
+  
+<span class="c"># 결과 확인</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"aws_vpc.peter_vpc.id"</span> | terraform console
+<span class="c"># =&gt; "vpc-0e6762235c588581b"</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"aws_subnet.peter_subnet.id"</span> | terraform console
+<span class="c"># =&gt; "subnet-06888df37bc01ab4c"</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>AWS 콘솔에서 VPC 생성 확인
+<img src="/assets/2024/20240622_terraform_w2_vpc.png" alt="20240622_terraform_w2_vpc.png" /></li>
+      <li>AWS 콘솔에서 Subnet 생성 확인
+<img src="/assets/2024/20240622_terraform_w2_subnet.png" alt="20240622_terraform_w2_subnet.png" /></li>
+    </ul>
+  </li>
+  <li>
+    <p>그래프</p>
+
+    <svg width="455pt" height="98pt" viewBox="0.00 0.00 454.75 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
+<title>G</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-94 450.75,-94 450.75,4 -4,4" />
+<!-- data.aws_availability_zones.available -->
+<g id="node1" class="node">
+<title>data.aws_availability_zones.available</title>
+<polygon fill="none" stroke="black" points="240.25,-90 0,-90 0,-54 240.25,-54 240.25,-90" />
+<text text-anchor="middle" x="120.12" y="-66.2" font-family="sans-serif" font-size="14.00">data.aws_availability_zones.available</text>
+</g>
+<!-- aws_subnet.peter_subnet -->
+<g id="node2" class="node">
+<title>aws_subnet.peter_subnet</title>
+<polygon fill="none" stroke="black" points="446.75,-63 276.25,-63 276.25,-27 446.75,-27 446.75,-63" />
+<text text-anchor="middle" x="361.5" y="-39.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet</text>
+</g>
+<!-- aws_subnet.peter_subnet&#45;&gt;data.aws_availability_zones.available -->
+<g id="edge1" class="edge">
+<title>aws_subnet.peter_subnet&#45;&gt;data.aws_availability_zones.available</title>
+<path fill="none" stroke="black" d="M275.77,-54.56C268,-55.43 260.01,-56.33 251.96,-57.24" />
+<polygon fill="black" stroke="black" points="251.59,-53.76 242.05,-58.36 252.38,-60.72 251.59,-53.76" />
+</g>
+<!-- aws_vpc.peter_vpc -->
+<g id="node3" class="node">
+<title>aws_vpc.peter_vpc</title>
+<polygon fill="none" stroke="black" points="185.88,-36 54.38,-36 54.38,0 185.88,0 185.88,-36" />
+<text text-anchor="middle" x="120.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
+</g>
+<!-- aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge2" class="edge">
+<title>aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M275.77,-35.44C250.23,-32.56 222.36,-29.42 197.4,-26.6" />
+<polygon fill="black" stroke="black" points="197.99,-23.15 187.66,-25.5 197.2,-30.1 197.99,-23.15" />
+</g>
+</g>
+</svg>
+  </li>
+</ul>
+
+<h3 id="도전과제-2-위-3개-코드-파일-내용에-리소스의-이름myvpc-mysubnet1-등을-반드시-꼭-자신의-닉네임으로-변경해서-배포-실습해보세요">도전과제 2. 위 3개 코드 파일 내용에 리소스의 이름(myvpc, mysubnet1 등)을 반드시! 꼭! 자신의 닉네임으로 변경해서 배포 실습해보세요!</h3>
+
+<ul>
+  <li>vpc.tf 생성
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># vpc.tf</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+    <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_vpc"</span> <span class="s2">"peter_vpc"</span> <span class="p">{</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.0.0/16"</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">name</span> <span class="p">=</span> <span class="s2">"t101-study"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>실행
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform init <span class="o">&amp;&amp;</span> terraform plan <span class="o">&amp;&amp;</span> terraform apply <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    Plan: 1 to add, 0 to change, 0 to destroy.</span>
+<span class="c">#    aws_vpc.peter_vpc: Creating...</span>
+<span class="c">#    aws_vpc.peter_vpc: Creation complete after 2s [id=vpc-0e1ad43009a8fe8fa]</span>
+<span class="c">#    </span>
+<span class="c">#    Apply complete! Resources: 1 added, 0 changed, 0 destroyed.</span>
+    
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"aws_vpc.peter_vpc.id"</span> | terraform console
+<span class="c"># =&gt; "vpc-0e1ad43009a8fe8fa"</span>
+   
+<span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> | jq
+<span class="c"># =&gt; {</span>
+<span class="c">#      "Vpcs": [</span>
+<span class="c">#        {</span>
+<span class="c">#          "CidrBlock": "10.10.0.0/16",</span>
+<span class="c">#          "DhcpOptionsId": "dopt-0c264ef627294fd1f",</span>
+<span class="c">#          "State": "available",</span>
+<span class="c">#          "VpcId": "vpc-0e1ad43009a8fe8fa",</span>
+<span class="c">#          "OwnerId": "654654550747",</span>
+<span class="c">#          "InstanceTenancy": "default",</span>
+<span class="c">#          "CidrBlockAssociationSet": [</span>
+<span class="c">#            {</span>
+<span class="c">#              "AssociationId": "vpc-cidr-assoc-0e9adafb317c75f4f",</span>
+<span class="c">#              "CidrBlock": "10.10.0.0/16",</span>
+<span class="c">#              "CidrBlockState": {</span>
+<span class="c">#                "State": "associated"</span>
+<span class="c">#              }</span>
+<span class="c">#            }</span>
+<span class="c">#          ],</span>
+<span class="c">#          "IsDefault": false,</span>
+<span class="c">#          "Tags": [</span>
+<span class="c">#            {</span>
+<span class="c">#              "Key": "name",</span>
+<span class="c">#              "Value": "t101-study"</span>
+<span class="c">#            }</span>
+<span class="c">#          ]</span>
+<span class="c">#        }</span>
+<span class="c">#      ]</span>
+<span class="c">#    }</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>AWS 콘솔에서 VPC 생성정보 확인 : DNS 옵션값 확인
+    <ul>
+      <li>아래의 캡쳐와 같이 DNS hostnames는 Disabled, DNS resolution은 Enabled 된 것을 확인하였습니다.
+<img src="/assets/2024/20240622_terraform_w2_c2_p1_1.png" alt="20240622_terraform_w2_c2_p1_1.png" /></li>
+    </ul>
+  </li>
+  <li>vpc.tf의 DNS 옵션을 수정하여 두 DNS 옵션값을 enabled 로 변경
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># vpc.tf</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+  <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_vpc"</span> <span class="s2">"peter_vpc"</span> <span class="p">{</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.0.0/16"</span>
+  <span class="nx">enable_dns_support</span> <span class="p">=</span> <span class="kc">true</span>   <span class="c1"># 추가</span>
+  <span class="nx">enable_dns_hostnames</span> <span class="p">=</span> <span class="kc">true</span> <span class="c1"># 추가</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-study"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+  </li>
+  <li>수정된 vpc.tf 적용
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+</code></pre></div>    </div>
+  </li>
+  <li>AWS 콘솔에서 VPC 생성정보 확인 : DNS 옵션값 확인
+    <ul>
+      <li>아래와 같이 DNS hostnames 도 Enabled 되었습니다.
+<img src="/assets/2024/20240622_terraform_w2_c2_p1_2.png" alt="20240622_terraform_w2_c2_p1_2.png" /></li>
+    </ul>
+  </li>
+  <li>vpc.tf 코드 내용 수정 : 서브넷 2개 생성 추가
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+    <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_vpc"</span> <span class="s2">"peter_vpc"</span> <span class="p">{</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.0.0/16"</span>
+  <span class="nx">enable_dns_support</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">enable_dns_hostnames</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-study"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_subnet"</span> <span class="s2">"peter_subnet1"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.1.0/24"</span>
+  
+  <span class="nx">availability_zone</span> <span class="p">=</span> <span class="s2">"ap-northeast-2a"</span>
+  
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-subnet1"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="k">resource</span> <span class="s2">"aws_subnet"</span> <span class="s2">"peter_subnet2"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.2.0/24"</span>
+  
+  <span class="nx">availability_zone</span> <span class="p">=</span> <span class="s2">"ap-northeast-2c"</span>
+  
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-subnet2"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+  
+<span class="k">output</span> <span class="s2">"aws_vpc_id"</span> <span class="p">{</span>
+  <span class="nx">value</span> <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>실행 결과 확인
+        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+    
+<span class="nv">$ </span>terraform state list
+<span class="c"># =&gt; aws_subnet.peter_subnet1</span>
+<span class="c">#    aws_subnet.peter_subnet2</span>
+<span class="c">#    aws_vpc.peter_vpc</span>
+    
+<span class="nv">$ </span>terraform output
+<span class="c"># =&gt; aws_vpc_id = "vpc-0e1ad43009a8fe8fa"</span>
+    
+<span class="nv">$ </span>terraform output aws_vpc_id
+<span class="c"># =&gt; "vpc-0e1ad43009a8fe8fa"</span>
+    
+<span class="nv">$ </span>terraform output <span class="nt">-raw</span> aws_vpc_id
+<span class="c"># =&gt; vpc-0e1ad43009a8fe8fa</span>
+    
+<span class="nv">$ VPCID</span><span class="o">=</span><span class="si">$(</span>terraform output <span class="nt">-raw</span> aws_vpc_id<span class="si">)</span>
+    
+<span class="nv">$ </span>aws ec2 describe-subnets <span class="nt">--filters</span> <span class="s2">"Name=vpc-id,Values=</span><span class="nv">$VPCID</span><span class="s2">"</span> <span class="nt">--output</span> table
+</code></pre></div>        </div>
+        <p><img src="/assets/2024/20240622_terraform_w2_c2_p1_3.png" alt="20240622_terraform_w2_c2_p1_3.png" /></p>
+
+        <p><code class="language-plaintext highlighter-rouge">terraform output</code> 시 <code class="language-plaintext highlighter-rouge">-raw</code> 옵션을 사용하면 “(따옴표) 없이 출력값만을 확인할 수 있습니다. 스크립트 작성시 유용할듯합니다.</p>
+      </li>
+      <li>
+        <p>그래프</p>
+
+        <svg width="354pt" height="98pt" viewBox="0.00 0.00 353.50 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
+<title>G</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-94 349.5,-94 349.5,4 -4,4" />
+<!-- aws_subnet.peter_subnet1 -->
+<g id="node1" class="node">
+<title>aws_subnet.peter_subnet1</title>
+<polygon fill="none" stroke="black" points="345.5,-90 167.5,-90 167.5,-54 345.5,-54 345.5,-90" />
+<text text-anchor="middle" x="256.5" y="-66.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet1</text>
+</g>
+<!-- aws_vpc.peter_vpc -->
+<g id="node3" class="node">
+<title>aws_vpc.peter_vpc</title>
+<polygon fill="none" stroke="black" points="131.5,-63 0,-63 0,-27 131.5,-27 131.5,-63" />
+<text text-anchor="middle" x="65.75" y="-39.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
+</g>
+<!-- aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge1" class="edge">
+<title>aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M167.2,-59.37C159.21,-58.23 151.16,-57.07 143.28,-55.95" />
+<polygon fill="black" stroke="black" points="143.78,-52.48 133.38,-54.53 142.79,-59.41 143.78,-52.48" />
+</g>
+<!-- aws_subnet.peter_subnet2 -->
+<g id="node2" class="node">
+<title>aws_subnet.peter_subnet2</title>
+<polygon fill="none" stroke="black" points="345.5,-36 167.5,-36 167.5,0 345.5,0 345.5,-36" />
+<text text-anchor="middle" x="256.5" y="-12.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet2</text>
+</g>
+<!-- aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge2" class="edge">
+<title>aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M167.2,-30.63C159.21,-31.77 151.16,-32.93 143.28,-34.05" />
+<polygon fill="black" stroke="black" points="142.79,-30.59 133.38,-35.47 143.78,-37.52 142.79,-30.59" />
+</g>
+</g>
+</svg>
+      </li>
+    </ul>
+  </li>
+  <li>이후 다음의 작업을 추가 적용 하였습니다.
+    <ul>
+      <li>IGW 인터넷 게이트웨이 추가</li>
+      <li>IGW 인터넷 게이트웨이로 전달하는 디폴트 라우팅 정보 추가</li>
+      <li>보안그룹/EC2 배포</li>
+    </ul>
+  </li>
+  <li>최종 결과는 아래와 같습니다.
+    <ul>
+      <li>vpc.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># vpc.tf</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+    <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_vpc"</span> <span class="s2">"peter_vpc"</span> <span class="p">{</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.0.0/16"</span>
+  <span class="nx">enable_dns_support</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">enable_dns_hostnames</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-study"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_subnet"</span> <span class="s2">"peter_subnet1"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.1.0/24"</span>
+    
+  <span class="nx">availability_zone</span> <span class="p">=</span> <span class="s2">"ap-northeast-2a"</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-subnet1"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_subnet"</span> <span class="s2">"peter_subnet2"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">cidr_block</span> <span class="p">=</span> <span class="s2">"10.10.2.0/24"</span>
+    
+  <span class="nx">availability_zone</span> <span class="p">=</span> <span class="s2">"ap-northeast-2c"</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-subnet2"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_internet_gateway"</span> <span class="s2">"peter_igw"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span> <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-igw"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+    
+<span class="k">resource</span> <span class="s2">"aws_route_table"</span> <span class="s2">"peter_rt"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span> <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-rt"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_route_table_association"</span> <span class="s2">"peter_rtassociation1"</span> <span class="p">{</span>
+  <span class="nx">subnet_id</span>      <span class="p">=</span> <span class="nx">aws_subnet</span><span class="p">.</span><span class="nx">peter_subnet1</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">route_table_id</span> <span class="p">=</span> <span class="nx">aws_route_table</span><span class="p">.</span><span class="nx">peter_rt</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_route_table_association"</span> <span class="s2">"peter_rtassociation2"</span> <span class="p">{</span>
+  <span class="nx">subnet_id</span>      <span class="p">=</span> <span class="nx">aws_subnet</span><span class="p">.</span><span class="nx">peter_subnet2</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">route_table_id</span> <span class="p">=</span> <span class="nx">aws_route_table</span><span class="p">.</span><span class="nx">peter_rt</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_route"</span> <span class="s2">"peter_defaultroute"</span> <span class="p">{</span>
+  <span class="nx">route_table_id</span>         <span class="p">=</span> <span class="nx">aws_route_table</span><span class="p">.</span><span class="nx">peter_rt</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">destination_cidr_block</span> <span class="p">=</span> <span class="s2">"0.0.0.0/0"</span>
+  <span class="nx">gateway_id</span>             <span class="p">=</span> <span class="nx">aws_internet_gateway</span><span class="p">.</span><span class="nx">peter_igw</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+    
+<span class="k">output</span> <span class="s2">"aws_vpc_id"</span> <span class="p">{</span>
+  <span class="nx">value</span> <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>    
+</code></pre></div>        </div>
+      </li>
+      <li>sg.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># sg.tf</span>
+<span class="k">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"peter_sg"</span> <span class="p">{</span>
+  <span class="nx">vpc_id</span>      <span class="p">=</span> <span class="nx">aws_vpc</span><span class="p">.</span><span class="nx">peter_vpc</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">name</span>        <span class="p">=</span> <span class="s2">"T101 SG"</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"T101 Study SG"</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_security_group_rule"</span> <span class="s2">"peter_sginbound"</span> <span class="p">{</span>
+  <span class="nx">type</span>              <span class="p">=</span> <span class="s2">"ingress"</span>
+  <span class="nx">from_port</span>         <span class="p">=</span> <span class="mi">80</span>
+  <span class="nx">to_port</span>           <span class="p">=</span> <span class="mi">80</span>
+  <span class="nx">protocol</span>          <span class="p">=</span> <span class="s2">"tcp"</span>
+  <span class="nx">cidr_blocks</span>       <span class="p">=</span> <span class="p">[</span><span class="s2">"0.0.0.0/0"</span><span class="p">]</span>
+  <span class="nx">security_group_id</span> <span class="p">=</span> <span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">peter_sg</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_security_group_rule"</span> <span class="s2">"peter_sgoutbound"</span> <span class="p">{</span>
+  <span class="nx">type</span>              <span class="p">=</span> <span class="s2">"egress"</span>
+  <span class="nx">from_port</span>         <span class="p">=</span> <span class="mi">0</span>
+  <span class="nx">to_port</span>           <span class="p">=</span> <span class="mi">0</span>
+  <span class="nx">protocol</span>          <span class="p">=</span> <span class="s2">"-1"</span>
+  <span class="nx">cidr_blocks</span>       <span class="p">=</span> <span class="p">[</span><span class="s2">"0.0.0.0/0"</span><span class="p">]</span>
+  <span class="nx">security_group_id</span> <span class="p">=</span> <span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">peter_sg</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>
+    
+<span class="k">output</span> <span class="s2">"aws_security_group_id"</span> <span class="p">{</span>
+  <span class="nx">value</span>       <span class="p">=</span> <span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">peter_sg</span><span class="p">.</span><span class="nx">id</span>
+<span class="p">}</span>    
+</code></pre></div>        </div>
+      </li>
+      <li>ec2.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># ec2.tf</span>
+<span class="k">data</span> <span class="s2">"aws_ami"</span> <span class="s2">"peter_amazonlinux2"</span> <span class="p">{</span>
+  <span class="nx">most_recent</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">filter</span> <span class="p">{</span>
+    <span class="nx">name</span>   <span class="p">=</span> <span class="s2">"owner-alias"</span>
+    <span class="nx">values</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"amazon"</span><span class="p">]</span>
+  <span class="p">}</span>
+    
+  <span class="nx">filter</span> <span class="p">{</span>
+    <span class="nx">name</span>   <span class="p">=</span> <span class="s2">"name"</span>
+    <span class="nx">values</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"amzn2-ami-hvm-*-x86_64-ebs"</span><span class="p">]</span>
+  <span class="p">}</span>
+    
+  <span class="nx">owners</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"amazon"</span><span class="p">]</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"peter_ec2"</span> <span class="p">{</span>
+    
+  <span class="nx">depends_on</span> <span class="p">=</span> <span class="p">[</span>
+    <span class="nx">aws_internet_gateway</span><span class="p">.</span><span class="nx">peter_igw</span>
+  <span class="p">]</span>
+    
+  <span class="nx">ami</span>                         <span class="p">=</span> <span class="k">data</span><span class="p">.</span><span class="nx">aws_ami</span><span class="p">.</span><span class="nx">peter_amazonlinux2</span><span class="p">.</span><span class="nx">id</span>
+  <span class="nx">associate_public_ip_address</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">instance_type</span>               <span class="p">=</span> <span class="s2">"t2.micro"</span>
+  <span class="nx">vpc_security_group_ids</span>      <span class="p">=</span> <span class="p">[</span><span class="s2">"</span><span class="k">${</span><span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">peter_sg</span><span class="p">.</span><span class="nx">id</span><span class="k">}</span><span class="s2">"</span><span class="p">]</span>
+  <span class="nx">subnet_id</span>                   <span class="p">=</span> <span class="nx">aws_subnet</span><span class="p">.</span><span class="nx">peter_subnet1</span><span class="p">.</span><span class="nx">id</span>
+    
+  <span class="nx">user_data</span> <span class="p">=</span> <span class="o">&lt;&lt;-</span><span class="no">EOF</span><span class="sh">
+              #!/bin/bash
+              wget https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-x86_64
+              mv busybox-x86_64 busybox
+              chmod +x busybox
+              RZAZ=$(curl http://169.254.169.254/latest/meta-data/placement/availability-zone-id)
+              IID=$(curl 169.254.169.254/latest/meta-data/instance-id)
+              LIP=$(curl 169.254.169.254/latest/meta-data/local-ipv4)
+              echo "&lt; h1&gt;RegionAz($RZAZ) : Instance ID($IID) : Private IP($LIP) : Web Server&lt;/h1&gt;&lt;br/&gt;Greetings commander" &gt; index.html
+              nohup ./busybox httpd -f -p 80 &amp;
+</span><span class="no">              EOF
+    
+</span>  <span class="nx">user_data_replace_on_change</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"t101-peter_ec2"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">output</span> <span class="s2">"peter_ec2_public_ip"</span> <span class="p">{</span>
+  <span class="nx">value</span>       <span class="p">=</span> <span class="nx">aws_instance</span><span class="p">.</span><span class="nx">peter_ec2</span><span class="p">.</span><span class="nx">public_ip</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The public IP of the Instance"</span>
+<span class="p">}</span>    
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>배포 후 EC2 확인
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    Outputs:</span>
+
+<span class="c">#    aws_security_group_id = "sg-07761e7b1e39b5af6"</span>
+<span class="c">#    aws_vpc_id = "vpc-0e1ad43009a8fe8fa"</span>
+<span class="c">#    peter_ec2_public_ip = "54.180.146.116"</span>
+  
+<span class="c"># ami 데이터 확인</span>
+<span class="nv">$ </span>terraform state show data.aws_ami.my_amazonlinux2
+  
+<span class="c"># EC2 인스턴스 정보 확인</span>
+<span class="nv">$ </span>terraform state show aws_instance.myec2
+  
+<span class="c"># EC2 인스턴스 IP 확인</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"aws_instance.peter_ec2.public_ip"</span> | terraform console
+<span class="c"># =&gt; "54.180.146.116"</span>
+<span class="nv">$ </span>terraform output <span class="nt">-raw</span> peter_ec2_public_ip
+<span class="c"># =&gt; 54.180.146.116</span>
+  
+<span class="c"># curl 로 접속 확인</span>
+<span class="nv">$ PETER_EC2_IP</span><span class="o">=</span><span class="si">$(</span>terraform output <span class="nt">-raw</span> peter_ec2_public_ip<span class="si">)</span>
+<span class="nv">$ </span>curl <span class="nv">$PETER_EC2_IP</span>                                      
+<span class="c"># =&gt; &lt; h1&gt;RegionAz(apne2-az1) : Instance ID(i-0d4b665d1ce7a4b09) : Private IP(10.10.1.41) : Web Server&lt;/h1&gt;&lt;br/&gt;Greetings commander</span>
+</code></pre></div>    </div>
+  </li>
+  <li>브라우저로 접속 확인
+<img src="/assets/2024/20240622_terraform_w2_c2_p1_4.png" alt="20240622_terraform_w2_c2_p1_4.png" /></li>
+  <li>그래프 확인
+    <svg width="753pt" height="341pt" viewBox="0.00 0.00 752.75 341.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 337)">
+<title>G</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-337 748.75,-337 748.75,4 -4,4" />
+<!-- data.aws_ami.peter_amazonlinux2 -->
+<g id="node1" class="node">
+<title>data.aws_ami.peter_amazonlinux2</title>
+<polygon fill="none" stroke="black" points="393.5,-252 167.5,-252 167.5,-216 393.5,-216 393.5,-252" />
+<text text-anchor="middle" x="280.5" y="-228.2" font-family="sans-serif" font-size="14.00">data.aws_ami.peter_amazonlinux2</text>
+</g>
+<!-- aws_instance.peter_ec2 -->
+<g id="node2" class="node">
+<title>aws_instance.peter_ec2</title>
+<polygon fill="none" stroke="black" points="667.88,-198 506.38,-198 506.38,-162 667.88,-162 667.88,-198" />
+<text text-anchor="middle" x="587.12" y="-174.2" font-family="sans-serif" font-size="14.00">aws_instance.peter_ec2</text>
+</g>
+<!-- aws_instance.peter_ec2&#45;&gt;data.aws_ami.peter_amazonlinux2 -->
+<g id="edge1" class="edge">
+<title>aws_instance.peter_ec2&#45;&gt;data.aws_ami.peter_amazonlinux2</title>
+<path fill="none" stroke="black" d="M506.09,-194.19C472.7,-200.11 433.28,-207.09 396.86,-213.55" />
+<polygon fill="black" stroke="black" points="396.39,-210.08 387.15,-215.27 397.61,-216.97 396.39,-210.08" />
+</g>
+<!-- aws_internet_gateway.peter_igw -->
+<g id="node3" class="node">
+<title>aws_internet_gateway.peter_igw</title>
+<polygon fill="none" stroke="black" points="386.38,-198 174.62,-198 174.62,-162 386.38,-162 386.38,-198" />
+<text text-anchor="middle" x="280.5" y="-174.2" font-family="sans-serif" font-size="14.00">aws_internet_gateway.peter_igw</text>
+</g>
+<!-- aws_instance.peter_ec2&#45;&gt;aws_internet_gateway.peter_igw -->
+<g id="edge2" class="edge">
+<title>aws_instance.peter_ec2&#45;&gt;aws_internet_gateway.peter_igw</title>
+<path fill="none" stroke="black" d="M506.09,-180C473.02,-180 434.03,-180 397.91,-180" />
+<polygon fill="black" stroke="black" points="398.31,-176.5 388.31,-180 398.31,-183.5 398.31,-176.5" />
+</g>
+<!-- aws_security_group.peter_sg -->
+<g id="node8" class="node">
+<title>aws_security_group.peter_sg</title>
+<polygon fill="none" stroke="black" points="376.62,-306 184.38,-306 184.38,-270 376.62,-270 376.62,-306" />
+<text text-anchor="middle" x="280.5" y="-282.2" font-family="sans-serif" font-size="14.00">aws_security_group.peter_sg</text>
+</g>
+<!-- aws_instance.peter_ec2&#45;&gt;aws_security_group.peter_sg -->
+<g id="edge3" class="edge">
+<title>aws_instance.peter_ec2&#45;&gt;aws_security_group.peter_sg</title>
+<path fill="none" stroke="black" d="M517.9,-198.43C489.7,-207.34 457.2,-219.31 429.5,-234 411.83,-243.37 411.59,-252.48 393.5,-261 390,-262.65 386.39,-264.2 382.71,-265.66" />
+<polygon fill="black" stroke="black" points="381.76,-262.28 373.58,-269.03 384.18,-268.85 381.76,-262.28" />
+</g>
+<!-- aws_subnet.peter_subnet1 -->
+<g id="node11" class="node">
+<title>aws_subnet.peter_subnet1</title>
+<polygon fill="none" stroke="black" points="369.5,-144 191.5,-144 191.5,-108 369.5,-108 369.5,-144" />
+<text text-anchor="middle" x="280.5" y="-120.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet1</text>
+</g>
+<!-- aws_instance.peter_ec2&#45;&gt;aws_subnet.peter_subnet1 -->
+<g id="edge4" class="edge">
+<title>aws_instance.peter_ec2&#45;&gt;aws_subnet.peter_subnet1</title>
+<path fill="none" stroke="black" d="M506.02,-166.35C481.46,-162.12 454.36,-157.41 429.5,-153 413.83,-150.22 397.23,-147.23 381.04,-144.3" />
+<polygon fill="black" stroke="black" points="381.86,-140.89 371.4,-142.54 380.61,-147.78 381.86,-140.89" />
+</g>
+<!-- aws_vpc.peter_vpc -->
+<g id="node13" class="node">
+<title>aws_vpc.peter_vpc</title>
+<polygon fill="none" stroke="black" points="131.5,-144 0,-144 0,-108 131.5,-108 131.5,-144" />
+<text text-anchor="middle" x="65.75" y="-120.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
+</g>
+<!-- aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge5" class="edge">
+<title>aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M201.71,-161.52C190.23,-158.71 178.55,-155.81 167.5,-153 159.51,-150.97 151.17,-148.8 142.86,-146.62" />
+<polygon fill="black" stroke="black" points="144.02,-143.3 133.46,-144.13 142.23,-150.07 144.02,-143.3" />
+</g>
+<!-- aws_route.peter_defaultroute -->
+<g id="node4" class="node">
+<title>aws_route.peter_defaultroute</title>
+<polygon fill="none" stroke="black" points="682.88,-144 491.38,-144 491.38,-108 682.88,-108 682.88,-144" />
+<text text-anchor="middle" x="587.12" y="-120.2" font-family="sans-serif" font-size="14.00">aws_route.peter_defaultroute</text>
+</g>
+<!-- aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw -->
+<g id="edge6" class="edge">
+<title>aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw</title>
+<path fill="none" stroke="black" d="M491.26,-142.2C470.88,-145.72 449.47,-149.46 429.5,-153 417.69,-155.1 405.35,-157.31 393.05,-159.53" />
+<polygon fill="black" stroke="black" points="392.49,-156.07 383.28,-161.3 393.74,-162.96 392.49,-156.07" />
+</g>
+<!-- aws_route_table.peter_rt -->
+<g id="node5" class="node">
+<title>aws_route_table.peter_rt</title>
+<polygon fill="none" stroke="black" points="363.12,-90 197.88,-90 197.88,-54 363.12,-54 363.12,-90" />
+<text text-anchor="middle" x="280.5" y="-66.2" font-family="sans-serif" font-size="14.00">aws_route_table.peter_rt</text>
+</g>
+<!-- aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt -->
+<g id="edge7" class="edge">
+<title>aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt</title>
+<path fill="none" stroke="black" d="M491.26,-109.8C470.88,-106.28 449.47,-102.54 429.5,-99 411.72,-95.85 392.74,-92.42 374.52,-89.11" />
+<polygon fill="black" stroke="black" points="375.24,-85.69 364.77,-87.34 373.99,-92.57 375.24,-85.69" />
+</g>
+<!-- aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge8" class="edge">
+<title>aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M201.71,-90.48C190.23,-93.29 178.55,-96.19 167.5,-99 159.51,-101.03 151.17,-103.2 142.86,-105.38" />
+<polygon fill="black" stroke="black" points="142.23,-101.93 133.46,-107.87 144.02,-108.7 142.23,-101.93" />
+</g>
+<!-- aws_route_table_association.peter_rtassociation1 -->
+<g id="node6" class="node">
+<title>aws_route_table_association.peter_rtassociation1</title>
+<polygon fill="none" stroke="black" points="744.75,-90 429.5,-90 429.5,-54 744.75,-54 744.75,-90" />
+<text text-anchor="middle" x="587.12" y="-66.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation1</text>
+</g>
+<!-- aws_route_table_association.peter_rtassociation1&#45;&gt;aws_route_table.peter_rt -->
+<g id="edge9" class="edge">
+<title>aws_route_table_association.peter_rtassociation1&#45;&gt;aws_route_table.peter_rt</title>
+<path fill="none" stroke="black" d="M429.35,-72C410.7,-72 392.13,-72 374.77,-72" />
+<polygon fill="black" stroke="black" points="375.07,-68.5 365.07,-72 375.07,-75.5 375.07,-68.5" />
+</g>
+<!-- aws_route_table_association.peter_rtassociation1&#45;&gt;aws_subnet.peter_subnet1 -->
+<g id="edge10" class="edge">
+<title>aws_route_table_association.peter_rtassociation1&#45;&gt;aws_subnet.peter_subnet1</title>
+<path fill="none" stroke="black" d="M478.26,-90.45C461.92,-93.29 445.26,-96.2 429.5,-99 413.83,-101.78 397.23,-104.77 381.04,-107.7" />
+<polygon fill="black" stroke="black" points="380.61,-104.22 371.4,-109.46 381.86,-111.11 380.61,-104.22" />
+</g>
+<!-- aws_route_table_association.peter_rtassociation2 -->
+<g id="node7" class="node">
+<title>aws_route_table_association.peter_rtassociation2</title>
+<polygon fill="none" stroke="black" points="744.75,-36 429.5,-36 429.5,0 744.75,0 744.75,-36" />
+<text text-anchor="middle" x="587.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation2</text>
+</g>
+<!-- aws_route_table_association.peter_rtassociation2&#45;&gt;aws_route_table.peter_rt -->
+<g id="edge11" class="edge">
+<title>aws_route_table_association.peter_rtassociation2&#45;&gt;aws_route_table.peter_rt</title>
+<path fill="none" stroke="black" d="M478.26,-36.45C461.92,-39.29 445.26,-42.2 429.5,-45 411.72,-48.15 392.74,-51.58 374.52,-54.89" />
+<polygon fill="black" stroke="black" points="373.99,-51.43 364.77,-56.66 375.24,-58.31 373.99,-51.43" />
+</g>
+<!-- aws_subnet.peter_subnet2 -->
+<g id="node12" class="node">
+<title>aws_subnet.peter_subnet2</title>
+<polygon fill="none" stroke="black" points="369.5,-36 191.5,-36 191.5,0 369.5,0 369.5,-36" />
+<text text-anchor="middle" x="280.5" y="-12.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet2</text>
+</g>
+<!-- aws_route_table_association.peter_rtassociation2&#45;&gt;aws_subnet.peter_subnet2 -->
+<g id="edge12" class="edge">
+<title>aws_route_table_association.peter_rtassociation2&#45;&gt;aws_subnet.peter_subnet2</title>
+<path fill="none" stroke="black" d="M429.35,-18C412.93,-18 396.57,-18 381.05,-18" />
+<polygon fill="black" stroke="black" points="381.42,-14.5 371.42,-18 381.42,-21.5 381.42,-14.5" />
+</g>
+<!-- aws_security_group.peter_sg&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge13" class="edge">
+<title>aws_security_group.peter_sg&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M184.02,-270C178.24,-267.4 172.68,-264.41 167.5,-261 126.88,-234.21 96.5,-185.22 80.21,-154.2" />
+<polygon fill="black" stroke="black" points="83.39,-152.72 75.73,-145.39 77.15,-155.89 83.39,-152.72" />
+</g>
+<!-- aws_security_group_rule.peter_sginbound -->
+<g id="node9" class="node">
+<title>aws_security_group_rule.peter_sginbound</title>
+<polygon fill="none" stroke="black" points="722.25,-333 452,-333 452,-297 722.25,-297 722.25,-333" />
+<text text-anchor="middle" x="587.12" y="-309.2" font-family="sans-serif" font-size="14.00">aws_security_group_rule.peter_sginbound</text>
+</g>
+<!-- aws_security_group_rule.peter_sginbound&#45;&gt;aws_security_group.peter_sg -->
+<g id="edge14" class="edge">
+<title>aws_security_group_rule.peter_sginbound&#45;&gt;aws_security_group.peter_sg</title>
+<path fill="none" stroke="black" d="M451.63,-303.08C430.38,-301.2 408.66,-299.27 388.16,-297.45" />
+<polygon fill="black" stroke="black" points="388.68,-293.99 378.41,-296.59 388.07,-300.96 388.68,-293.99" />
+</g>
+<!-- aws_security_group_rule.peter_sgoutbound -->
+<g id="node10" class="node">
+<title>aws_security_group_rule.peter_sgoutbound</title>
+<polygon fill="none" stroke="black" points="726.38,-279 447.88,-279 447.88,-243 726.38,-243 726.38,-279" />
+<text text-anchor="middle" x="587.12" y="-255.2" font-family="sans-serif" font-size="14.00">aws_security_group_rule.peter_sgoutbound</text>
+</g>
+<!-- aws_security_group_rule.peter_sgoutbound&#45;&gt;aws_security_group.peter_sg -->
+<g id="edge15" class="edge">
+<title>aws_security_group_rule.peter_sgoutbound&#45;&gt;aws_security_group.peter_sg</title>
+<path fill="none" stroke="black" d="M447.63,-273.28C427.75,-275.04 407.56,-276.83 388.42,-278.52" />
+<polygon fill="black" stroke="black" points="388.12,-275.04 378.47,-279.4 388.74,-282.01 388.12,-275.04" />
+</g>
+<!-- aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge16" class="edge">
+<title>aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M191.12,-126C175.14,-126 158.59,-126 142.99,-126" />
+<polygon fill="black" stroke="black" points="143.34,-122.5 133.34,-126 143.34,-129.5 143.34,-122.5" />
+</g>
+<!-- aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc -->
+<g id="edge17" class="edge">
+<title>aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc</title>
+<path fill="none" stroke="black" d="M191.07,-35.39C182.93,-38.15 174.95,-41.34 167.5,-45 139.2,-58.91 111.62,-81.94 92.49,-99.9" />
+<polygon fill="black" stroke="black" points="90.21,-97.25 85.42,-106.7 95.06,-102.29 90.21,-97.25" />
+</g>
+</g>
+</svg>
+  </li>
+</ul>
+
+<h1 id="마치며">마치며</h1>
+<ul>
+  <li>실습을 통해 리소스 유형과 리소스 이름의 사용법, 리소스 속성 등에 대해 이해를 높일 수 있었습니다. 
+새삼스럽지만 이렇게 쉽게 각종 리소스들이 생성되고, 서비스가 운영된다는게 신기합니다.</li>
+  <li>악분님 실습도 해보고 싶었지만 생각보다 여기까지 시간이 많이 소요되어 다음번으로 미루어야겠습니다. :cry:</li>
+  <li>따라가기 버거운 만큼 남는것이 많은 스터디가 될것 같습니다. 끝까지 생존해서 완주 할 수 있길 바라며 오늘의 포스팅을 마칩니다.</li>
+</ul>]]></content><author><name></name></author><category term="terraform" /><category term="terraform," /><category term="cloud," /><category term="aws" /><summary type="html"><![CDATA[테라폼 기초 입문 실습 스터디 2주차 입니다. 1주차에 이어 테라폼의 기본 사용법에 대해 실습해보려 합니다. 이번 주에도 “테라폼으로 시작하는 IaC” 책을 기준으로 정리하였습니다.]]></summary></entry><entry><title type="html">[T101 4기] 테라폼 기본 사용법 1/3</title><link href="/posts/2024-06-11-T101-Study-Terraform-Week-1/" rel="alternate" type="text/html" title="[T101 4기] 테라폼 기본 사용법 1/3" /><published>2024-06-11T23:41:18+09:00</published><updated>2024-06-11T23:41:18+09:00</updated><id>/posts/T101%20Study%20-%20Terraform%20Week%201</id><content type="html" xml:base="/posts/2024-06-11-T101-Study-Terraform-Week-1/"><![CDATA[<h1 id="들어가며">들어가며</h1>
 
 <p>앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다.
 이번 글의 주제는 테라폼의 기본 사용법이며 “테라폼으로 시작하는 IaC” 책을 기준으로 정리하였습니다.</p>
@@ -109,7 +1587,7 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <h2 id="hcl-네이티브-문법-예시">HCL 네이티브 문법 예시</h2>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 한줄 주석 방법1</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 한줄 주석 방법1</span>
 <span class="c1"># 한줄 주석 방법2</span>
 
 <span class="cm">/*
@@ -135,10 +1613,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="nx">scientific</span>  <span class="p">=</span> <span class="mi">1</span><span class="nx">e10</span>   <span class="c1"># 과학표기 법도 지원한다.</span>
 
   <span class="c1"># funtion 호출 예</span>
-  <span class="nx">myprojectname</span> <span class="p">=</span> <span class="nx">format</span><span class="p">(</span><span class="s2">"%s is myproject name"</span><span class="p">,</span> <span class="nx">var</span><span class="p">.</span><span class="nx">project</span><span class="p">)</span>
+  <span class="nx">myprojectname</span> <span class="p">=</span> <span class="nx">format</span><span class="p">(</span><span class="s2">"%s is myproject name"</span><span class="p">,</span> <span class="kd">var</span><span class="p">.</span><span class="nx">project</span><span class="p">)</span>
 
   <span class="c1"># 3항 연산자 조건문을 지원한다.</span>
-  <span class="nx">credentials</span> <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">credentials</span> <span class="p">==</span> <span class="s2">""</span> <span class="err">?</span> <span class="nx">file</span><span class="p">(</span><span class="nx">var</span><span class="p">.</span><span class="nx">credentials_file</span><span class="p">)</span> <span class="err">:</span> <span class="nx">var</span><span class="p">.</span><span class="nx">credentials</span>
+  <span class="nx">credentials</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span> <span class="p">==</span> <span class="s2">""</span> <span class="err">?</span> <span class="nx">file</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">credentials_file</span><span class="p">)</span> <span class="err">:</span> <span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span>
 <span class="p">}</span>
 </code></pre></div></div>
 
@@ -163,8 +1641,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p><code class="language-plaintext highlighter-rouge">terraform</code> 블록 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"~&gt; 1.3.0"</span> <span class="c1"># 테라폼 버전</span>
   
   <span class="nx">required_providers</span> <span class="p">{</span> <span class="c1"># 프로바이더 버전을 나열</span>
@@ -234,8 +1712,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>main.tf 수정</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="c1"># 현재 설치된 terraform 버전인 1.8.5 미만으로 지정</span>
   <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"&lt; 1.8.5"</span>
 <span class="p">}</span>
@@ -262,8 +1740,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <p><code class="language-plaintext highlighter-rouge">terraform { required_providers { ... } }</code> 블록을 사용하여 프로바이더 버전을 지정할 수 있습니다.</p>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">required_providers</span> <span class="p">{</span>
     <span class="nx">aws</span> <span class="p">=</span> <span class="p">{</span>
       <span class="nx">source</span> <span class="p">=</span> <span class="s2">"hashicorp/aws"</span>
@@ -289,8 +1767,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <p><code class="language-plaintext highlighter-rouge">terraform { cloud { ... } }</code> 블록을 사용하여 Terraform Cloud나 Terraform Enterprise 환경에서 사용하는 설정을 지정할 수 있습니다.</p>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">cloud</span> <span class="p">{</span>
     <span class="nx">hostname</span> <span class="p">=</span> <span class="s2">"app.terraform.io"</span>        
     <span class="nx">organization</span> <span class="p">=</span> <span class="s2">"my-org"</span>  
@@ -309,8 +1787,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>Local 파일 시스템을 사용하는 경우</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">backend</span> <span class="s2">"local"</span> <span class="p">{</span>
     <span class="nx">path</span> <span class="p">=</span> <span class="s2">"relative/path/to/terraform.tfstate"</span>
   <span class="p">}</span>
@@ -321,8 +1799,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>AWS S3를 사용하는 경우</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">backend</span> <span class="s2">"s3"</span> <span class="p">{</span>
     <span class="nx">bucket</span> <span class="p">=</span> <span class="s2">"mybucket"</span>
     <span class="nx">key</span>    <span class="p">=</span> <span class="s2">"path/to/my/key"</span>
@@ -340,18 +1818,18 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>local 프로바이더의 file 리소스를 사용하는 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
   </li>
   <li>
     <p>AWS 프로바이더의 ec2 리소스를 사용하는 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"web"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"web"</span> <span class="p">{</span>
   <span class="nx">ami</span> <span class="p">=</span> <span class="s2">"ami-a1b2c3d4"</span>
   <span class="nx">instance_type</span> <span class="p">=</span> <span class="s2">"t2.micro"</span>  
 <span class="p">}</span>
@@ -384,15 +1862,15 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>종속성이 없는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -420,15 +1898,15 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>암시적 종속성이 있는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">content</span> <span class="err">+</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -460,19 +1938,19 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>명시적 종속성이 있는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">depends_on</span> <span class="p">=</span> <span class="p">[</span>  <span class="c1"># 명시적 종속성 선언</span>
     <span class="nx">local_file</span><span class="p">.</span><span class="nx">def</span>
   <span class="p">]</span>
   
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -512,8 +1990,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>속성 (attributes) : 사용자가 설정할 수는 없지만, 리소스가 생성되면 읽을 수 있는 리소스의 고유 값</li>
     </ul>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"&lt;프로바이더_유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"&lt;프로바이더_유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
   <span class="err">&lt;인수&gt;</span>           <span class="p">=</span> <span class="err">&lt;값&gt;</span>
 <span class="p">}</span>
   
@@ -547,10 +2025,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>의도적으로 생성 후 삭제를 원할때 <code class="language-plaintext highlighter-rouge">create_before_destroy = true</code>를 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">create_before_destroy</span> <span class="p">=</span> <span class="kc">true</span>
@@ -567,10 +2045,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>리소스가 삭제되지 않도록 방지합니다. 이 속성은 특정 리소스가 삭제되지 않도록 방지할 때 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">prevent_destroy</span> <span class="p">=</span> <span class="kc">true</span>
@@ -602,10 +2080,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>특정 인수의 변경을 무시합니다. 이 속성은 특정 인수의 변경을 무시하고 리소스를 업데이트할 때 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">ignore_changes</span> <span class="p">=</span> <span class="p">[</span>
@@ -626,17 +2104,17 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p><code class="language-plaintext highlighter-rouge">condition</code>이 <code class="language-plaintext highlighter-rouge">true</code>인지 확인 하고, 조건이 맞지 않는 경우 <code class="language-plaintext highlighter-rouge">error_message</code>로 지정된 에러메시지를 표시합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
   <span class="nx">default</span> <span class="p">=</span> <span class="s2">"step0.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 6"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/${var.file_name}"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="k">}</span><span class="s2">"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">precondition</span> <span class="p">{</span>
-      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">file_name</span> <span class="p">==</span> <span class="s2">"step6.txt"</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span> <span class="p">==</span> <span class="s2">"step6.txt"</span>
       <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"file name is not </span><span class="se">\"</span><span class="s2">step6.txt</span><span class="se">\"</span><span class="s2">"</span>
     <span class="p">}</span>
   <span class="p">}</span>
@@ -651,9 +2129,9 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>마찬가지로 <code class="language-plaintext highlighter-rouge">condition</code> 인수로 검증하고, 조건이 맞지 않는 경우 <code class="language-plaintext highlighter-rouge">error_message</code>로 지정된 에러메시지를 표시합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">""</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/step7.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/step7.txt"</span>
 
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">postcondition</span> <span class="p">{</span>
@@ -663,7 +2141,7 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
 
-<span class="nx">output</span> <span class="s2">"step7_content"</span> <span class="p">{</span>
+<span class="k">output</span> <span class="s2">"step7_content"</span> <span class="p">{</span>
   <span class="nx">value</span> <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">id</span>
 <span class="p">}</span>
 </code></pre></div>        </div>
@@ -715,16 +2193,16 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>main.tf 파일 생성</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
   <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
 <span class="p">}</span>
   
 <span class="c1"># TF_VAR_ami_id 환경변수를 사용하기 위해 선언. var.ami_id 와 같이 사용 가능</span>
-<span class="nx">variable</span> <span class="s2">"ami_id"</span> <span class="p">{</span> <span class="p">}</span>  
+<span class="k">variable</span> <span class="s2">"ami_id"</span> <span class="p">{</span> <span class="p">}</span>  
   
-<span class="nx">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"example"</span> <span class="p">{</span>
-  <span class="nx">ami</span>                    <span class="p">=</span> <span class="s2">"${var.ami_id}"</span>
+<span class="k">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"example"</span> <span class="p">{</span>
+  <span class="nx">ami</span>                    <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">ami_id</span><span class="k">}</span><span class="s2">"</span>
   <span class="nx">instance_type</span>          <span class="p">=</span> <span class="s2">"t2.micro"</span>
   <span class="nx">vpc_security_group_ids</span> <span class="p">=</span> <span class="p">[</span><span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">instance</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span>
   
@@ -741,8 +2219,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"instance"</span> <span class="p">{</span>
-  <span class="nx">name</span> <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">security_group_name</span>
+<span class="k">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"instance"</span> <span class="p">{</span>
+  <span class="nx">name</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">security_group_name</span>
   
   <span class="nx">ingress</span> <span class="p">{</span>
     <span class="nx">from_port</span>   <span class="p">=</span> <span class="mi">9090</span>
@@ -752,13 +2230,13 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
   
-<span class="nx">variable</span> <span class="s2">"security_group_name"</span> <span class="p">{</span>
+<span class="k">variable</span> <span class="s2">"security_group_name"</span> <span class="p">{</span>
   <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The name of the security group"</span>
   <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
   <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"terraform-example-instance"</span>
 <span class="p">}</span>
   
-<span class="nx">output</span> <span class="s2">"public_ip"</span> <span class="p">{</span>
+<span class="k">output</span> <span class="s2">"public_ip"</span> <span class="p">{</span>
   <span class="nx">value</span>       <span class="p">=</span> <span class="nx">aws_instance</span><span class="p">.</span><span class="nx">example</span><span class="p">.</span><span class="nx">public_ip</span>
   <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The public IP of the Instance"</span>
 <span class="p">}</span> 
@@ -802,18 +2280,18 @@ terraform apply <span class="nt">-auto-approve</span>
   <li>
     <p>답안 : 정규표현식을 사용하여 아래와 같이 작성하였습니다.</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
+    <div class="language-terraform highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
   <span class="nx">default</span> <span class="p">=</span> <span class="s2">"step0.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 6"</span> <span class="c1"># 수정</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/${var.file_name}"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="k">}</span><span class="s2">"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">precondition</span> <span class="p">{</span>
-      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="nx">regex</span><span class="p">(</span><span class="s2">"^step[0-6]</span><span class="err">\\</span><span class="s2">.txt$"</span><span class="p">,</span> <span class="nx">var</span><span class="p">.</span><span class="nx">file_name</span><span class="p">))</span> <span class="err">&gt;</span> <span class="mi">0</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="nx">regex</span><span class="p">(</span><span class="s2">"^step[0-6]</span><span class="se">\\</span><span class="s2">.txt</span><span class="err">$</span><span class="s2">"</span><span class="p">,</span> <span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="p">))</span> <span class="err">&gt;</span> <span class="mi">0</span>
       <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"file name is not </span><span class="se">\"</span><span class="s2">step6.txt</span><span class="se">\"</span><span class="s2">"</span>
     <span class="p">}</span>
   <span class="p">}</span>
@@ -853,4 +2331,4 @@ terraform plan <span class="nt">-var</span><span class="o">=</span><span class="
 <p>이상과 같이 첫주차에는 테라폼 설치에서 부터 <code class="language-plaintext highlighter-rouge">lifecycle</code> 까지 스터디 하였습니다. 
 생각보다 외워야 하는 부분이 많아서 나중에 다시 확인하기 위해 키워드 위주로 정리하여 보았습니다.
 HCL을 통해 선언적으로 .tf 파일을 만들면 알아서 계획을 만들고 프로비저닝 해준다니 참 똑똑한 도구인것 같습니다. 
-앞으로 배우는 내용들도 재밌을것 같아 기대됩니다.</p>]]></content><author><name></name></author><category term="terraform" /><category term="qwe," /><category term="qweqe" /><summary type="html"><![CDATA[앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다. 이번 글의 주제는 테라폼의 기본 사용법이며 "테라폼으로 시작하는 IaC" 책을 기준으로 정리하였습니다.]]></summary></entry></feed>
+앞으로 배우는 내용들도 재밌을것 같아 기대됩니다.</p>]]></content><author><name></name></author><category term="terraform" /><category term="terraform," /><category term="cloud," /><category term="aws" /><summary type="html"><![CDATA[앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다. 이번 글의 주제는 테라폼의 기본 사용법이며 "테라폼으로 시작하는 IaC" 책을 기준으로 정리하였습니다.]]></summary></entry></feed>

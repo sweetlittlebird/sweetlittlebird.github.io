@@ -20,6 +20,7 @@
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-06-11T23:41:18+09:00","datePublished":"2024-06-11T23:41:18+09:00","description":"앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다. 이번 글의 주제는 테라폼의 기본 사용법이며 “테라폼으로 시작하는 IaC” 책을 기준으로 정리하였습니다.","headline":"[T101 4기] 테라폼 기본 사용법 1/3","mainEntityOfPage":{"@type":"WebPage","@id":"/posts/2024-06-11-T101-Study-Terraform-Week-1/"},"url":"/posts/2024-06-11-T101-Study-Terraform-Week-1/"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/main_dark.css" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer" /><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Sweet Little Bird" /></head>
 <body><header class="site-header" role="banner">
 
@@ -48,6 +49,34 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
+    <div>
+      목차
+      <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h1"><a href="#들어가며">들어가며</a></li>
+<li class="toc-entry toc-h1"><a href="#iac-와-테라폼">IaC 와 테라폼</a></li>
+<li class="toc-entry toc-h1"><a href="#실행-환경-구성">실행 환경 구성</a></li>
+<li class="toc-entry toc-h1"><a href="#terraform-명령의-주요-서브-커맨드">terraform 명령의 주요 서브 커맨드</a></li>
+<li class="toc-entry toc-h1"><a href="#terraform-명령의-주요-옵션">terraform 명령의 주요 옵션</a></li>
+<li class="toc-entry toc-h1"><a href="#hcl">HCL</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#hcl-네이티브-문법-예시">HCL 네이티브 문법 예시</a></li>
+<li class="toc-entry toc-h2"><a href="#테라폼-블록">테라폼 블록</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#terraform-블록">terraform 블록</a></li>
+<li class="toc-entry toc-h3"><a href="#resource-블록">resource 블록</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#실습">실습</a>
+<ul>
+<li class="toc-entry toc-h2"><a href="#aws에-배포하기">AWS에 배포하기</a></li>
+<li class="toc-entry toc-h2"><a href="#도전과제-3-lifecycle의-precondition">도전과제 3 lifecycle의 precondition</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h1"><a href="#마치며">마치며</a></li>
+</ul>
+    </div>
     <h1 id="들어가며">들어가며</h1>
 
 <p>앞으로 몇 주간에 걸쳐 테라폼 기초 입문 실습 스터디에 참여하면서 배운 내용을 정리하려 합니다.
@@ -159,7 +188,7 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <h2 id="hcl-네이티브-문법-예시">HCL 네이티브 문법 예시</h2>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 한줄 주석 방법1</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 한줄 주석 방법1</span>
 <span class="c1"># 한줄 주석 방법2</span>
 
 <span class="cm">/*
@@ -185,10 +214,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="nx">scientific</span>  <span class="p">=</span> <span class="mi">1</span><span class="nx">e10</span>   <span class="c1"># 과학표기 법도 지원한다.</span>
 
   <span class="c1"># funtion 호출 예</span>
-  <span class="nx">myprojectname</span> <span class="p">=</span> <span class="nx">format</span><span class="p">(</span><span class="s2">"%s is myproject name"</span><span class="p">,</span> <span class="nx">var</span><span class="p">.</span><span class="nx">project</span><span class="p">)</span>
+  <span class="nx">myprojectname</span> <span class="p">=</span> <span class="nx">format</span><span class="p">(</span><span class="s2">"%s is myproject name"</span><span class="p">,</span> <span class="kd">var</span><span class="p">.</span><span class="nx">project</span><span class="p">)</span>
 
   <span class="c1"># 3항 연산자 조건문을 지원한다.</span>
-  <span class="nx">credentials</span> <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">credentials</span> <span class="p">==</span> <span class="s2">""</span> <span class="err">?</span> <span class="nx">file</span><span class="p">(</span><span class="nx">var</span><span class="p">.</span><span class="nx">credentials_file</span><span class="p">)</span> <span class="err">:</span> <span class="nx">var</span><span class="p">.</span><span class="nx">credentials</span>
+  <span class="nx">credentials</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span> <span class="p">==</span> <span class="s2">""</span> <span class="err">?</span> <span class="nx">file</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">credentials_file</span><span class="p">)</span> <span class="err">:</span> <span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span>
 <span class="p">}</span>
 </code></pre></div></div>
 
@@ -213,8 +242,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p><code class="language-plaintext highlighter-rouge">terraform</code> 블록 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"~&gt; 1.3.0"</span> <span class="c1"># 테라폼 버전</span>
   
   <span class="nx">required_providers</span> <span class="p">{</span> <span class="c1"># 프로바이더 버전을 나열</span>
@@ -284,8 +313,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>main.tf 수정</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="c1"># 현재 설치된 terraform 버전인 1.8.5 미만으로 지정</span>
   <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"&lt; 1.8.5"</span>
 <span class="p">}</span>
@@ -312,8 +341,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <p><code class="language-plaintext highlighter-rouge">terraform { required_providers { ... } }</code> 블록을 사용하여 프로바이더 버전을 지정할 수 있습니다.</p>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">required_providers</span> <span class="p">{</span>
     <span class="nx">aws</span> <span class="p">=</span> <span class="p">{</span>
       <span class="nx">source</span> <span class="p">=</span> <span class="s2">"hashicorp/aws"</span>
@@ -339,8 +368,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
 <p><code class="language-plaintext highlighter-rouge">terraform { cloud { ... } }</code> 블록을 사용하여 Terraform Cloud나 Terraform Enterprise 환경에서 사용하는 설정을 지정할 수 있습니다.</p>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">cloud</span> <span class="p">{</span>
     <span class="nx">hostname</span> <span class="p">=</span> <span class="s2">"app.terraform.io"</span>        
     <span class="nx">organization</span> <span class="p">=</span> <span class="s2">"my-org"</span>  
@@ -359,8 +388,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>Local 파일 시스템을 사용하는 경우</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">backend</span> <span class="s2">"local"</span> <span class="p">{</span>
     <span class="nx">path</span> <span class="p">=</span> <span class="s2">"relative/path/to/terraform.tfstate"</span>
   <span class="p">}</span>
@@ -371,8 +400,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>AWS S3를 사용하는 경우</li>
 </ul>
 
-<div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">terraform</span> <span class="p">{</span>
+<div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">terraform</span> <span class="p">{</span>
   <span class="nx">backend</span> <span class="s2">"s3"</span> <span class="p">{</span>
     <span class="nx">bucket</span> <span class="p">=</span> <span class="s2">"mybucket"</span>
     <span class="nx">key</span>    <span class="p">=</span> <span class="s2">"path/to/my/key"</span>
@@ -390,18 +419,18 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>local 프로바이더의 file 리소스를 사용하는 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
   </li>
   <li>
     <p>AWS 프로바이더의 ec2 리소스를 사용하는 예시</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"web"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"web"</span> <span class="p">{</span>
   <span class="nx">ami</span> <span class="p">=</span> <span class="s2">"ami-a1b2c3d4"</span>
   <span class="nx">instance_type</span> <span class="p">=</span> <span class="s2">"t2.micro"</span>  
 <span class="p">}</span>
@@ -434,15 +463,15 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>종속성이 없는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -470,15 +499,15 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>암시적 종속성이 있는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">content</span> <span class="err">+</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -510,19 +539,19 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>명시적 종속성이 있는 상태 확인</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">depends_on</span> <span class="p">=</span> <span class="p">[</span>  <span class="c1"># 명시적 종속성 선언</span>
     <span class="nx">local_file</span><span class="p">.</span><span class="nx">def</span>
   <span class="p">]</span>
   
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"123!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"def"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"456!"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/def.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/def.txt"</span>
 <span class="p">}</span>
 </code></pre></div>    </div>
 
@@ -562,8 +591,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>속성 (attributes) : 사용자가 설정할 수는 없지만, 리소스가 생성되면 읽을 수 있는 리소스의 고유 값</li>
     </ul>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"&lt;프로바이더_유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"&lt;프로바이더_유형&gt;"</span> <span class="s2">"&lt;이름&gt;"</span> <span class="p">{</span>
   <span class="err">&lt;인수&gt;</span>           <span class="p">=</span> <span class="err">&lt;값&gt;</span>
 <span class="p">}</span>
   
@@ -597,10 +626,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>의도적으로 생성 후 삭제를 원할때 <code class="language-plaintext highlighter-rouge">create_before_destroy = true</code>를 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">create_before_destroy</span> <span class="p">=</span> <span class="kc">true</span>
@@ -617,10 +646,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>리소스가 삭제되지 않도록 방지합니다. 이 속성은 특정 리소스가 삭제되지 않도록 방지할 때 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">prevent_destroy</span> <span class="p">=</span> <span class="kc">true</span>
@@ -652,10 +681,10 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>특정 인수의 변경을 무시합니다. 이 속성은 특정 인수의 변경을 무시하고 리소스를 업데이트할 때 사용합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 1"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/abc.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/abc.txt"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">ignore_changes</span> <span class="p">=</span> <span class="p">[</span>
@@ -676,17 +705,17 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p><code class="language-plaintext highlighter-rouge">condition</code>이 <code class="language-plaintext highlighter-rouge">true</code>인지 확인 하고, 조건이 맞지 않는 경우 <code class="language-plaintext highlighter-rouge">error_message</code>로 지정된 에러메시지를 표시합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
   <span class="nx">default</span> <span class="p">=</span> <span class="s2">"step0.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 6"</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/${var.file_name}"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="k">}</span><span class="s2">"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">precondition</span> <span class="p">{</span>
-      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">file_name</span> <span class="p">==</span> <span class="s2">"step6.txt"</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span> <span class="p">==</span> <span class="s2">"step6.txt"</span>
       <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"file name is not </span><span class="se">\"</span><span class="s2">step6.txt</span><span class="se">\"</span><span class="s2">"</span>
     <span class="p">}</span>
   <span class="p">}</span>
@@ -701,9 +730,9 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
       <li>
         <p>마찬가지로 <code class="language-plaintext highlighter-rouge">condition</code> 인수로 검증하고, 조건이 맞지 않는 경우 <code class="language-plaintext highlighter-rouge">error_message</code>로 지정된 에러메시지를 표시합니다.</p>
 
-        <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">""</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/step7.txt"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/step7.txt"</span>
 
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">postcondition</span> <span class="p">{</span>
@@ -713,7 +742,7 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
 
-<span class="nx">output</span> <span class="s2">"step7_content"</span> <span class="p">{</span>
+<span class="k">output</span> <span class="s2">"step7_content"</span> <span class="p">{</span>
   <span class="nx">value</span> <span class="p">=</span> <span class="nx">local_file</span><span class="p">.</span><span class="nx">abc</span><span class="p">.</span><span class="nx">id</span>
 <span class="p">}</span>
 </code></pre></div>        </div>
@@ -765,16 +794,16 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <li>
     <p>main.tf 파일 생성</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+    <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
   <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
 <span class="p">}</span>
   
 <span class="c1"># TF_VAR_ami_id 환경변수를 사용하기 위해 선언. var.ami_id 와 같이 사용 가능</span>
-<span class="nx">variable</span> <span class="s2">"ami_id"</span> <span class="p">{</span> <span class="p">}</span>  
+<span class="k">variable</span> <span class="s2">"ami_id"</span> <span class="p">{</span> <span class="p">}</span>  
   
-<span class="nx">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"example"</span> <span class="p">{</span>
-  <span class="nx">ami</span>                    <span class="p">=</span> <span class="s2">"${var.ami_id}"</span>
+<span class="k">resource</span> <span class="s2">"aws_instance"</span> <span class="s2">"example"</span> <span class="p">{</span>
+  <span class="nx">ami</span>                    <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">ami_id</span><span class="k">}</span><span class="s2">"</span>
   <span class="nx">instance_type</span>          <span class="p">=</span> <span class="s2">"t2.micro"</span>
   <span class="nx">vpc_security_group_ids</span> <span class="p">=</span> <span class="p">[</span><span class="nx">aws_security_group</span><span class="p">.</span><span class="nx">instance</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span>
   
@@ -791,8 +820,8 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"instance"</span> <span class="p">{</span>
-  <span class="nx">name</span> <span class="p">=</span> <span class="nx">var</span><span class="p">.</span><span class="nx">security_group_name</span>
+<span class="k">resource</span> <span class="s2">"aws_security_group"</span> <span class="s2">"instance"</span> <span class="p">{</span>
+  <span class="nx">name</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">security_group_name</span>
   
   <span class="nx">ingress</span> <span class="p">{</span>
     <span class="nx">from_port</span>   <span class="p">=</span> <span class="mi">9090</span>
@@ -802,13 +831,13 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
   <span class="p">}</span>
 <span class="p">}</span>
   
-<span class="nx">variable</span> <span class="s2">"security_group_name"</span> <span class="p">{</span>
+<span class="k">variable</span> <span class="s2">"security_group_name"</span> <span class="p">{</span>
   <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The name of the security group"</span>
   <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
   <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"terraform-example-instance"</span>
 <span class="p">}</span>
   
-<span class="nx">output</span> <span class="s2">"public_ip"</span> <span class="p">{</span>
+<span class="k">output</span> <span class="s2">"public_ip"</span> <span class="p">{</span>
   <span class="nx">value</span>       <span class="p">=</span> <span class="nx">aws_instance</span><span class="p">.</span><span class="nx">example</span><span class="p">.</span><span class="nx">public_ip</span>
   <span class="nx">description</span> <span class="p">=</span> <span class="s2">"The public IP of the Instance"</span>
 <span class="p">}</span> 
@@ -852,18 +881,18 @@ terraform apply <span class="nt">-auto-approve</span>
   <li>
     <p>답안 : 정규표현식을 사용하여 아래와 같이 작성하였습니다.</p>
 
-    <div class="language-hcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
-<span class="nx">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
+    <div class="language-terraform highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># main.tf</span>
+<span class="k">variable</span> <span class="s2">"file_name"</span> <span class="p">{</span>
   <span class="nx">default</span> <span class="p">=</span> <span class="s2">"step0.txt"</span>
 <span class="p">}</span>
   
-<span class="nx">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
+<span class="k">resource</span> <span class="s2">"local_file"</span> <span class="s2">"abc"</span> <span class="p">{</span>
   <span class="nx">content</span>  <span class="p">=</span> <span class="s2">"lifecycle - step 6"</span> <span class="c1"># 수정</span>
-  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"${path.module}/${var.file_name}"</span>
+  <span class="nx">filename</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="nx">path</span><span class="p">.</span><span class="k">module}</span><span class="s2">/</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="k">}</span><span class="s2">"</span>
   
   <span class="nx">lifecycle</span> <span class="p">{</span>
     <span class="nx">precondition</span> <span class="p">{</span>
-      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="nx">regex</span><span class="p">(</span><span class="s2">"^step[0-6]</span><span class="err">\\</span><span class="s2">.txt$"</span><span class="p">,</span> <span class="nx">var</span><span class="p">.</span><span class="nx">file_name</span><span class="p">))</span> <span class="err">&gt;</span> <span class="mi">0</span>
+      <span class="nx">condition</span>     <span class="p">=</span> <span class="nx">length</span><span class="p">(</span><span class="nx">regex</span><span class="p">(</span><span class="s2">"^step[0-6]</span><span class="se">\\</span><span class="s2">.txt</span><span class="err">$</span><span class="s2">"</span><span class="p">,</span> <span class="kd">var</span><span class="p">.</span><span class="nx">file_name</span><span class="p">))</span> <span class="err">&gt;</span> <span class="mi">0</span>
       <span class="nx">error_message</span> <span class="p">=</span> <span class="s2">"file name is not </span><span class="se">\"</span><span class="s2">step6.txt</span><span class="se">\"</span><span class="s2">"</span>
     <span class="p">}</span>
   <span class="p">}</span>
@@ -913,6 +942,8 @@ HCL을 통해 선언적으로 .tf 파일을 만들면 알아서 계획을 만들
 <div class="PageNavigation">
   
   
+  <a class="next" href="/posts/2024-06-23-T101-Study-Terraform-Week-2/">[T101 4기] 테라폼 기본 사용법 2/3 &raquo;</a>
+  
 </div>
       </div>
     </main><footer class="site-footer h-card">
@@ -939,6 +970,14 @@ HCL을 통해 선언적으로 .tf 파일을 만들면 알아서 계획을 만들
   </div>
 
 </footer>
-</body>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-EWGY9N8QXY');
+    </script>
+  </body>
 
 </html>
