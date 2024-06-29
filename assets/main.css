@@ -953,6 +953,11 @@ pre.highlight .err {
 
 .PageNavigation .next {
   text-align: right;
+  width: 100%;
+}
+
+.PageNavigation a + .next {
+  width: 50%;
 }
 
 pre {
@@ -968,6 +973,17 @@ pre.highlight code {
 
 pre, code {
   background-color: #fff0f0;
+}
+
+.page-content .home h1 {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e8e8e8;
+}
+.page-content .home h1:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top-style: none;
 }
 
 .post-content {
@@ -1015,6 +1031,10 @@ pre, code {
 .post-content table th,
 .post-content table td {
   padding: 0.125rem 0.75rem;
+}
+
+#disqus_thread {
+  margin-top: 2rem;
 }
 
 /*# sourceMappingURL=main.css.map */
