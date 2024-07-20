@@ -24,7 +24,9 @@
   <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="icon" href="/assets/favicon.png"><link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird" /></head>
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon"><link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
@@ -52,27 +54,27 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <div>
-      목차
+    <div class="table-of-content">
+      <header>목차</header>
       <ul id="toc" class="section-nav">
-<li class="toc-entry toc-h1"><a href="#들어가며">들어가며</a></li>
-<li class="toc-entry toc-h1"><a href="#terraform-runner">Terraform Runner</a>
+<li class="toc-entry toc-h2"><a href="#들어가며">들어가며</a></li>
+<li class="toc-entry toc-h2"><a href="#terraform-runner">Terraform Runner</a>
 <ul>
-<li class="toc-entry toc-h2"><a href="#atlantis-란">Atlantis 란?</a></li>
-<li class="toc-entry toc-h2"><a href="#atlantis-설치">Atlantis 설치</a></li>
-<li class="toc-entry toc-h2"><a href="#atlantis-실습">Atlantis 실습</a>
+<li class="toc-entry toc-h3"><a href="#atlantis-란">Atlantis 란?</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-설치">Atlantis 설치</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-실습">Atlantis 실습</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#작업-1-null-provider">작업 1. null provider</a></li>
-<li class="toc-entry toc-h3"><a href="#작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</a></li>
-<li class="toc-entry toc-h3"><a href="#작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
+<li class="toc-entry toc-h4"><a href="#작업-1-null-provider">작업 1. null provider</a></li>
+<li class="toc-entry toc-h4"><a href="#작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</a></li>
+<li class="toc-entry toc-h4"><a href="#작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toc-entry toc-h1"><a href="#마치며">마치며</a></li>
+<li class="toc-entry toc-h2"><a href="#마치며">마치며</a></li>
 </ul>
     </div>
-    <h1 id="들어가며">들어가며</h1>
+    <h2 id="들어가며">들어가며</h2>
 
 <p>이번 주에는 <code class="language-plaintext highlighter-rouge">Module</code>과 <code class="language-plaintext highlighter-rouge">Runner</code>에 대해
 <a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a>를 통해 알아 보는 중입니다.
@@ -84,7 +86,7 @@
   <p><a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a></p>
 </blockquote>
 
-<h1 id="terraform-runner">Terraform Runner</h1>
+<h2 id="terraform-runner">Terraform Runner</h2>
 
 <ul>
   <li>Terraform Runner는 Terraform을 사용하여 인프라를 관리하는 방법 중 하나로
@@ -116,7 +118,7 @@
   <li>Terraform Runner는 다수의 종류가 있는데 그 중에서 Atlantis를 사용해 보겠습니다.</li>
 </ul>
 
-<h2 id="atlantis-란">Atlantis 란?</h2>
+<h3 id="atlantis-란">Atlantis 란?</h3>
 
 <ul>
   <li><strong>Atlantis</strong>는 <strong>Terraform Pull Request Automation</strong> 도구로,
@@ -128,7 +130,7 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
 <em class="image-caption">출처 : <a href="https://isn-t.tistory.com/46">https://isn-t.tistory.com/46</a></em></li>
 </ul>
 
-<h2 id="atlantis-설치">Atlantis 설치</h2>
+<h3 id="atlantis-설치">Atlantis 설치</h3>
 
 <ul>
   <li>Atlantis는 다양한 방법으로 설치할 수 있습니다. 이 중에서 Github를 사용하고 Docker를 사용한 설치 방법을 소개합니다.</li>
@@ -209,9 +211,9 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
   <li>설치과정이 완료되었습니다. 이제 Terraform 코드를 작성하고 PR을 생성하여 Atlantis를 통해 Terraform 코드를 관리해 보겠습니다.</li>
 </ul>
 
-<h2 id="atlantis-실습">Atlantis 실습</h2>
+<h3 id="atlantis-실습">Atlantis 실습</h3>
 
-<h3 id="작업-1-null-provider">작업 1. null provider</h3>
+<h4 id="작업-1-null-provider">작업 1. null provider</h4>
 
 <ul>
   <li>
@@ -290,7 +292,7 @@ atlantis apply <span class="nt">-d</span> <span class="nb">.</span>
   </li>
 </ul>
 
-<h4 id="atlantis의-auto-plan-manual-plan-apply">atlantis의 Auto plan, Manual plan, Apply</h4>
+<h5 id="atlantis의-auto-plan-manual-plan-apply">atlantis의 Auto plan, Manual plan, Apply</h5>
 
 <ul>
   <li>auto plan
@@ -317,7 +319,7 @@ atlantis apply <span class="nt">-w</span> staging  <span class="c"># 워크스�
   </li>
 </ul>
 
-<h3 id="작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</h3>
+<h4 id="작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</h4>
 
 <ul>
   <li>AWS S3 버킷 생성 : Terraform Backend state 저장용으로 사용합니다.
@@ -432,7 +434,7 @@ atlantis apply <span class="nt">-d</span> iam
   </li>
 </ul>
 
-<h3 id="작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</h3>
+<h4 id="작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</h4>
 <ul>
   <li>Local에서 Git 코드 작업
     <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># feature branch 생성</span>
@@ -528,7 +530,7 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
   </li>
 </ul>
 
-<h1 id="마치며">마치며</h1>
+<h2 id="마치며">마치며</h2>
 
 <p>이상과 같이 Atlantis를 사용하여 Terraform 코드를 관리하는 방법을 알아보았습니다.
 팀으로 작업을 할 때 참 유용한 기능인것 같습니다. 
@@ -543,6 +545,26 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
 염려되는데 해당 부분에 대해  보완할 방법을 조금더 찾아봐야 할것 같습니다.
 이번 주 수업도 기대됩니다. 완주까지 화이팅입니다.</p>
 
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#들어가며">들어가며</a></li>
+<li class="toc-entry toc-h2"><a href="#terraform-runner">Terraform Runner</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#atlantis-란">Atlantis 란?</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-설치">Atlantis 설치</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-실습">Atlantis 실습</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#작업-1-null-provider">작업 1. null provider</a></li>
+<li class="toc-entry toc-h4"><a href="#작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</a></li>
+<li class="toc-entry toc-h4"><a href="#작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#마치며">마치며</a></li>
+</ul>
   </div><a class="u-url" href="/posts/2024-07-13-T101-Study-Terraform-Week-5b/" hidden></a>
 </article>
 
@@ -593,6 +615,8 @@ this.page.identifier = "/posts/T101 Study - Terraform Week 5b";
     
     <script src="/assets/dist/app.min.js"></script>
     
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
   </body>
 
 </html>

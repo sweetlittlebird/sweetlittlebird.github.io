@@ -992,6 +992,10 @@ pre, code {
   box-shadow: 0 1px 0 0 #333;
 }
 
+.post-content h2 {
+  color: #fff;
+}
+
 pre,
 code {
   background-color: #456;
@@ -1028,6 +1032,41 @@ body {
     max-width: var(--scrollbar-width-legacy);
     max-height: var(--scrollbar-width-legacy);
   }
+}
+.site-header {
+  border-top-color: #1756a9;
+  background: #333;
+}
+
+.scrolled .site-header {
+  background: rgba(33, 33, 33, 0.9);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.site-title:before {
+  background-image: url("/assets/top_dark_icon.png");
+}
+
+#back-to-top {
+  background: #222;
+}
+#back-to-top:hover {
+  background: #000;
+}
+
+.toc-minimap.active {
+  background: #333;
+  border-color: #444;
+}
+.toc-minimap.active ul li.active > a {
+  color: #fff;
+  font-weight: normal;
+}
+.toc-minimap.collapsed ul li:before {
+  background: #fff;
+}
+.toc-minimap.collapsed ul li.active:before {
+  background: #fff;
 }
 
 /*# sourceMappingURL=main_dark.css.map */

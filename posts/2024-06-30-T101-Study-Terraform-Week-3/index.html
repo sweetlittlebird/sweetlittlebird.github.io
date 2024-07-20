@@ -24,7 +24,9 @@
   <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="icon" href="/assets/favicon.png"><link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird" /></head>
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon"><link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper">
@@ -56,50 +58,50 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <div>
-      목차
+    <div class="table-of-content">
+      <header>목차</header>
       <ul id="toc" class="section-nav">
-<li class="toc-entry toc-h1"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
-<li class="toc-entry toc-h1">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
 <a href="#hcl-%EA%B3%84%EC%86%8D">HCL (계속)</a>
 <ul>
-<li class="toc-entry toc-h2">
+<li class="toc-entry toc-h3">
 <a href="#%EB%B0%98%EB%B3%B5%EB%AC%B8-22">반복문 (2/2)</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#for_each">for_each</a></li>
-<li class="toc-entry toc-h3"><a href="#for-expression">for Expression</a></li>
-<li class="toc-entry toc-h3"><a href="#dynamic">dynamic</a></li>
+<li class="toc-entry toc-h4"><a href="#for_each">for_each</a></li>
+<li class="toc-entry toc-h4"><a href="#for-expression">for Expression</a></li>
+<li class="toc-entry toc-h4"><a href="#dynamic">dynamic</a></li>
 </ul>
 </li>
-<li class="toc-entry toc-h2"><a href="#%EC%A1%B0%EA%B1%B4%EB%AC%B8-conditional-expression">조건문 (Conditional Expression)</a></li>
-<li class="toc-entry toc-h2"><a href="#%ED%95%A8%EC%88%98-function">함수 (Function)</a></li>
-<li class="toc-entry toc-h2">
+<li class="toc-entry toc-h3"><a href="#%EC%A1%B0%EA%B1%B4%EB%AC%B8-conditional-expression">조건문 (Conditional Expression)</a></li>
+<li class="toc-entry toc-h3"><a href="#%ED%95%A8%EC%88%98-function">함수 (Function)</a></li>
+<li class="toc-entry toc-h3">
 <a href="#%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88-provisioner">프로비저너 (provisioner)</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#local-exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">local-exec 프로비저너</a></li>
-<li class="toc-entry toc-h3"><a href="#%EC%9B%90%EA%B2%A9%EC%A7%80-%EC%97%B0%EA%B2%B0">원격지 연결</a></li>
-<li class="toc-entry toc-h3"><a href="#file-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">file 프로비저너</a></li>
-<li class="toc-entry toc-h3"><a href="#remote_exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">remote_exec 프로비저너</a></li>
+<li class="toc-entry toc-h4"><a href="#local-exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">local-exec 프로비저너</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9B%90%EA%B2%A9%EC%A7%80-%EC%97%B0%EA%B2%B0">원격지 연결</a></li>
+<li class="toc-entry toc-h4"><a href="#file-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">file 프로비저너</a></li>
+<li class="toc-entry toc-h4"><a href="#remote_exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">remote_exec 프로비저너</a></li>
 </ul>
 </li>
-<li class="toc-entry toc-h2">
+<li class="toc-entry toc-h3">
 <a href="#null_resource%EC%99%80-terraform_data">null_resource와 terraform_data</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#null_resource">null_resource</a></li>
-<li class="toc-entry toc-h3"><a href="#terraform_data">terraform_data</a></li>
+<li class="toc-entry toc-h4"><a href="#null_resource">null_resource</a></li>
+<li class="toc-entry toc-h4"><a href="#terraform_data">terraform_data</a></li>
 </ul>
 </li>
-<li class="toc-entry toc-h2"><a href="#moved-%EB%B8%94%EB%A1%9D">moved 블록</a></li>
+<li class="toc-entry toc-h3"><a href="#moved-%EB%B8%94%EB%A1%9D">moved 블록</a></li>
 </ul>
 </li>
-<li class="toc-entry toc-h1"><a href="#cli%EB%A5%BC-%EC%9C%84%ED%95%9C-%EC%8B%9C%EC%8A%A4%ED%85%9C-%ED%99%98%EA%B2%BD-%EB%B3%80%EC%88%98">CLI를 위한 시스템 환경 변수</a></li>
-<li class="toc-entry toc-h1"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+<li class="toc-entry toc-h2"><a href="#cli%EB%A5%BC-%EC%9C%84%ED%95%9C-%EC%8B%9C%EC%8A%A4%ED%85%9C-%ED%99%98%EA%B2%BD-%EB%B3%80%EC%88%98">CLI를 위한 시스템 환경 변수</a></li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
 </ul>
     </div>
     <ul id="toc" class="section-nav">
 </ul>
 
-<h1 id="들어가며">들어가며</h1>
+<h2 id="들어가며">들어가며</h2>
 
 <p>테라폼 기초 입문 실습 스터디 3주차이고, 기본 사용법 마지막 주차입니다.
 이번 주에도 학습해야 하는 내용이 많아서 부지런히 달려보겠습니다.
@@ -111,13 +113,13 @@
   <p><a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a></p>
 </blockquote>
 
-<h1 id="hcl-계속">HCL (계속)</h1>
+<h2 id="hcl-계속">HCL (계속)</h2>
 
 <p>이번주에도 HCL(HashiCorp Configuration Language) 의 문법에 대해 알아보겠습니다.</p>
 
-<h2 id="반복문-22">반복문 (2/2)</h2>
+<h3 id="반복문-22">반복문 (2/2)</h3>
 
-<h3 id="for_each">for_each</h3>
+<h4 id="for_each">for_each</h4>
 
 <ul>
   <li>반복문이며 선언된 key 값 개수만큼 리소스를 생성합니다.</li>
@@ -296,7 +298,7 @@
   </li>
 </ul>
 
-<h3 id="for-expression">for Expression</h3>
+<h4 id="for-expression">for Expression</h4>
 
 <ul>
   <li>
@@ -462,7 +464,7 @@
   </li>
 </ul>
 
-<h3 id="dynamic">dynamic</h3>
+<h4 id="dynamic">dynamic</h4>
 
 <ul>
   <li>
@@ -585,7 +587,7 @@
   </li>
 </ul>
 
-<h2 id="조건문-conditional-expression">조건문 (Conditional Expression)</h2>
+<h3 id="조건문-conditional-expression">조건문 (Conditional Expression)</h3>
 <ul>
   <li>조건문은 테라폼에서는 다음과 같이 3항 연산자 형태로 사용할 수 있습니다.
     <div class="language-tf highlighter-rouge">
@@ -676,7 +678,7 @@
   </li>
 </ul>
 
-<h2 id="함수-function">함수 (Function)</h2>
+<h3 id="함수-function">함수 (Function)</h3>
 
 <ul>
   <li>테라폼에서는 프로그래밍 언어 처럼 값의 유형을 변경하거나 가공할 수 있는 다양한 내장 함수를 제공합니다.</li>
@@ -711,7 +713,7 @@
   </li>
 </ul>
 
-<h2 id="프로비저너-provisioner">프로비저너 (provisioner)</h2>
+<h3 id="프로비저너-provisioner">프로비저너 (provisioner)</h3>
 <ul>
   <li>프로비저너는 리소스가 생성된 후에 리소스에 대한 추가적인 설정이나 초기화 작업을 수행하는 기능입니다.</li>
   <li>프로바이더로 실행되지 않는 명령어 실행과 파일 복사 같은 역할을 수행할 수 있습니다.</li>
@@ -749,7 +751,7 @@
   </li>
 </ul>
 
-<h3 id="local-exec-프로비저너">local-exec 프로비저너</h3>
+<h4 id="local-exec-프로비저너">local-exec 프로비저너</h4>
 <ul>
   <li>테라폼이 실행되는 로컬에서 실행되는 명령어를 실행할 수 있습니다.</li>
   <li>리눅스나 윈도우 등 실행 환경에 맞게 커맨드를 정의해야 하며, 다음의 인수 값을 사용합니다.
@@ -822,7 +824,7 @@
   </li>
 </ul>
 
-<h3 id="원격지-연결">원격지 연결</h3>
+<h4 id="원격지-연결">원격지 연결</h4>
 <ul>
   <li>
 <code class="language-plaintext highlighter-rouge">remote-exec</code>와 <code class="language-plaintext highlighter-rouge">file</code> 프로비저너를 사용하여 원격지 서버에 명령어를 실행하거나 파일을 복사하려면 원격지 연결할 SSH 또는 WinRM (windows 서버의 경우) 연결 정의가 필요합니다.
@@ -1041,7 +1043,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h3 id="file-프로비저너">file 프로비저너</h3>
+<h4 id="file-프로비저너">file 프로비저너</h4>
 <ul>
   <li>
 <code class="language-plaintext highlighter-rouge">file</code> 프로비저너는 로컬 파일이나 디렉터리를 원격지 서버로 복사하는 기능을 제공합니다.</li>
@@ -1105,7 +1107,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h3 id="remote_exec-프로비저너">remote_exec 프로비저너</h3>
+<h4 id="remote_exec-프로비저너">remote_exec 프로비저너</h4>
 <ul>
   <li>
 <code class="language-plaintext highlighter-rouge">remote-exec</code> 프로비저너는 원격지 서버에 명령어를 실행하는 기능을 제공합니다. 예를들어 AWS의 EC2 인스턴스를 생성하고 해당 VM에서 명령을 실행할 때 사용합니다.</li>
@@ -1152,8 +1154,8 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h2 id="null_resource와-terraform_data">null_resource와 terraform_data</h2>
-<h3 id="null_resource">null_resource</h3>
+<h3 id="null_resource와-terraform_data">null_resource와 terraform_data</h3>
+<h4 id="null_resource">null_resource</h4>
 <ul>
   <li>
 <code class="language-plaintext highlighter-rouge">null_resource</code> 블록은 자체적으로는 아무것도 수행하지 않는 리소스를 생성할 때 사용합니다.
@@ -1529,7 +1531,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h3 id="terraform_data">terraform_data</h3>
+<h4 id="terraform_data">terraform_data</h4>
 <ul>
   <li>테라폼 1.4 이후에는 <code class="language-plaintext highlighter-rouge">null_resource</code> 대신 <code class="language-plaintext highlighter-rouge">terraform_data</code>를 사용하여 아무 작업도 수행하지 않는 리소스 구현이 가능합니다.</li>
   <li>이후에는 가능한 <code class="language-plaintext highlighter-rouge">null_resource</code> 대신 <code class="language-plaintext highlighter-rouge">terraform_data</code>를 사용하는 것이 좋습니다.</li>
@@ -1578,7 +1580,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h2 id="moved-블록">moved 블록</h2>
+<h3 id="moved-블록">moved 블록</h3>
 
 <ul>
   <li>테라폼은 state에 기록되는 리소스의 이름이 변경되면 기존 리소스는 삭제되고, 새로운 리소스를 생성합니다.</li>
@@ -1716,7 +1718,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
   </li>
 </ul>
 
-<h1 id="cli를-위한-시스템-환경-변수">CLI를 위한 시스템 환경 변수</h1>
+<h2 id="cli를-위한-시스템-환경-변수">CLI를 위한 시스템 환경 변수</h2>
 <ul>
   <li>테라폼은 다양한 환경 변수를 사용하여 동작을 제어할 수 있습니다.</li>
   <li>로컬 작업환경 별 환경변수 지정 방법
@@ -1784,12 +1786,52 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
   </li>
 </ul>
 
-<h1 id="마치며">마치며</h1>
+<h2 id="마치며">마치며</h2>
 <p>지금까지 3주간에 걸처 테라폼 HCL의 기본 문법과 기능을 알아보았습니다.
 내용도 많고 실습해볼것도 많고, 블로그도 써야하고 다소 힘들었지만 <img class="emoji" title=":cry:" alt=":cry:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f622.png" height="20" width="20">, 다음 주차 수업부터 실제 응용을 배울 생각을 하니 두근 거립니다.</p>
 
 <p>이번 주도 과제가 무사히 통과되길 기도<img class="emoji" title=":pray:" alt=":pray:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f64f.png" height="20" width="20">하며 이번 블로그를 마칩니다.</p>
 
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#hcl-%EA%B3%84%EC%86%8D">HCL (계속)</a>
+<ul>
+<li class="toc-entry toc-h3">
+<a href="#%EB%B0%98%EB%B3%B5%EB%AC%B8-22">반복문 (2/2)</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#for_each">for_each</a></li>
+<li class="toc-entry toc-h4"><a href="#for-expression">for Expression</a></li>
+<li class="toc-entry toc-h4"><a href="#dynamic">dynamic</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#%EC%A1%B0%EA%B1%B4%EB%AC%B8-conditional-expression">조건문 (Conditional Expression)</a></li>
+<li class="toc-entry toc-h3"><a href="#%ED%95%A8%EC%88%98-function">함수 (Function)</a></li>
+<li class="toc-entry toc-h3">
+<a href="#%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88-provisioner">프로비저너 (provisioner)</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#local-exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">local-exec 프로비저너</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9B%90%EA%B2%A9%EC%A7%80-%EC%97%B0%EA%B2%B0">원격지 연결</a></li>
+<li class="toc-entry toc-h4"><a href="#file-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">file 프로비저너</a></li>
+<li class="toc-entry toc-h4"><a href="#remote_exec-%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%84%88">remote_exec 프로비저너</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#null_resource%EC%99%80-terraform_data">null_resource와 terraform_data</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#null_resource">null_resource</a></li>
+<li class="toc-entry toc-h4"><a href="#terraform_data">terraform_data</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#moved-%EB%B8%94%EB%A1%9D">moved 블록</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#cli%EB%A5%BC-%EC%9C%84%ED%95%9C-%EC%8B%9C%EC%8A%A4%ED%85%9C-%ED%99%98%EA%B2%BD-%EB%B3%80%EC%88%98">CLI를 위한 시스템 환경 변수</a></li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
   </div>
 <a class="u-url" href="/posts/2024-06-30-T101-Study-Terraform-Week-3/" hidden></a>
 </article>
@@ -1846,6 +1888,8 @@ this.page.identifier = "/posts/T101 Study - Terraform Week 3";
     
     <script src="/assets/dist/app.min.js"></script>
     
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
   </body>
 
 </html>
