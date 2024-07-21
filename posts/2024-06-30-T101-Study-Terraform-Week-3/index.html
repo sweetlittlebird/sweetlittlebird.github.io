@@ -1368,137 +1368,114 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
 
 <svg width="1076pt" height="206pt" viewbox="0.00 0.00 1075.75 206.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 202)">
-<title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-202 1071.75,-202 1071.75,4 -4,4"></polygon>
 <!-- aws_eip.myeip -->
 <g id="node1" class="node">
-<title>aws_eip.myeip</title>
 <polygon fill="none" stroke="black" points="865,-36 759,-36 759,0 865,0 865,-36"></polygon>
 <text text-anchor="middle" x="812" y="-12.2" font-family="sans-serif" font-size="14.00">aws_eip.myeip</text>
 </g>
 <!-- aws_instance.example -->
 <g id="node2" class="node">
-<title>aws_instance.example</title>
 <polygon fill="none" stroke="black" points="645.75,-36 492.5,-36 492.5,0 645.75,0 645.75,-36"></polygon>
 <text text-anchor="middle" x="569.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_instance.example</text>
 </g>
 <!-- aws_eip.myeip&#45;&gt;aws_instance.example -->
 <g id="edge1" class="edge">
-<title>aws_eip.myeip-&gt;aws_instance.example</title>
 <path fill="none" stroke="black" d="M758.73,-18C729.15,-18 691.38,-18 657.42,-18"></path>
 <polygon fill="black" stroke="black" points="657.58,-14.5 647.58,-18 657.58,-21.5 657.58,-14.5"></polygon>
 </g>
 <!-- aws_security_group.instance -->
 <g id="node7" class="node">
-<title>aws_security_group.instance</title>
 <polygon fill="none" stroke="black" points="368.38,-36 178.38,-36 178.38,0 368.38,0 368.38,-36"></polygon>
 <text text-anchor="middle" x="273.38" y="-12.2" font-family="sans-serif" font-size="14.00">aws_security_group.instance</text>
 </g>
 <!-- aws_instance.example&#45;&gt;aws_security_group.instance -->
 <g id="edge2" class="edge">
-<title>aws_instance.example-&gt;aws_security_group.instance</title>
 <path fill="none" stroke="black" d="M492.1,-18C457.97,-18 417.14,-18 380.1,-18"></path>
 <polygon fill="black" stroke="black" points="380.26,-14.5 370.26,-18 380.26,-21.5 380.26,-14.5"></polygon>
 </g>
 <!-- aws_subnet.peter_subnet -->
 <g id="node8" class="node">
-<title>aws_subnet.peter_subnet</title>
 <polygon fill="none" stroke="black" points="358.62,-90 188.12,-90 188.12,-54 358.62,-54 358.62,-90"></polygon>
 <text text-anchor="middle" x="273.38" y="-66.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet</text>
 </g>
 <!-- aws_instance.example&#45;&gt;aws_subnet.peter_subnet -->
 <g id="edge3" class="edge">
-<title>aws_instance.example-&gt;aws_subnet.peter_subnet</title>
 <path fill="none" stroke="black" d="M492.1,-31.98C454.88,-38.82 409.69,-47.12 370.15,-54.39"></path>
 <polygon fill="black" stroke="black" points="369.58,-50.94 360.37,-56.19 370.84,-57.83 369.58,-50.94"></polygon>
 </g>
 <!-- aws_internet_gateway.peter_igw -->
 <g id="node3" class="node">
-<title>aws_internet_gateway.peter_igw</title>
 <polygon fill="none" stroke="black" points="379.25,-198 167.5,-198 167.5,-162 379.25,-162 379.25,-198"></polygon>
 <text text-anchor="middle" x="273.38" y="-174.2" font-family="sans-serif" font-size="14.00">aws_internet_gateway.peter_igw</text>
 </g>
 <!-- aws_vpc.peter_vpc -->
 <g id="node9" class="node">
-<title>aws_vpc.peter_vpc</title>
 <polygon fill="none" stroke="black" points="131.5,-117 0,-117 0,-81 131.5,-81 131.5,-117"></polygon>
 <text text-anchor="middle" x="65.75" y="-93.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
 </g>
 <!-- aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge4" class="edge">
-<title>aws_internet_gateway.peter_igw-&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M192.43,-161.56C183.92,-158.97 175.47,-156.11 167.5,-153 146.54,-144.82 124.38,-133.3 106.2,-122.99"></path>
 <polygon fill="black" stroke="black" points="107.99,-119.98 97.58,-118.02 104.49,-126.05 107.99,-119.98"></polygon>
 </g>
 <!-- aws_route.peter_defaultroute -->
 <g id="node4" class="node">
-<title>aws_route.peter_defaultroute</title>
 <polygon fill="none" stroke="black" points="664.88,-184 473.38,-184 473.38,-148 664.88,-148 664.88,-184"></polygon>
 <text text-anchor="middle" x="569.12" y="-160.2" font-family="sans-serif" font-size="14.00">aws_route.peter_defaultroute</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw -->
 <g id="edge5" class="edge">
-<title>aws_route.peter_defaultroute-&gt;aws_internet_gateway.peter_igw</title>
 <path fill="none" stroke="black" d="M473.16,-170.53C446.93,-171.78 418.18,-173.15 390.88,-174.45"></path>
 <polygon fill="black" stroke="black" points="391.03,-170.94 381.21,-174.91 391.36,-177.93 391.03,-170.94"></polygon>
 </g>
 <!-- aws_route_table.peter_rt -->
 <g id="node5" class="node">
-<title>aws_route_table.peter_rt</title>
 <polygon fill="none" stroke="black" points="356,-144 190.75,-144 190.75,-108 356,-108 356,-144"></polygon>
 <text text-anchor="middle" x="273.38" y="-120.2" font-family="sans-serif" font-size="14.00">aws_route_table.peter_rt</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge6" class="edge">
-<title>aws_route.peter_defaultroute-&gt;aws_route_table.peter_rt</title>
 <path fill="none" stroke="black" d="M473.16,-153.07C439.27,-148.45 401.16,-143.26 367.44,-138.67"></path>
 <polygon fill="black" stroke="black" points="368.06,-135.22 357.68,-137.34 367.12,-142.16 368.06,-135.22"></polygon>
 </g>
 <!-- aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge7" class="edge">
-<title>aws_route_table.peter_rt-&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M190.52,-115.25C174.83,-113.19 158.47,-111.04 142.98,-109.01"></path>
 <polygon fill="black" stroke="black" points="143.74,-105.58 133.37,-107.75 142.83,-112.52 143.74,-105.58"></polygon>
 </g>
 <!-- aws_route_table_association.peter_rtassociation -->
 <g id="node6" class="node">
-<title>aws_route_table_association.peter_rtassociation</title>
 <polygon fill="none" stroke="black" points="723,-117 415.25,-117 415.25,-81 723,-81 723,-117"></polygon>
 <text text-anchor="middle" x="569.12" y="-93.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation</text>
 </g>
 <!-- aws_route_table_association.peter_rtassociation&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge8" class="edge">
-<title>aws_route_table_association.peter_rtassociation-&gt;aws_route_table.peter_rt</title>
 <path fill="none" stroke="black" d="M414.8,-113.09C398.72,-114.57 382.75,-116.04 367.66,-117.43"></path>
 <polygon fill="black" stroke="black" points="367.44,-113.93 357.8,-118.33 368.08,-120.9 367.44,-113.93"></polygon>
 </g>
 <!-- aws_route_table_association.peter_rtassociation&#45;&gt;aws_subnet.peter_subnet -->
 <g id="edge9" class="edge">
-<title>aws_route_table_association.peter_rtassociation-&gt;aws_subnet.peter_subnet</title>
 <path fill="none" stroke="black" d="M414.8,-84.91C399.65,-83.51 384.59,-82.13 370.27,-80.81"></path>
 <polygon fill="black" stroke="black" points="370.75,-77.34 360.47,-79.91 370.11,-84.31 370.75,-77.34"></polygon>
 </g>
 <!-- aws_security_group.instance&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge10" class="edge">
-<title>aws_security_group.instance-&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M192.43,-36.44C183.92,-39.03 175.47,-41.89 167.5,-45 146.54,-53.18 124.38,-64.7 106.2,-75.01"></path>
 <polygon fill="black" stroke="black" points="104.49,-71.95 97.58,-79.98 107.99,-78.02 104.49,-71.95"></polygon>
 </g>
 <!-- aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge11" class="edge">
-<title>aws_subnet.peter_subnet-&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M187.85,-83.1C172.93,-85.06 157.48,-87.09 142.82,-89.01"></path>
 <polygon fill="black" stroke="black" points="142.73,-85.49 133.27,-90.26 143.64,-92.43 142.73,-85.49"></polygon>
 </g>
 <!-- null_resource.echomyeip -->
 <g id="node10" class="node">
-<title>null_resource.echomyeip</title>
 <polygon fill="none" stroke="black" points="1067.75,-36 901,-36 901,0 1067.75,0 1067.75,-36"></polygon>
 <text text-anchor="middle" x="984.38" y="-12.2" font-family="sans-serif" font-size="14.00">null_resource.echomyeip</text>
 </g>
 <!-- null_resource.echomyeip&#45;&gt;aws_eip.myeip -->
 <g id="edge12" class="edge">
-<title>null_resource.echomyeip-&gt;aws_eip.myeip</title>
 <path fill="none" stroke="black" d="M900.68,-18C892.59,-18 884.48,-18 876.62,-18"></path>
 <polygon fill="black" stroke="black" points="876.84,-14.5 866.84,-18 876.84,-21.5 876.84,-14.5"></polygon>
 </g>
