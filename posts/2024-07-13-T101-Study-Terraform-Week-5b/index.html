@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html lang="ko"><head>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
 <title>[T101 4기] Runner | Sweet Little Bird</title>
-<meta name="generator" content="Jekyll v4.3.3" />
-<meta property="og:title" content="[T101 4기] Runner" />
-<meta property="og:locale" content="ko" />
-<meta name="description" content="이번 주에는 Module과 Runner에 대해 테라폼으로 시작하는 IaC를 통해 알아 보는 중입니다. 계속해서 Terraform Runner에 대해 알아보겠습니다." />
-<meta property="og:description" content="이번 주에는 Module과 Runner에 대해 테라폼으로 시작하는 IaC를 통해 알아 보는 중입니다. 계속해서 Terraform Runner에 대해 알아보겠습니다." />
-<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/" />
-<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/" />
-<meta property="og:site_name" content="Sweet Little Bird" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2024-07-13T02:08:00+09:00" />
-<meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="[T101 4기] Runner" />
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="[T101 4기] Runner">
+<meta property="og:locale" content="ko">
+<meta name="description" content="이번 주에는 Module과 Runner에 대해 테라폼으로 시작하는 IaC를 통해 알아 보는 중입니다. 계속해서 Terraform Runner에 대해 알아보겠습니다.">
+<meta property="og:description" content="이번 주에는 Module과 Runner에 대해 테라폼으로 시작하는 IaC를 통해 알아 보는 중입니다. 계속해서 Terraform Runner에 대해 알아보겠습니다.">
+<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/">
+<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/">
+<meta property="og:site_name" content="Sweet Little Bird">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2024-07-13T02:08:00+09:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="[T101 4기] Runner">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-07-13T02:08:00+09:00","datePublished":"2024-07-13T02:08:00+09:00","description":"이번 주에는 Module과 Runner에 대해 테라폼으로 시작하는 IaC를 통해 알아 보는 중입니다. 계속해서 Terraform Runner에 대해 알아보겠습니다.","headline":"[T101 4기] Runner","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/"},"url":"https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/"}</script>
 <!-- End Jekyll SEO tag -->
@@ -23,29 +26,36 @@
   <link rel="stylesheet" href="/assets/dist/main.min.css">
   <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
   
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!--  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&display=swap" rel="stylesheet">-->
-  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&family=Milonga&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&amp;family=Milonga&amp;display=swap" rel="stylesheet">
 
   <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
-  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon"><link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird" /></head>
-<body><header class="site-header" role="banner">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+<link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird">
+</head>
+<body>
+<header class="site-header" role="banner">
 
-  <div class="wrapper"><a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
-        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
         <label for="nav-trigger">
           <span class="menu-icon">
-            <svg viewBox="0 0 18 15" width="18px" height="15px">
-              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
             </svg>
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a></div>
-      </nav></div>
+        <div class="trigger">
+<a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a>
+</div>
+      </nav>
+</div>
 </header>
 <main class="page-content" aria-label="Content">
       <div class="wrapper">
@@ -62,21 +72,23 @@
     <div class="table-of-content">
       <header>목차</header>
       <ul id="toc" class="section-nav">
-<li class="toc-entry toc-h2"><a href="#들어가며">들어가며</a></li>
-<li class="toc-entry toc-h2"><a href="#terraform-runner">Terraform Runner</a>
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#terraform-runner">Terraform Runner</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#atlantis-란">Atlantis 란?</a></li>
-<li class="toc-entry toc-h3"><a href="#atlantis-설치">Atlantis 설치</a></li>
-<li class="toc-entry toc-h3"><a href="#atlantis-실습">Atlantis 실습</a>
+<li class="toc-entry toc-h3"><a href="#atlantis-%EB%9E%80">Atlantis 란?</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-%EC%84%A4%EC%B9%98">Atlantis 설치</a></li>
+<li class="toc-entry toc-h3">
+<a href="#atlantis-%EC%8B%A4%EC%8A%B5">Atlantis 실습</a>
 <ul>
-<li class="toc-entry toc-h4"><a href="#작업-1-null-provider">작업 1. null provider</a></li>
-<li class="toc-entry toc-h4"><a href="#작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</a></li>
-<li class="toc-entry toc-h4"><a href="#작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-1-null-provider">작업 1. null provider</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-2-aws-iam-user-%EC%83%9D%EC%84%B1">작업 2. aws iam user 생성</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-3-%EC%9E%91%EC%97%85-2%EC%97%90%EC%84%9C-%EC%83%9D%EC%84%B1%ED%95%9C-%EB%A6%AC%EC%86%8C%EC%8A%A4-%EC%82%AD%EC%A0%9C">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toc-entry toc-h2"><a href="#마치며">마치며</a></li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
 </ul>
     </div>
     <h2 id="들어가며">들어가며</h2>
@@ -86,7 +98,7 @@
 계속해서 Terraform Runner에 대해 알아보겠습니다.</p>
 
 <blockquote>
-  <p><img src="/assets/2024/20240614_terraform_book.jpg" alt="테라폼으로 시작하는 IaC" /></p>
+  <p><img src="/assets/2024/20240614_terraform_book.jpg" alt="테라폼으로 시작하는 IaC" loading="lazy" width="458" height="589"></p>
 
   <p><a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a></p>
 </blockquote>
@@ -103,19 +115,28 @@
     <ul>
       <li>국내
         <ul>
-          <li>Terraform을 GitOps 방식으로 사용하기 위한 도구 선택 - <a href="https://nangman14.tistory.com/109">Link</a></li>
-          <li>Atlantis 란? (Terraform Pull Request Automation) - <a href="https://kim-dragon.tistory.com/253">Link</a></li>
-          <li>펫프렌즈가 DevOps 조직없이 인프라를 관리하는 방법 - <a href="https://techblog.pet-friends.co.kr/%ED%8E%AB%ED%94%84%EB%A0%8C%EC%A6%88%EA%B0%80-devops-%EC%A1%B0%EC%A7%81%EC%97%86%EC%9D%B4-%EC%9D%B8%ED%94%84%EB%9D%BC%EB%A5%BC-%EA%B4%80%EB%A6%AC%ED%95%98%EB%8A%94-%EB%B0%A9%EB%B2%95-ce27449bc201">Link</a></li>
-          <li>Atlantis 배포하기 - <a href="https://devops-art-factory.gitbook.io/devops-workshop/terraform/atlantis/atlantis-main">Link</a></li>
-          <li>Github에서 Atlantis를 이용한  Terraform 협업 환경 구축 - <a href="https://isn-t.tistory.com/46">Link</a> <a href="https://github.com/TAEKnical/Terraform_study/">Github</a></li>
-          <li>Jenkins + terraform + tfsec 로 정적 분석 자동화 구성 하기 - <a href="https://devocean.sk.com/blog/techBoardDetail.do?ID=163872">Link</a></li>
+          <li>Terraform을 GitOps 방식으로 사용하기 위한 도구 선택 - <a href="https://nangman14.tistory.com/109">Link</a>
+</li>
+          <li>Atlantis 란? (Terraform Pull Request Automation) - <a href="https://kim-dragon.tistory.com/253">Link</a>
+</li>
+          <li>펫프렌즈가 DevOps 조직없이 인프라를 관리하는 방법 - <a href="https://techblog.pet-friends.co.kr/%ED%8E%AB%ED%94%84%EB%A0%8C%EC%A6%88%EA%B0%80-devops-%EC%A1%B0%EC%A7%81%EC%97%86%EC%9D%B4-%EC%9D%B8%ED%94%84%EB%9D%BC%EB%A5%BC-%EA%B4%80%EB%A6%AC%ED%95%98%EB%8A%94-%EB%B0%A9%EB%B2%95-ce27449bc201">Link</a>
+</li>
+          <li>Atlantis 배포하기 - <a href="https://devops-art-factory.gitbook.io/devops-workshop/terraform/atlantis/atlantis-main">Link</a>
+</li>
+          <li>Github에서 Atlantis를 이용한  Terraform 협업 환경 구축 - <a href="https://isn-t.tistory.com/46">Link</a> <a href="https://github.com/TAEKnical/Terraform_study/">Github</a>
+</li>
+          <li>Jenkins + terraform + tfsec 로 정적 분석 자동화 구성 하기 - <a href="https://devocean.sk.com/blog/techBoardDetail.do?ID=163872">Link</a>
+</li>
         </ul>
       </li>
       <li>해외
         <ul>
-          <li>install-atlantis-docker-container-in-amazon-linux-integrate - <a href="https://www.easydeploy.io/blog/install-atlantis-docker-container-in-amazon-linux-integrate/">Link</a> <a href="https://github.com/easydeploy-cloud/atlantis-blog">Github</a></li>
-          <li>Hacking Atlantis - <a href="https://www.youtube.com/watch?v=S1-vGf_ao1s&amp;t=896s">Youtube</a></li>
-          <li>[CNCF] How Breaking up Our Infrastructure Monorepos Saved Us from Pul… Donnie Laughton - <a href="https://www.youtube.com/watch?v=5dAUDpwZTQ8">Youtube</a></li>
+          <li>install-atlantis-docker-container-in-amazon-linux-integrate - <a href="https://www.easydeploy.io/blog/install-atlantis-docker-container-in-amazon-linux-integrate/">Link</a> <a href="https://github.com/easydeploy-cloud/atlantis-blog">Github</a>
+</li>
+          <li>Hacking Atlantis - <a href="https://www.youtube.com/watch?v=S1-vGf_ao1s&amp;t=896s">Youtube</a>
+</li>
+          <li>[CNCF] How Breaking up Our Infrastructure Monorepos Saved Us from Pul… Donnie Laughton - <a href="https://www.youtube.com/watch?v=5dAUDpwZTQ8">Youtube</a>
+</li>
         </ul>
       </li>
     </ul>
@@ -126,13 +147,16 @@
 <h3 id="atlantis-란">Atlantis 란?</h3>
 
 <ul>
-  <li><strong>Atlantis</strong>는 <strong>Terraform Pull Request Automation</strong> 도구로,
+  <li>
+<strong>Atlantis</strong>는 <strong>Terraform Pull Request Automation</strong> 도구로,
 Terraform 코드를 GitOps 방식으로 관리할 때 사용됩니다. Terraform Pull Request Automation란 개발자와 운영자가 <strong>풀 리퀘스트에서 직접 terraform plan과 apply를 실행할 수 있게</strong> 하여
 Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
-  <li>이는 개발자가 자격 증명 없이 Terraform을 작성하고 적용할 수 있도록 돕고, 효과적인 협업 문제를 해결합니다. 자세한 내용은 다음 링크에서 확인할 수 있습니다. <a href="https://www.runatlantis.io/">Link</a></li>
+  <li>이는 개발자가 자격 증명 없이 Terraform을 작성하고 적용할 수 있도록 돕고, 효과적인 협업 문제를 해결합니다. 자세한 내용은 다음 링크에서 확인할 수 있습니다. <a href="https://www.runatlantis.io/">Link</a>
+</li>
   <li>대략적인 동작 방식은 아래와 같습니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_1.png" alt="img.png" class="image-center" />
-<em class="image-caption">출처 : <a href="https://isn-t.tistory.com/46">https://isn-t.tistory.com/46</a></em></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_1.png" alt="img.png" class="image-center" loading="lazy" width="1630" height="925">
+<em class="image-caption">출처 : <a href="https://isn-t.tistory.com/46">https://isn-t.tistory.com/46</a></em>
+</li>
 </ul>
 
 <h3 id="atlantis-설치">Atlantis 설치</h3>
@@ -161,7 +185,8 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
       <li>Docker에서 atlantis 실행
         <ul>
           <li>docker-compose.yml 작성
-            <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">services</span><span class="pi">:</span>
+            <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="na">services</span><span class="pi">:</span>
   <span class="na">atlantis</span><span class="pi">:</span>
     <span class="na">image</span><span class="pi">:</span> <span class="s">ghcr.io/runatlantis/atlantis:v0.28-alpine</span>
     <span class="na">restart</span><span class="pi">:</span> <span class="s">always</span>
@@ -175,7 +200,8 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
 </code></pre></div>            </div>
           </li>
           <li>docker-compose 실행
-            <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker compose up <span class="nt">-d</span>
+            <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>docker compose up <span class="nt">-d</span>
 </code></pre></div>            </div>
           </li>
         </ul>
@@ -184,7 +210,8 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
         <ul>
           <li>브라우저에서 <code class="language-plaintext highlighter-rouge">http://&lt;서버 IP&gt;:4141</code>로 접속하여 확인합니다.</li>
           <li>Atlantis가 정상적으로 실행되었다면 아래와 같은 화면이 나타납니다.
- <img src="/assets/2024/20240711_terraform_w5_atlantis_2.png" alt="img.png" /></li>
+ <img src="/assets/2024/20240711_terraform_w5_atlantis_2.png" alt="img.png" loading="lazy" width="1296" height="850">
+</li>
         </ul>
       </li>
       <li>Github에 Webhook 설정
@@ -193,7 +220,8 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
           <li>Settings &gt; Webhooks &gt; Add webhook 클릭합니다.</li>
           <li>Payload URL에 앞서 접속 테스트한 <code class="language-plaintext highlighter-rouge">http://&lt;서버 IP&gt;:4141/events</code> 를 기입합니다.
             <ul>
-              <li><code class="language-plaintext highlighter-rouge">/events</code> 로 끝나는지 반드시 확인합니다. 특히 405 에러가 나면 더욱 그러합니다.</li>
+              <li>
+<code class="language-plaintext highlighter-rouge">/events</code> 로 끝나는지 반드시 확인합니다. 특히 405 에러가 나면 더욱 그러합니다.</li>
             </ul>
           </li>
           <li>Content type에 <code class="language-plaintext highlighter-rouge">application/json</code> 을 선택합니다.</li>
@@ -224,7 +252,8 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
   <li>
     <p>Local에서 git 코드 작업</p>
 
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># git clone</span>
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># git clone</span>
 <span class="nv">$ </span>git clone https://github.com/sweetlittlebird/terraform-atlantis-test <span class="o">&amp;&amp;</span> <span class="nb">cd </span>terraform-atlantis-test <span class="o">&amp;&amp;</span> tree
   
 <span class="c"># feature branch 생성</span>
@@ -241,18 +270,23 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
     <p>Github PR 생성 =&gt; Atlantis 확인</p>
     <ul>
       <li>서버에서 다음의 명령어로 모니터링합니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
 </code></pre></div>        </div>
       </li>
       <li>Github 에서 Compare &amp; Pull request를 클릭합니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_3.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_3.png" alt="img.png" loading="lazy" width="935" height="476">
+</li>
       <li>Create pull request : title ( create null resource )
-<img src="/assets/2024/20240711_terraform_w5_atlantis_4.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_4.png" alt="img.png" loading="lazy" width="912" height="672">
+</li>
       <li>plan 자동 수행 확인
-<img src="/assets/2024/20240711_terraform_w5_atlantis_5.png" alt="img.png" />
-<img src="/assets/2024/20240711_terraform_w5_atlantis_6.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_5.png" alt="img.png" loading="lazy" width="664" height="1620">
+<img src="/assets/2024/20240711_terraform_w5_atlantis_6.png" alt="img.png" loading="lazy" width="715" height="491">
+</li>
       <li>서버 모니터링 결과 init 과 plan 이 실행된것을 확인 할 수 있습니다.
-        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis    
+        <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis    
 <span class="c"># =&gt; /home/atlantis/.atlantis</span>
 <span class="c">#    ├── atlantis.db</span>
 <span class="c">#    ├── bin</span>
@@ -276,21 +310,25 @@ Terraform 워크플로우의 협업과 안전성을 개선합니다.</li>
 </code></pre></div>        </div>
       </li>
       <li>PR 코멘트에 이것저것 명령을 넣어봅니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_7.png" alt="20240711_terraform_w5_atlantis_7.png" />
+<img src="/assets/2024/20240711_terraform_w5_atlantis_7.png" alt="20240711_terraform_w5_atlantis_7.png" loading="lazy" width="830" height="1000">
         <ul>
-          <li><code class="language-plaintext highlighter-rouge">atlantis help</code>는 응답이 오지만 <code class="language-plaintext highlighter-rouge">cat /etc/passwd</code>는 반응이 없습니다.</li>
+          <li>
+<code class="language-plaintext highlighter-rouge">atlantis help</code>는 응답이 오지만 <code class="language-plaintext highlighter-rouge">cat /etc/passwd</code>는 반응이 없습니다.</li>
         </ul>
       </li>
       <li>PR 코멘트에 명령을 조합해서 속이려고 해도 되지 않습니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_8.png" alt="20240711_terraform_w5_atlantis_8.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_8.png" alt="20240711_terraform_w5_atlantis_8.png" loading="lazy" width="829" height="470">
+</li>
       <li>이제 apply 해보겠습니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> <span class="nb">.</span>
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> <span class="nb">.</span>
 atlantis apply <span class="nt">-d</span> <span class="nb">.</span>
 </code></pre></div>        </div>
-        <p><img src="/assets/2024/20240711_terraform_w5_atlantis_9.png" alt="20240711_terraform_w5_atlantis_9.png" /></p>
+        <p><img src="/assets/2024/20240711_terraform_w5_atlantis_9.png" alt="20240711_terraform_w5_atlantis_9.png" loading="lazy" width="832" height="862"></p>
       </li>
       <li>아틀란티스 웹에서 확인해보겠습니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_10.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_10.png" alt="img.png" loading="lazy" width="837" height="647">
+</li>
       <li>plan과 apply가 잘 된 것을 확인할 수 있습니다.</li>
       <li>만약 Locks에 항목이 있고, 어떤 의도에서든 plan을 다시 실행하고 싶다면 클릭해서 <strong>Discard Plan &amp; Unlock</strong> 하십시오. 그렇지 않으면 Lock 된 plan으로 apply 됩니다. pull request를 merge 하면 Lock 이 해제됩니다.</li>
     </ul>
@@ -309,7 +347,8 @@ atlantis apply <span class="nt">-d</span> <span class="nb">.</span>
     <ul>
       <li>variable의 값을 넘기거나 하고 싶다면 수동 plan 실행이 필요합니다.</li>
       <li>PR 코멘트에 다음 명령들을 실행하면 수동 plan이 실행됩니다. (단, Lock이 걸려있지 않아야 합니다.)
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> <span class="nb">dir</span>      <span class="c"># 디렉터리</span>
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> <span class="nb">dir</span>      <span class="c"># 디렉터리</span>
 atlantis plan <span class="nt">-w</span> staging  <span class="c"># 워크스페이스</span>
 atlantis plan <span class="nt">--</span> <span class="nt">-target</span><span class="o">=</span>resource <span class="nt">-var</span> <span class="s1">'foo=bar'</span>  <span class="c"># -var로 variable 값 넘기기</span>
 </code></pre></div>        </div>
@@ -317,7 +356,8 @@ atlantis plan <span class="nt">--</span> <span class="nt">-target</span><span cl
     </ul>
   </li>
   <li>apply
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atlantis apply             <span class="c"># 루트 디렉터리에서 실행</span>
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>atlantis apply             <span class="c"># 루트 디렉터리에서 실행</span>
 atlantis apply <span class="nt">-d</span> <span class="nb">dir</span>      <span class="c"># 디렉터리</span>
 atlantis apply <span class="nt">-w</span> staging  <span class="c"># 워크스페이스</span>
 </code></pre></div>    </div>
@@ -328,7 +368,8 @@ atlantis apply <span class="nt">-w</span> staging  <span class="c"># 워크스�
 
 <ul>
   <li>AWS S3 버킷 생성 : Terraform Backend state 저장용으로 사용합니다.
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>aws s3 <span class="nb">ls</span> 
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>aws s3 <span class="nb">ls</span> 
   
 <span class="c"># aws s3 mb s3://&lt;유일한 사용할 S3 버킷명&gt; --region ap-northeast-2</span>
 aws s3 mb s3://sweetlittlebird-terraform-state <span class="nt">--region</span> ap-northeast-2 <span class="c"># S3 버킷 생성</span>
@@ -337,7 +378,8 @@ aws s3 <span class="nb">ls</span>  <span class="c"># 생성 확인</span>
 </code></pre></div>    </div>
   </li>
   <li>Local에서 Git 코드 작업
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># feature branch 생성</span>
+    <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># feature branch 생성</span>
 <span class="nv">$ </span>git branch iam <span class="o">&amp;&amp;</span> git checkout iam <span class="o">&amp;&amp;</span> git branch
   
 <span class="c"># 디렉터리 생성</span>
@@ -369,14 +411,16 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
   <li>Github에서 PR 생성 및 Atlantis 확인
     <ul>
       <li>서버에서 다음의 명령어로 모니터링합니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
 </code></pre></div>        </div>
       </li>
       <li>Github 에서 Compare &amp; Pull request를 클릭합니다.</li>
       <li>Create pull request : title ( create iam user )</li>
       <li>plan 자동 수행 확인</li>
       <li>서버 모니터링 결과 init 과 plan 이 실행된것을 확인 할 수 있습니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
     
 <span class="c"># =&gt; /home/atlantis/.atlantis</span>
 <span class="c">#    ...</span>
@@ -397,30 +441,35 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
     </ul>
   </li>
   <li>S3 버킷 확인
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
 <span class="c"># =&gt; 2024-07-XX 00:00:00        180 terraform.tfstate  </span>
 </code></pre></div>    </div>
   </li>
   <li>apply 하기
     <ul>
       <li>PR 코멘트에 아래의 명령을 넣어 apply 합니다.
-        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> iam
+        <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>atlantis plan <span class="nt">-d</span> iam
     
 atlantis apply <span class="nt">-d</span> iam
 </code></pre></div>        </div>
-        <p><img src="/assets/2024/20240711_terraform_w5_atlantis_12.png" alt="img.png" /></p>
+        <p><img src="/assets/2024/20240711_terraform_w5_atlantis_12.png" alt="img.png" loading="lazy" width="839" height="438"></p>
       </li>
     </ul>
   </li>
   <li>S3 버킷 확인 - apply 하면서 적용된 최종 상태값을 저장하여 크기가 커진것을 확인할 수 있습니다.
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
 <span class="c"># =&gt; 2024-07-14 02:12:56        862 terraform.tfstate</span>
 </code></pre></div>    </div>
   </li>
   <li>Atlantis 웹에서 apply 됨을 확인합니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_11.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_11.png" alt="img.png" loading="lazy" width="806" height="740">
+</li>
   <li>Merge Pull request =&gt; Confirm merge
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
   
 <span class="c"># =&gt; /home/atlantis/.atlantis</span>
 <span class="c">#    ...</span>
@@ -431,7 +480,8 @@ atlantis apply <span class="nt">-d</span> iam
     <p>terraform-atlantis-test 이하의 디렉터리와 파일들이 정리되어 삭제된것을 확인할 수 있습니다.</p>
   </li>
   <li>Merge request된 사항을 Local git main 에서 pull 받아서 확인합니다.
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git checkout main
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git checkout main
 <span class="nv">$ </span>git pull origin main
 <span class="nv">$ </span><span class="nb">cd</span> ..
 <span class="nv">$ </span>tree
@@ -442,7 +492,8 @@ atlantis apply <span class="nt">-d</span> iam
 <h4 id="작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</h4>
 <ul>
   <li>Local에서 Git 코드 작업
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># feature branch 생성</span>
+    <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># feature branch 생성</span>
 git branch deleteiam <span class="o">&amp;&amp;</span> git checkout deleteiam <span class="o">&amp;&amp;</span> git branch
   
 <span class="c"># 디렉터리 생성</span>
@@ -466,15 +517,18 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
   <li>Github에서 PR 생성 및 Atlantis 확인
     <ul>
       <li>서버에서 다음의 명령어로 모니터링합니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
 </code></pre></div>        </div>
       </li>
       <li>Github 에서 Compare &amp; Pull request를 클릭합니다.</li>
       <li>Create pull request : title ( delete iam user )</li>
       <li>plan 자동 수행 확인
-<img src="/assets/2024/20240711_terraform_w5_atlantis_13.png" alt="20240711_terraform_w5_atlantis_13.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_13.png" alt="20240711_terraform_w5_atlantis_13.png" loading="lazy" width="792" height="690">
+</li>
       <li>서버 모니터링 결과 init 과 plan 이 실행된것을 확인 할 수 있습니다.
-        <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+        <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
     
 <span class="c"># =&gt; /home/atlantis/.atlantis</span>
 <span class="c">#    ...</span>
@@ -497,29 +551,35 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
     </ul>
   </li>
   <li>S3 버킷 확인
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
 <span class="c"># =&gt; 2024-07-14 02:12:56        862 terraform.tfstate</span>
 </code></pre></div>    </div>
   </li>
   <li>apply 하기
     <ul>
       <li>PR 코멘트에 아래의 명령을 넣어 apply 합니다.
-        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atlantis apply <span class="nt">-d</span> deleteiam
+        <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>atlantis apply <span class="nt">-d</span> deleteiam
 </code></pre></div>        </div>
       </li>
     </ul>
   </li>
   <li>AWS 콘솔에서 IAM이 삭제됨을 확인합니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_15.png" alt="20240711_terraform_w5_atlantis_15.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_15.png" alt="20240711_terraform_w5_atlantis_15.png" loading="lazy" width="810" height="309">
+</li>
   <li>S3 버킷 확인 - apply 하면서 리소스가 삭제되어 상태파일 크기가 줄어든것을 확인할 수 있습니다.
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws s3 <span class="nb">ls </span>s3://sweetlittlebird-terraform-state
 <span class="c"># =&gt; 2024-07-14 02:35:09        180 terraform.tfstate</span>
 </code></pre></div>    </div>
   </li>
   <li>Atlantis 웹에서 apply 됨을 확인합니다.
-<img src="/assets/2024/20240711_terraform_w5_atlantis_14.png" alt="img.png" /></li>
+<img src="/assets/2024/20240711_terraform_w5_atlantis_14.png" alt="img.png" loading="lazy" width="824" height="74">
+</li>
   <li>Merge Pull request =&gt; Confirm merge
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> docker-atlantis-1 watch <span class="nt">-n</span> 1 tree /home/atlantis/.atlantis
   
 <span class="c"># =&gt; /home/atlantis/.atlantis</span>
 <span class="c">#    ...</span>
@@ -530,7 +590,8 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
     <p>terraform-atlantis-test 이하의 디렉터리와 파일들이 정리되어 삭제된것을 확인할 수 있습니다.</p>
   </li>
   <li>Merge request된 사항을 Local git main 에서 pull 받아서 확인합니다.
-    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git checkout main <span class="o">&amp;&amp;</span> git pull <span class="o">&amp;&amp;</span> <span class="nb">cd</span> .. <span class="o">&amp;&amp;</span> tree
+    <div class="language-sh highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git checkout main <span class="o">&amp;&amp;</span> git pull <span class="o">&amp;&amp;</span> <span class="nb">cd</span> .. <span class="o">&amp;&amp;</span> tree
 </code></pre></div>    </div>
   </li>
 </ul>
@@ -554,33 +615,36 @@ git add main.tf <span class="o">&amp;&amp;</span> git commit <span class="nt">-m
 
   <div id="toc-minimap" class="toc-minimap collapsed">
     <ul id="toc" class="section-nav">
-<li class="toc-entry toc-h2"><a href="#들어가며">들어가며</a></li>
-<li class="toc-entry toc-h2"><a href="#terraform-runner">Terraform Runner</a>
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#terraform-runner">Terraform Runner</a>
 <ul>
-<li class="toc-entry toc-h3"><a href="#atlantis-란">Atlantis 란?</a></li>
-<li class="toc-entry toc-h3"><a href="#atlantis-설치">Atlantis 설치</a></li>
-<li class="toc-entry toc-h3"><a href="#atlantis-실습">Atlantis 실습</a>
+<li class="toc-entry toc-h3"><a href="#atlantis-%EB%9E%80">Atlantis 란?</a></li>
+<li class="toc-entry toc-h3"><a href="#atlantis-%EC%84%A4%EC%B9%98">Atlantis 설치</a></li>
+<li class="toc-entry toc-h3">
+<a href="#atlantis-%EC%8B%A4%EC%8A%B5">Atlantis 실습</a>
 <ul>
-<li class="toc-entry toc-h4"><a href="#작업-1-null-provider">작업 1. null provider</a></li>
-<li class="toc-entry toc-h4"><a href="#작업-2-aws-iam-user-생성">작업 2. aws iam user 생성</a></li>
-<li class="toc-entry toc-h4"><a href="#작업-3-작업-2에서-생성한-리소스-삭제">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-1-null-provider">작업 1. null provider</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-2-aws-iam-user-%EC%83%9D%EC%84%B1">작업 2. aws iam user 생성</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%9E%91%EC%97%85-3-%EC%9E%91%EC%97%85-2%EC%97%90%EC%84%9C-%EC%83%9D%EC%84%B1%ED%95%9C-%EB%A6%AC%EC%86%8C%EC%8A%A4-%EC%82%AD%EC%A0%9C">작업 3. 작업 2에서 생성한 리소스 삭제</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toc-entry toc-h2"><a href="#마치며">마치며</a></li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
 </ul>
-  </div><a class="u-url" href="/posts/2024-07-13-T101-Study-Terraform-Week-5b/" hidden></a>
+  </div>
+<a class="u-url" href="/posts/2024-07-13-T101-Study-Terraform-Week-5b/" hidden></a>
 </article>
 
 
 
 <div class="PageNavigation">
   
-  <a class="prev" href="/posts/2024-07-10-T101-Study-Terraform-Week-5/">&laquo; [T101 4기] Module</a>
+  <a class="prev" href="/posts/2024-07-10-T101-Study-Terraform-Week-5/">« [T101 4기] Module</a>
   
   
-  <a class="next" href="/posts/2024-07-27-T101-Study-Terraform-Week-7/">[T101 4기] 테라폼으로 AWS EKS 배포 &raquo;</a>
+  <a class="next" href="/posts/2024-07-27-T101-Study-Terraform-Week-7/">[T101 4기] 테라폼으로 AWS EKS 배포 »</a>
   
 </div>
 
@@ -591,7 +655,8 @@ this.page.url = "https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-T
 this.page.identifier = "/posts/T101 Study - Terraform Week 5b";
 };
 </script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+</noscript>
       </div>
     </main><footer class="site-footer h-card">
   <data class="u-url" href="/"></data>
@@ -603,10 +668,12 @@ this.page.identifier = "/posts/T101 Study - Terraform Week 5b";
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">Sweet Little Bird</li></ul>
+          <li class="p-name">Sweet Little Bird</li>
+</ul>
       </div>
 
-      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
 </div>
 
       <div class="footer-col footer-col-3">
