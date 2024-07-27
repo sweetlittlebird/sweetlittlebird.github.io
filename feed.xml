@@ -1,4 +1,1420 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetlittlebird.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://sweetlittlebird.github.io/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-07-21T01:10:42+09:00</updated><id>https://sweetlittlebird.github.io/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] Runner</title><link href="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/" rel="alternate" type="text/html" title="[T101 4기] Runner" /><published>2024-07-13T02:08:00+09:00</published><updated>2024-07-13T02:08:00+09:00</updated><id>https://sweetlittlebird.github.io/posts/T101%20Study%20-%20Terraform%20Week%205b</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/"><![CDATA[<h2 id="들어가며">들어가며</h2>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetlittlebird.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://sweetlittlebird.github.io/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-07-27T18:08:35+09:00</updated><id>https://sweetlittlebird.github.io/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[T101 4기] 테라폼으로 AWS EKS 배포</title><link href="https://sweetlittlebird.github.io/posts/2024-07-27-T101-Study-Terraform-Week-7/" rel="alternate" type="text/html" title="[T101 4기] 테라폼으로 AWS EKS 배포" /><published>2024-07-27T16:02:00+09:00</published><updated>2024-07-27T16:02:00+09:00</updated><id>https://sweetlittlebird.github.io/posts/T101%20Study%20-%20Terraform%20Week%207</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-07-27-T101-Study-Terraform-Week-7/"><![CDATA[<h2 id="들어가며">들어가며</h2>
+
+<p>이번 주에는 테라폼으로 AWS EKS 배포를 하는것을
+<a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a>를 통해 알아 보겠습니다.</p>
+
+<blockquote>
+  <p><img src="/assets/2024/20240614_terraform_book.jpg" alt="테라폼으로 시작하는 IaC" /></p>
+
+  <p><a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a></p>
+</blockquote>
+
+<h2 id="amazon-eks-blueprints-for-terraform">Amazon EKS Blueprints for Terraform</h2>
+
+<h3 id="개요">개요</h3>
+
+<ul>
+  <li><a href="https://aws-ia.github.io/terraform-aws-eks-blueprints/">Amazon EKS BluePrints 소개 Link</a> / <a href="https://aws-ia.github.io/terraform-aws-eks-blueprints/faq/">FAQ Link</a></li>
+  <li>Amazon EKS Blueprints for Terraform은 Terraform으로 Amazon EKS 클러스터를 구축하는 패턴들의 모음이며, Amazon EKS를 도입하는것이 얼마나 빠르고 쉬운지 보여줍니다.</li>
+  <li>사용 방법은 Amazon EKS Blueprints를 <strong>참고해서</strong> 원하는 패턴을 선택하고 Terraform을 사용해서 클러스터를 구축하는 방법과, 필요한 스니펫들을 <strong>복사해서</strong> 사용할 수 있습니다.</li>
+  <li>주의할 점
+    <ul>
+      <li>Amazon EKS Blueprints는 <strong>AWS CloudFormation</strong>을 사용하는 것이 아니라 <strong>Terraform</strong>을 사용합니다.</li>
+      <li>있는 그대로 사용되는것을 권장하지 않으며, <strong>사용자의 환경에 맞게 수정</strong>해서 사용하는것을 권장합니다.</li>
+      <li>패턴과 스니펫은 Terraform 모듈로 설계되지 않았으며, 모듈화를 하려면는 사용자가 직접 수행해야 합니다.</li>
+      <li>Local 블록을 주로 사용하며, 특정 정보가 필요한 경우 (Route 53 호스트 영역 ID 등)만 Variable 블록을 사용합니다.</li>
+      <li>복잡성을 줄이기위해 variable과 outputs가 최대한 사용되지 않았습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="실습-eks-fargate-및-karpenter-배포">[실습] EKS Fargate 및 Karpenter 배포</h3>
+
+<p>먼저 <code class="language-plaintext highlighter-rouge">EKS</code>와 <code class="language-plaintext highlighter-rouge">Fargate</code>, <code class="language-plaintext highlighter-rouge">Karpenter</code>에 대해 간략하게 알아보겠습니다.</p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_1.png" alt="EKS 소개" />
+<code class="language-plaintext highlighter-rouge">EKS</code>는 Elastic Kubernetes Service의 약자로, AWS에서 제공하는 <strong>관리형 Kubernetes 서비스</strong>입니다.
+EKS를 사용하면 컨테이너 예약, 가용성 관리, 클러스터의 데이터 저장 및 다른 주요 작업을 담당하는 Kubernetes 컨트롤 플레인의
+가용성과 확장성을 쉽게 관리할 수 있습니다. EKS는 컨테이너를 EC2 상에서 운영하거나 Fargate를 통해 
+탄력적으로 서버리스 방식으로 운영할 수도 있습니다.
+<a href="https://aws.amazon.com/ko/eks/">AWS EKS 소개</a></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_2.png" alt="Fargate와 기존 EC2 방식의 컨테이너 배포와 비교" />
+<code class="language-plaintext highlighter-rouge">Fargate</code>는 AWS에서 제공하는 <strong>서버리스 컴퓨팅 엔진</strong>으로, 컨테이너를 별도의 <strong>서버 관리 없이, 컨테이너를 사용한 만큼만</strong> 비용을 지불할 수 있는 서비스입니다. <a href="https://aws.amazon.com/ko/fargate/">AWS Fargate 소개</a></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_36.png" alt="Karpenter의 동작 방식 소개" />
+<code class="language-plaintext highlighter-rouge">Karpenter</code>는 Kubernetes 클러스터에 동작하는 Node를 최적화하여 효율성과 비용을 최적화하는 오픈소스 프로젝트입니다.
+Karpenter는 Node의 리소스 부족으로 스케쥴 되지 못한 pod들을 Node를 추가하여 스케쥴링하는 Autoscaling 기능 뿐만 아니라,
+각각 Node들을 조각모음 하듯이 더 크고 저렴한 하나의 노드로 교체하는 등의 전략을 통해 비용을 최적화합니다.
+<a href="https://aws.amazon.com/ko/blogs/containers/introducing-karpenter/">Karpenter 소개</a></p>
+
+<ul>
+  <li>이번에 실습할 패턴은 <code class="language-plaintext highlighter-rouge">Karpenter</code>를 통하여 Fargate에 서버리스 클러스터를 프로비저닝하는 것으로 먼저 EKS와 Fargate를 배포하고, 그 다음에 Karpenter를 배포하는 것을 실습해보겠습니다.</li>
+</ul>
+
+<h4 id="사전준비">사전준비</h4>
+<ul>
+  <li>awscli, terraform, kubectl, helm 등 설치
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 설치된 파일 버전 확인</span>
+<span class="nv">$ </span>aws <span class="nt">--version</span>
+<span class="c"># =&gt; aws-cli/2.17.14 Python/3.11.9 Darwin/22.6.0 source/arm64</span>
+<span class="nv">$ </span>terraform <span class="nt">--version</span>
+<span class="c"># =&gt; Terraform v1.8.5</span>
+<span class="nv">$ </span>kubectl version <span class="nt">--client</span><span class="o">=</span><span class="nb">true</span>
+<span class="c"># =&gt; Client Version: version.Info{Major:"1", Minor:"22", GitVersion:"v1.22.5", GitCommit:"5c99e2ac2ff9a3c549d9ca665e7bc05a3e18f07e", GitTreeState:"clean", BuildDate:"2021-12-16T08:38:33Z", GoVersion:"go1.16.12", Compiler:"gc", Platform:"darwin/arm64"}</span>
+<span class="nv">$ </span>helm version 
+<span class="c"># =&gt; version.BuildInfo{Version:"v3.15.3", GitCommit:"3bb50bbbdd9c946ba9989fbe4fb4104766302a64", GitTreeState:"clean", GoVersion:"go1.22.5"}</span>
+</code></pre></div>    </div>
+  </li>
+  <li>코드 준비 - <a href="https://github.com/aws-ia/terraform-aws-eks-blueprints">Github</a>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/aws-ia/terraform-aws-eks-blueprints
+<span class="nv">$ </span><span class="nb">cd </span>terraform-aws-eks-blueprints/patterns/karpenter
+<span class="nv">$ </span>tree 
+</code></pre></div>    </div>
+    <ul>
+      <li>versions.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">terraform</span> <span class="p">{</span>
+  <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"&gt;= 1.3"</span>
+    
+  <span class="nx">required_providers</span> <span class="p">{</span>
+    <span class="nx">aws</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"hashicorp/aws"</span>
+      <span class="nx">version</span> <span class="p">=</span> <span class="s2">"&gt;= 5.34"</span>
+    <span class="p">}</span>
+    <span class="nx">helm</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"hashicorp/helm"</span>
+      <span class="nx">version</span> <span class="p">=</span> <span class="s2">"&gt;= 2.9"</span>
+    <span class="p">}</span>
+    <span class="nx">kubernetes</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"hashicorp/kubernetes"</span>
+      <span class="nx">version</span> <span class="p">=</span> <span class="s2">"&gt;= 2.20"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+    
+  <span class="c1"># ##  Used for end-to-end testing on project; update to suit your needs</span>
+  <span class="c1"># backend "s3" {</span>
+  <span class="c1">#   bucket = "terraform-ssp-github-actions-state"</span>
+  <span class="c1">#   region = "us-west-2"</span>
+  <span class="c1">#   key    = "e2e/karpenter/terraform.tfstate"</span>
+  <span class="c1"># }</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>main.tf</p>
+
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+  <span class="nx">region</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">region</span>
+<span class="p">}</span>
+    
+<span class="c1"># Required for public ECR where Karpenter artifacts are hosted</span>
+<span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+  <span class="nx">region</span> <span class="p">=</span> <span class="s2">"us-east-1"</span>
+  <span class="nx">alias</span>  <span class="p">=</span> <span class="s2">"virginia"</span>
+<span class="p">}</span>
+    
+<span class="k">provider</span> <span class="s2">"kubernetes"</span> <span class="p">{</span>
+  <span class="nx">host</span>                   <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_endpoint</span>
+  <span class="nx">cluster_ca_certificate</span> <span class="p">=</span> <span class="nx">base64decode</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_certificate_authority_data</span><span class="p">)</span>
+    
+  <span class="nx">exec</span> <span class="p">{</span>
+    <span class="nx">api_version</span> <span class="p">=</span> <span class="s2">"client.authentication.k8s.io/v1beta1"</span>
+    <span class="nx">command</span>     <span class="p">=</span> <span class="s2">"aws"</span>
+    <span class="c1"># This requires the awscli to be installed locally where Terraform is executed</span>
+    <span class="nx">args</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"eks"</span><span class="p">,</span> <span class="s2">"get-token"</span><span class="p">,</span> <span class="s2">"--cluster-name"</span><span class="p">,</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_name</span><span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">provider</span> <span class="s2">"helm"</span> <span class="p">{</span>
+  <span class="nx">kubernetes</span> <span class="p">{</span>
+    <span class="nx">host</span>                   <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_endpoint</span>
+    <span class="nx">cluster_ca_certificate</span> <span class="p">=</span> <span class="nx">base64decode</span><span class="p">(</span><span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_certificate_authority_data</span><span class="p">)</span>
+    
+    <span class="nx">exec</span> <span class="p">{</span>
+      <span class="nx">api_version</span> <span class="p">=</span> <span class="s2">"client.authentication.k8s.io/v1beta1"</span>
+      <span class="nx">command</span>     <span class="p">=</span> <span class="s2">"aws"</span>
+      <span class="c1"># This requires the awscli to be installed locally where Terraform is executed</span>
+      <span class="nx">args</span> <span class="p">=</span> <span class="p">[</span><span class="s2">"eks"</span><span class="p">,</span> <span class="s2">"get-token"</span><span class="p">,</span> <span class="s2">"--cluster-name"</span><span class="p">,</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_name</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">data</span> <span class="s2">"aws_ecrpublic_authorization_token"</span> <span class="s2">"token"</span> <span class="p">{</span>
+  <span class="k">provider</span> <span class="p">=</span> <span class="nx">aws</span><span class="p">.</span><span class="nx">virginia</span>
+<span class="p">}</span>
+    
+<span class="k">data</span> <span class="s2">"aws_availability_zones"</span> <span class="s2">"available"</span> <span class="p">{}</span>
+    
+<span class="nx">locals</span> <span class="p">{</span>
+  <span class="c1"># name   = "ex-${basename(path.cwd)}"</span>
+  <span class="nx">name</span>   <span class="p">=</span> <span class="s2">"t101-</span><span class="k">${</span><span class="nx">basename</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">cwd</span><span class="p">)</span><span class="k">}</span><span class="s2">"</span>
+  <span class="c1"># region = "us-west-2"</span>
+  <span class="nx">region</span> <span class="p">=</span> <span class="s2">"ap-northeast-2"</span>
+    
+  <span class="nx">vpc_cidr</span> <span class="p">=</span> <span class="s2">"10.10.0.0/16"</span>
+  <span class="nx">azs</span>      <span class="p">=</span> <span class="nx">slice</span><span class="p">(</span><span class="k">data</span><span class="p">.</span><span class="nx">aws_availability_zones</span><span class="p">.</span><span class="nx">available</span><span class="p">.</span><span class="nx">names</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">Blueprint</span>  <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">name</span>
+    <span class="nx">GithubRepo</span> <span class="p">=</span> <span class="s2">"github.com/aws-ia/terraform-aws-eks-blueprints"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="c1">################################################################################</span>
+<span class="c1"># Cluster</span>
+<span class="c1">################################################################################</span>
+    
+<span class="k">module</span> <span class="s2">"eks"</span> <span class="p">{</span>
+  <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"terraform-aws-modules/eks/aws"</span>
+  <span class="nx">version</span> <span class="p">=</span> <span class="s2">"~&gt; 20.11"</span>
+    
+  <span class="nx">cluster_name</span>                   <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">name</span>
+  <span class="nx">cluster_version</span>                <span class="p">=</span> <span class="s2">"1.30"</span>
+  <span class="nx">cluster_endpoint_public_access</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">vpc</span><span class="p">.</span><span class="nx">vpc_id</span>
+  <span class="nx">subnet_ids</span> <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">vpc</span><span class="p">.</span><span class="nx">private_subnets</span>
+    
+  <span class="c1"># Fargate profiles use the cluster primary security group so these are not utilized</span>
+  <span class="nx">create_cluster_security_group</span> <span class="p">=</span> <span class="kc">false</span>
+  <span class="nx">create_node_security_group</span>    <span class="p">=</span> <span class="kc">false</span>
+    
+  <span class="nx">enable_cluster_creator_admin_permissions</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">fargate_profiles</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">karpenter</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">selectors</span> <span class="p">=</span> <span class="p">[</span>
+        <span class="p">{</span> <span class="nx">namespace</span> <span class="p">=</span> <span class="s2">"karpenter"</span> <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+    <span class="nx">kube_system</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">name</span> <span class="p">=</span> <span class="s2">"kube-system"</span>
+      <span class="nx">selectors</span> <span class="p">=</span> <span class="p">[</span>
+        <span class="p">{</span> <span class="nx">namespace</span> <span class="p">=</span> <span class="s2">"kube-system"</span> <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="nx">merge</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">tags</span><span class="p">,</span> <span class="p">{</span>
+    <span class="c1"># NOTE - if creating multiple security groups with this module, only tag the</span>
+    <span class="c1"># security group that Karpenter should utilize with the following tag</span>
+    <span class="c1"># (i.e. - at most, only one security group should have this tag in your account)</span>
+    <span class="s2">"karpenter.sh/discovery"</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">name</span>
+  <span class="p">})</span>
+<span class="p">}</span>
+    
+<span class="c1">################################################################################</span>
+<span class="c1"># EKS Blueprints Addons</span>
+<span class="c1">################################################################################</span>
+    
+<span class="k">module</span> <span class="s2">"eks_blueprints_addons"</span> <span class="p">{</span>
+  <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"aws-ia/eks-blueprints-addons/aws"</span>
+  <span class="nx">version</span> <span class="p">=</span> <span class="s2">"~&gt; 1.16"</span>
+    
+  <span class="nx">cluster_name</span>      <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="nx">cluster_endpoint</span>  <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_endpoint</span>
+  <span class="nx">cluster_version</span>   <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_version</span>
+  <span class="nx">oidc_provider_arn</span> <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">oidc_provider_arn</span>
+    
+  <span class="c1"># We want to wait for the Fargate profiles to be deployed first</span>
+  <span class="nx">create_delay_dependencies</span> <span class="p">=</span> <span class="p">[</span><span class="nx">for</span> <span class="nx">prof</span> <span class="nx">in</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">fargate_profiles</span> <span class="err">:</span> <span class="nx">prof</span><span class="p">.</span><span class="nx">fargate_profile_arn</span><span class="p">]</span>
+    
+  <span class="nx">eks_addons</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">coredns</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">configuration_values</span> <span class="p">=</span> <span class="nx">jsonencode</span><span class="p">({</span>
+        <span class="nx">computeType</span> <span class="p">=</span> <span class="s2">"Fargate"</span>
+        <span class="c1"># Ensure that the we fully utilize the minimum amount of resources that are supplied by</span>
+        <span class="c1"># Fargate https://docs.aws.amazon.com/eks/latest/userguide/fargate-pod-configuration.html</span>
+        <span class="c1"># Fargate adds 256 MB to each pod's memory reservation for the required Kubernetes</span>
+        <span class="c1"># components (kubelet, kube-proxy, and containerd). Fargate rounds up to the following</span>
+        <span class="c1"># compute configuration that most closely matches the sum of vCPU and memory requests in</span>
+        <span class="c1"># order to ensure pods always have the resources that they need to run.</span>
+        <span class="nx">resources</span> <span class="p">=</span> <span class="p">{</span>
+          <span class="nx">limits</span> <span class="p">=</span> <span class="p">{</span>
+            <span class="nx">cpu</span> <span class="p">=</span> <span class="s2">"0.25"</span>
+            <span class="c1"># We are targeting the smallest Task size of 512Mb, so we subtract 256Mb from the</span>
+            <span class="c1"># request/limit to ensure we can fit within that task</span>
+            <span class="nx">memory</span> <span class="p">=</span> <span class="s2">"256M"</span>
+          <span class="p">}</span>
+          <span class="nx">requests</span> <span class="p">=</span> <span class="p">{</span>
+            <span class="nx">cpu</span> <span class="p">=</span> <span class="s2">"0.25"</span>
+            <span class="c1"># We are targeting the smallest Task size of 512Mb, so we subtract 256Mb from the</span>
+            <span class="c1"># request/limit to ensure we can fit within that task</span>
+            <span class="nx">memory</span> <span class="p">=</span> <span class="s2">"256M"</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">})</span>
+    <span class="p">}</span>
+    <span class="nx">vpc-cni</span>    <span class="p">=</span> <span class="p">{}</span>
+    <span class="nx">kube-proxy</span> <span class="p">=</span> <span class="p">{}</span>
+  <span class="p">}</span>
+    
+  <span class="nx">enable_karpenter</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">karpenter</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">repository_username</span> <span class="p">=</span> <span class="k">data</span><span class="p">.</span><span class="nx">aws_ecrpublic_authorization_token</span><span class="p">.</span><span class="nx">token</span><span class="p">.</span><span class="nx">user_name</span>
+    <span class="nx">repository_password</span> <span class="p">=</span> <span class="k">data</span><span class="p">.</span><span class="nx">aws_ecrpublic_authorization_token</span><span class="p">.</span><span class="nx">token</span><span class="p">.</span><span class="nx">password</span>
+  <span class="p">}</span>
+    
+  <span class="nx">karpenter_node</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="c1"># Use static name so that it matches what is defined in `karpenter.yaml` example manifest</span>
+    <span class="nx">iam_role_use_name_prefix</span> <span class="p">=</span> <span class="kc">false</span>
+  <span class="p">}</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">tags</span>
+<span class="p">}</span>
+    
+<span class="k">resource</span> <span class="s2">"aws_eks_access_entry"</span> <span class="s2">"karpenter_node_access_entry"</span> <span class="p">{</span>
+  <span class="nx">cluster_name</span>      <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="nx">principal_arn</span>     <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">eks_blueprints_addons</span><span class="p">.</span><span class="nx">karpenter</span><span class="p">.</span><span class="nx">node_iam_role_arn</span>
+  <span class="nx">kubernetes_groups</span> <span class="p">=</span> <span class="p">[]</span>
+  <span class="nx">type</span>              <span class="p">=</span> <span class="s2">"EC2_LINUX"</span>
+<span class="p">}</span>
+    
+<span class="c1">################################################################################</span>
+<span class="c1"># Supporting Resources</span>
+<span class="c1">################################################################################</span>
+    
+<span class="k">module</span> <span class="s2">"vpc"</span> <span class="p">{</span>
+  <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"terraform-aws-modules/vpc/aws"</span>
+  <span class="nx">version</span> <span class="p">=</span> <span class="s2">"~&gt; 5.0"</span>
+    
+  <span class="nx">name</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">name</span>
+  <span class="nx">cidr</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">vpc_cidr</span>
+    
+  <span class="nx">azs</span>             <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span>
+  <span class="nx">private_subnets</span> <span class="p">=</span> <span class="p">[</span><span class="nx">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">in</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span> <span class="err">:</span> <span class="nx">cidrsubnet</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">vpc_cidr</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="nx">k</span><span class="p">)]</span>
+  <span class="nx">public_subnets</span>  <span class="p">=</span> <span class="p">[</span><span class="nx">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">in</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span> <span class="err">:</span> <span class="nx">cidrsubnet</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">vpc_cidr</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">k</span> <span class="err">+</span> <span class="mi">48</span><span class="p">)]</span>
+    
+  <span class="nx">enable_nat_gateway</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">single_nat_gateway</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">public_subnet_tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="s2">"kubernetes.io/role/elb"</span> <span class="p">=</span> <span class="mi">1</span>
+  <span class="p">}</span>
+    
+  <span class="nx">private_subnet_tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="s2">"kubernetes.io/role/internal-elb"</span> <span class="p">=</span> <span class="mi">1</span>
+    <span class="c1"># Tags subnets for Karpenter auto-discovery</span>
+    <span class="s2">"karpenter.sh/discovery"</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">name</span>
+  <span class="p">}</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">tags</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>output.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">output</span> <span class="s2">"configure_kubectl"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"Configure kubectl: make sure you're logged in with the correct AWS profile and run the following command to update your kubeconfig"</span>
+  <span class="nx">value</span>       <span class="p">=</span> <span class="s2">"aws eks --region </span><span class="k">${</span><span class="kd">local</span><span class="p">.</span><span class="nx">region</span><span class="k">}</span><span class="s2"> update-kubeconfig --name </span><span class="k">${module</span><span class="p">.</span><span class="nx">eks</span><span class="p">.</span><span class="nx">cluster_name</span><span class="k">}</span><span class="s2">"</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>init
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform init
+<span class="nv">$ </span>tree .terraform 
+<span class="nv">$ </span><span class="nb">cat</span> .terraform/modules/modules.json | jq
+<span class="nv">$ </span>tree .terraform/providers/registry.terraform.io/hashicorp <span class="nt">-L</span> 2
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="vpc-배포">VPC 배포</h4>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c"># VPC 배포전 VPC 확인</span>
+  <span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+  <span class="c"># =&gt; Vpcs: []</span>
+  
+  <span class="c"># vpc 배포</span>
+  <span class="nv">$ </span>terraform apply <span class="nt">-target</span><span class="o">=</span><span class="s2">"module.vpc"</span> <span class="nt">-auto-approve</span>
+  
+  <span class="c"># 배포 확인</span>
+  <span class="nv">$ </span>terraform state list
+  <span class="nv">$ </span>terraform show
+  
+  <span class="c"># VPC 정보 확인</span>
+  <span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+  <span class="c"># =&gt; Vpcs:</span>
+  <span class="c">#    - CidrBlock: 10.10.0.0/16</span>
+  <span class="c">#      CidrBlockAssociationSet:</span>
+  <span class="c">#      - AssociationId: vpc-cidr</span>
+  <span class="c">#    ...</span>
+  
+  <span class="c"># 상세정보 확인</span>
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available"</span> | terraform console
+  <span class="c"># =&gt; {</span>
+  <span class="c">#      "all_availability_zones" = tobool(null)</span>
+  <span class="c">#      "exclude_names" = toset(null) /* of string */</span>
+  <span class="c">#      "exclude_zone_ids" = toset(null) /* of string */</span>
+  <span class="c">#      "filter" = toset(null) /* of object */</span>
+  <span class="c">#      "group_names" = toset([</span>
+  <span class="c">#        "ap-northeast-2",</span>
+  <span class="c">#      ])</span>
+  <span class="c">#      "id" = "ap-northeast-2"</span>
+  <span class="c">#      "names" = tolist([</span>
+  <span class="c">#        "ap-northeast-2a",</span>
+  <span class="c">#        "ap-northeast-2b",</span>
+  <span class="c">#        "ap-northeast-2c",</span>
+  <span class="c">#        "ap-northeast-2d",</span>
+  <span class="c">#      ])</span>
+  <span class="c">#      "state" = tostring(null)</span>
+  <span class="c">#      "timeouts" = null /* object */</span>
+  <span class="c">#      "zone_ids" = tolist([</span>
+  <span class="c">#        "apne2-az1",</span>
+  <span class="c">#        "apne2-az2",</span>
+  <span class="c">#        "apne2-az3",</span>
+  <span class="c">#        "apne2-az4",</span>
+  <span class="c">#      ])</span>
+  <span class="c">#    }</span>
+  
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_vpc.this[0]'</span>
+  <span class="nv">$ VPCID</span><span class="o">=</span><span class="si">$(</span><span class="nb">echo</span> <span class="s1">'module.vpc.vpc_id'</span> | terraform console<span class="si">)</span>
+  <span class="nv">$ </span>aws ec2 describe-subnets <span class="nt">--filters</span> <span class="s2">"Name=vpc-id,Values=</span><span class="nv">$VPCID</span><span class="s2">"</span> | jq
+  <span class="nv">$ </span>aws ec2 describe-subnets <span class="nt">--filters</span> <span class="s2">"Name=vpc-id,Values=</span><span class="nv">$VPCID</span><span class="s2">"</span> <span class="nt">--output</span> text
+
+  <span class="c"># public 서브넷과 private 서브넷 CIDR 확인</span>
+  <span class="c">## private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]</span>
+  <span class="c">## public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_subnet.public[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_subnet.private[0]'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_3.png" alt="VPC 배포 결과" class="image-center" />
+<em class="image-caption">VPC 배포 결과</em></p>
+
+<h4 id="eks-및-fargate-배포">EKS 및 Fargate 배포</h4>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c"># EKS 배포</span>
+  <span class="nv">$ </span>terraform apply <span class="nt">-target</span><span class="o">=</span><span class="s2">"module.eks"</span> <span class="nt">-auto-approve</span>
+  <span class="c"># =&gt; Apply complete! Resources: 24 added, 0 changed, 0 destroyed.</span>
+  <span class="c">#    Outputs:</span>
+  <span class="c">#    configure_kubectl = "aws eks --region ap-northeast-2 update-kubeconfig --name t101-karpenter"</span>
+  
+  <span class="c"># 배포 확인</span>
+  <span class="nv">$ </span>terraform state list
+  <span class="c"># =&gt; data.aws_availability_zones.available</span>
+  <span class="c">#    module.eks.data.aws_caller_identity.current</span>
+  <span class="c">#    module.eks.data.aws_iam_policy_document.assume_role_policy[0]</span>
+  <span class="c">#    module.eks.data.aws_iam_session_context.current</span>
+  <span class="c">#    module.eks.data.aws_partition.current</span>
+  <span class="c">#    module.eks.data.tls_certificate.this[0]</span>
+  <span class="c">#    module.eks.aws_cloudwatch_log_group.this[0]</span>
+  <span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["Blueprint"]</span>
+  <span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["GithubRepo"]</span>
+  <span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["karpenter.sh/discovery"]</span>
+  <span class="c">#    module.eks.aws_eks_access_entry.this["cluster_creator"]</span>
+  <span class="c">#    module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]</span>
+  <span class="c">#    module.eks.aws_eks_cluster.this[0]</span>
+  <span class="c">#    module.eks.aws_iam_openid_connect_provider.oidc_provider[0]</span>
+  <span class="c">#    module.eks.aws_iam_policy.cluster_encryption[0]</span>
+  <span class="c">#    module.eks.aws_iam_role.this[0]</span>
+  <span class="c">#    module.eks.aws_iam_role_policy_attachment.cluster_encryption[0]</span>
+  <span class="c">#    module.eks.aws_iam_role_policy_attachment.this["AmazonEKSClusterPolicy"]</span>
+  <span class="c">#    module.eks.aws_iam_role_policy_attachment.this["AmazonEKSVPCResourceController"]</span>
+  <span class="c">#    module.eks.time_sleep.this[0]</span>
+  <span class="c">#    module.vpc.aws_default_network_acl.this[0]</span>
+  <span class="c">#    module.vpc.aws_default_route_table.default[0]</span>
+  <span class="c">#    module.vpc.aws_default_security_group.this[0]</span>
+  <span class="c">#    module.vpc.aws_eip.nat[0]</span>
+  <span class="c">#    module.vpc.aws_internet_gateway.this[0]</span>
+  <span class="c">#    module.vpc.aws_nat_gateway.this[0]</span>
+  <span class="c">#    module.vpc.aws_route.private_nat_gateway[0]</span>
+  <span class="c">#    module.vpc.aws_route.public_internet_gateway[0]</span>
+  <span class="c">#    module.vpc.aws_route_table.private[0]</span>
+  <span class="c">#    module.vpc.aws_route_table.public[0]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.private[0]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.private[1]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.private[2]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.public[0]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.public[1]</span>
+  <span class="c">#    module.vpc.aws_route_table_association.public[2]</span>
+  <span class="c">#    module.vpc.aws_subnet.private[0]</span>
+  <span class="c">#    module.vpc.aws_subnet.private[1]</span>
+  <span class="c">#    module.vpc.aws_subnet.private[2]</span>
+  <span class="c">#    module.vpc.aws_subnet.public[0]</span>
+  <span class="c">#    module.vpc.aws_subnet.public[1]</span>
+  <span class="c">#    module.vpc.aws_subnet.public[2]</span>
+  <span class="c">#    module.vpc.aws_vpc.this[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].data.aws_caller_identity.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].data.aws_iam_policy_document.assume_role_policy[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].data.aws_partition.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].data.aws_region.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].aws_eks_fargate_profile.this[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].aws_iam_role.this[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].aws_iam_role_policy_attachment.this["AmazonEKSFargatePodExecutionRolePolicy"]</span>
+  <span class="c">#    module.eks.module.fargate_profile["karpenter"].aws_iam_role_policy_attachment.this["AmazonEKS_CNI_Policy"]</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].data.aws_caller_identity.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].data.aws_iam_policy_document.assume_role_policy[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].data.aws_partition.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].data.aws_region.current</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].aws_eks_fargate_profile.this[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].aws_iam_role.this[0]</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].aws_iam_role_policy_attachment.this["AmazonEKSFargatePodExecutionRolePolicy"]</span>
+  <span class="c">#    module.eks.module.fargate_profile["kube_system"].aws_iam_role_policy_attachment.this["AmazonEKS_CNI_Policy"]</span>
+  <span class="c">#    module.eks.module.kms.data.aws_caller_identity.current[0]</span>
+  <span class="c">#    module.eks.module.kms.data.aws_iam_policy_document.this[0]</span>
+  <span class="c">#    module.eks.module.kms.data.aws_partition.current[0]</span>
+  <span class="c">#    module.eks.module.kms.aws_kms_alias.this["cluster"]</span>
+  <span class="c">#    module.eks.module.kms.aws_kms_key.this[0]</span>
+  
+  <span class="nv">$ </span>terraform output
+  <span class="c"># =&gt; configure_kubectl = "aws eks --region ap-northeast-2 update-kubeconfig --name t101-karpenter"</span>
+  
+  <span class="c"># kubectl 설정</span>
+  <span class="nv">$ </span>aws eks <span class="nt">--region</span> ap-northeast-2 update-kubeconfig <span class="nt">--name</span> t101-karpenter
+  <span class="nv">$ </span><span class="nb">cat</span> ~/.kube/config
+    
+  <span class="c"># k8s 노드, 파드 정보 확인</span>
+  <span class="nv">$ </span>kubectl cluster-info
+  <span class="c"># =&gt; Kubernetes control plane is running at https://D858CEEA85279742B1B4738D555C8602.sk1.ap-northeast-2.eks.amazonaws.com</span>
+  <span class="c">#    CoreDNS is running at https://D858CEEA85279742B1B4738D555C8602.sk1.ap-northeast-2.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy</span>
+  <span class="c">#    To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.</span>
+  <span class="nv">$ </span>kubectl get node
+  <span class="c"># =&gt; No resources found</span>
+  <span class="nv">$ </span>kubectl get pod <span class="nt">-A</span>
+  <span class="c"># =&gt; NAMESPACE     NAME                      READY   STATUS    RESTARTS   AGE</span>
+  <span class="c">#    kube-system   coredns-5b9dfbf96-24qbm   0/1     Pending   0          22m</span>
+  <span class="c">#    kube-system   coredns-5b9dfbf96-8q225   0/1     Pending   0          22m</span>
+  <span class="nv">$ </span>kubectl describe pod coredns-5b9dfbf96-24 <span class="nt">-n</span> kube-system
+  <span class="c"># =&gt; ...</span>
+  <span class="c">#    Type     Reason            Age                    From               Message</span>
+  <span class="c">#    ----     ------            ----                   ----               -------</span>
+  <span class="c">#    Warning  FailedScheduling  3m22s (x124 over 23m)  default-scheduler  no nodes available to schedule pods</span>
+  
+  <span class="c"># 상세 정보 확인</span>
+  <span class="nv">$ </span>terraform show
+  <span class="nv">$ </span>terraform state list
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.data.aws_caller_identity.current'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.data.aws_iam_session_context.current'</span>
+   
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_eks_cluster.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.data.tls_certificate.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_cloudwatch_log_group.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_eks_access_entry.this["cluster_creator"]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_iam_openid_connect_provider.oidc_provider[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.data.aws_partition.current'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_iam_policy.cluster_encryption[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_iam_role.this[0]'</span>
+  
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.time_sleep.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.kms.aws_kms_key.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.fargate_profile["kube_system"].aws_eks_fargate_profile.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.fargate_profile["karpenter"].aws_eks_fargate_profile.this[0]'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_4.png" alt="EKS 배포 결과" class="image-center" />
+<em class="image-caption">EKS 배포 결과</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_5.png" alt="EKS 배포 결과 (Secret 암호화 관련 설정)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (Secret 암호화 관련) 설정</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_6.png" alt="EKS 배포 결과 (Secret 암호화에 쓰이는 KMS 정보)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (Secret 암호화에 쓰이는 KMS 정보)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_8.png" alt="EKS 배포 결과 (네트워킹 정보)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (네트워킹 정보)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_9.png" alt="EKS 배포 결과 (접근 IAM 정보)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (접근 IAM 정보)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_10.png" alt="EKS 배포 결과 (로그 설정)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (로그 설정)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_11.png" alt="EKS 배포 결과 (Cloud Watch를 통한 로그 관리)" class="image-center" />
+<em class="image-caption">EKS 배포 결과 (Cloud Watch를 통한 로그 관리)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_7.png" alt="Fargate 배포 결과" class="image-center" />
+<em class="image-caption">Fargate 배포 결과</em></p>
+
+<h4 id="karpenter-및-기타-addon-배포">Karpenter 및 기타 addon 배포</h4>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c"># 배포</span>
+  <span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span>
+  
+  <span class="c"># 확인</span>
+  <span class="nv">$ </span>terraform state list
+  <span class="c"># =&gt; data.aws_ecrpublic_authorization_token.token</span>
+  <span class="c">#    aws_eks_access_entry.karpenter_node_access_entry</span>
+  <span class="c">#    ...</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_caller_identity.current</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_eks_addon_version.this["coredns"]</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_eks_addon_version.this["kube-proxy"]</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_eks_addon_version.this["vpc-cni"]</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_iam_policy_document.karpenter[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_iam_policy_document.karpenter_assume_role[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_partition.current</span>
+  <span class="c">#    module.eks_blueprints_addons.data.aws_region.current</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_rule.karpenter["health_event"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_rule.karpenter["instance_rebalance"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_rule.karpenter["instance_state_change"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_rule.karpenter["spot_interupt"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_target.karpenter["health_event"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_target.karpenter["instance_rebalance"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_target.karpenter["instance_state_change"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_cloudwatch_event_target.karpenter["spot_interupt"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_eks_addon.this["coredns"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_eks_addon.this["kube-proxy"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_eks_addon.this["vpc-cni"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_iam_instance_profile.karpenter[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_iam_role.karpenter[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_iam_role_policy_attachment.karpenter["AmazonEC2ContainerRegistryReadOnly"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_iam_role_policy_attachment.karpenter["AmazonEKSWorkerNodePolicy"]</span>
+  <span class="c">#    module.eks_blueprints_addons.aws_iam_role_policy_attachment.karpenter["AmazonEKS_CNI_Policy"]</span>
+  <span class="c">#    module.eks_blueprints_addons.time_sleep.this</span>
+  <span class="c">#    ...</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.data.aws_caller_identity.current[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.data.aws_iam_policy_document.assume[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.data.aws_iam_policy_document.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.data.aws_partition.current[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.aws_iam_policy.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.aws_iam_role.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.aws_iam_role_policy_attachment.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter.helm_release.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter_sqs.data.aws_iam_policy_document.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter_sqs.aws_sqs_queue.this[0]</span>
+  <span class="c">#    module.eks_blueprints_addons.module.karpenter_sqs.aws_sqs_queue_policy.this[0]</span>
+  
+  <span class="nv">$ </span>terraform show
+
+  <span class="c"># k8s 노드, 파드 정보 확인</span>
+  <span class="nv">$ </span>kubectl cluster-info
+  <span class="c"># =&gt; Kubernetes control plane is running at https://D858CEEA85279742B1B4738D555C8602.sk1.ap-northeast-2.eks.amazonaws.com</span>
+  <span class="c">#    CoreDNS is running at https://D858CEEA85279742B1B4738D555C8602.sk1.ap-northeast-2.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy</span>
+  <span class="c">#    </span>
+  <span class="c">#    To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.</span>
+  
+  <span class="nv">$ </span>kubectl get nodes <span class="nt">-L</span> node.kubernetes.io/instance-type <span class="nt">-L</span> topology.kubernetes.io/zone
+  <span class="c"># =&gt; NAME                                                      STATUS   ROLES    AGE     VERSION               INSTANCE-TYPE   ZONE</span>
+  <span class="c">#    fargate-ip-10-10-18-179.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   4m58s   v1.30.0-eks-404b9c6                   ap-northeast-2b</span>
+  <span class="c">#    fargate-ip-10-10-26-139.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   4m58s   v1.30.0-eks-404b9c6                   ap-northeast-2b</span>
+  <span class="c">#    fargate-ip-10-10-41-162.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   4m51s   v1.30.0-eks-404b9c6                   ap-northeast-2c</span>
+  <span class="c">#    fargate-ip-10-10-44-218.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   4m57s   v1.30.0-eks-404b9c6                   ap-northeast-2c</span>
+   
+  <span class="c"># fargate를 프로비저닝하기 전에는 노드가 없었으나, </span>
+  <span class="c"># fargate 프로비저닝 후 노드가 생성되었음을 확인할 수 있습니다.</span>
+  
+  <span class="nv">$ </span>kubectl get node <span class="nt">-owide</span>  
+  <span class="c"># =&gt; NAME                                                      STATUS   ROLES    AGE     VERSION               INTERNAL-IP    EXTERNAL-IP   OS-IMAGE         KERNEL-VERSION                  CONTAINER-RUNTIME</span>
+  <span class="c">#    fargate-ip-10-10-18-179.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   6m45s   v1.30.0-eks-404b9c6   10.10.18.179   &lt;none&gt;        Amazon Linux 2   5.10.220-209.867.amzn2.x86_64   containerd://1.7.11</span>
+  <span class="c">#    fargate-ip-10-10-26-139.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   6m45s   v1.30.0-eks-404b9c6   10.10.26.139   &lt;none&gt;        Amazon Linux 2   5.10.220-209.867.amzn2.x86_64   containerd://1.7.11</span>
+  <span class="c">#    fargate-ip-10-10-41-162.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   6m38s   v1.30.0-eks-404b9c6   10.10.41.162   &lt;none&gt;        Amazon Linux 2   5.10.220-209.867.amzn2.x86_64   containerd://1.7.11</span>
+  <span class="c">#    fargate-ip-10-10-44-218.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   6m44s   v1.30.0-eks-404b9c6   10.10.44.218   &lt;none&gt;        Amazon Linux 2   5.10.220-209.867.amzn2.x86_64   containerd://1.7.11</span>
+  
+  <span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> <span class="nt">-owide</span>        
+  <span class="c"># =&gt; NAMESPACE     NAME                         READY   STATUS    RESTARTS   AGE     IP             NODE                                                      NOMINATED NODE   READINESS GATES</span>
+  <span class="c">#    karpenter     karpenter-7c5786cbc4-q5k7x   1/1     Running   0          8m42s   10.10.18.179   fargate-ip-10-10-18-179.ap-northeast-2.compute.internal   &lt;none&gt;           &lt;none&gt;</span>
+  <span class="c">#    karpenter     karpenter-7c5786cbc4-vxlrq   1/1     Running   0          8m42s   10.10.26.139   fargate-ip-10-10-26-139.ap-northeast-2.compute.internal   &lt;none&gt;           &lt;none&gt;</span>
+  <span class="c">#    kube-system   coredns-86dcddd859-2x2gf     1/1     Running   0          8m43s   10.10.41.162   fargate-ip-10-10-41-162.ap-northeast-2.compute.internal   &lt;none&gt;           &lt;none&gt;</span>
+  <span class="c">#    kube-system   coredns-86dcddd859-xsdw5     1/1     Running   0          8m43s   10.10.44.218   fargate-ip-10-10-44-218.ap-northeast-2.compute.internal   &lt;none&gt;           &lt;none&gt;  </span>
+  
+  <span class="c"># node가 없어서 pod가 Pending 상태였던 것이, </span>
+  <span class="c"># fargate로 프로비저닝되면서 fargate computing node가 생겨서 Running 상태로 변경되었음을 확인할 수 있습니다.</span>
+                            
+  <span class="c"># helm chart 확인</span>
+  <span class="nv">$ </span>helm list <span class="nt">-n</span> karpenter
+  <span class="c"># =&gt; NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION</span>
+  <span class="c">#    karpenter       karpenter       1               2024-07-25 23:54:59.19597 +0900 KST     deployed        karpenter-0.35.0        0.35.0</span>
+  
+  <span class="c"># 시크릿 확인 : kms로 암호 처리됨</span>
+  <span class="nv">$ </span>kubectl get secret <span class="nt">-n</span> karpenter
+  <span class="c"># =&gt; NAME                              TYPE                 DATA   AGE</span>
+  <span class="c">#    sh.helm.release.v1.karpenter.v1   helm.sh/release.v1   1      12m</span>
+  <span class="nv">$ </span>kubectl get secret <span class="nt">-n</span> karpenter sh.helm.release.v1.karpenter.v1 <span class="nt">-o</span> json | jq
+
+  <span class="c"># 상세 정보 확인</span>
+  <span class="nv">$ </span>terraform state list
+  <span class="nv">$ </span>terraform state show <span class="s1">'data.aws_ecrpublic_authorization_token.token'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'aws_eks_access_entry.karpenter_node_access_entry'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.data.aws_caller_identity.current'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.data.aws_eks_addon_version.this["coredns"]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.aws_cloudwatch_event_rule.karpenter["health_event"]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.aws_cloudwatch_event_target.karpenter["health_event"]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.aws_eks_addon.this["coredns"]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.aws_iam_role.karpenter[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.aws_iam_instance_profile.karpenter[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter.data.aws_iam_policy_document.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter.data.aws_iam_policy_document.assume[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter.aws_iam_policy.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter.helm_release.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter_sqs.aws_sqs_queue.this[0]'</span>
+  <span class="nv">$ </span>terraform state show <span class="s1">'module.eks_blueprints_addons.module.karpenter_sqs.aws_sqs_queue_policy.this[0]'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_12.png" alt="Karpenter 배포 결과" class="image-center" />
+<em class="image-caption">Karpenter 배포 결과</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_13.png" alt="Addon 설치 결과" class="image-center" />
+<em class="image-caption">Addon 설치 결과</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_14.png" alt="Karpenter 배포 결과 (접근 IAM 정보)" class="image-center" />
+<em class="image-caption">Karpenter 배포 결과 (접근 IAM 정보)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_15.png" alt="EC2 목록 (아직은 EC2 인스턴스가 없음)" class="image-center" />
+<em class="image-caption">EC2 목록 (아직은 EC2 인스턴스가 없음)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_16.png" alt="Karpenter의 Autoscaling 관련 룰" class="image-center" />
+<em class="image-caption">Karpenter의 Autoscaling 관련 룰</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_35.png" alt="Karpenter의 SQS Queue" />
+<em class="image-caption">Karpenter의 SQS Queue</em></p>
+
+<ul>
+  <li>
+    <p>eks-node-viewer 설치 및 사용법
+<img src="/assets/2024/20240727_terraform_w7_eks_karpenter_17.png" alt="eks-node-viewer" class="image-center" />
+<em class="image-caption">eks-node-viewer</em></p>
+
+    <ul>
+      <li>노드 할당 가능 용량과 요청 request 리소스 표시해줍니다.</li>
+      <li>실제 파드의 리소스 사용량과는 차이가 있으니 참고용으로만 사용해야 할것입니다.</li>
+      <li>설치
+        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># MacOS 기준 설치</span>
+<span class="nv">$ </span>brew tap aws/tap
+<span class="nv">$ </span>brew <span class="nb">install </span>eks-node-viewer
+</code></pre></div>        </div>
+      </li>
+      <li>사용
+        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># [신규 터미널] Display both CPU and Memory Usage*</span>
+eks-node-viewer <span class="nt">--resources</span> cpu,memory
+    
+<span class="c"># Standard usage</span>
+eks-node-viewer
+    
+<span class="c"># Karpenter nodes only</span>
+eks-node-viewer <span class="nt">--node-selector</span> karpenter.sh/nodepool
+    
+<span class="c"># Display extra labels, i.e. AZ</span>
+eks-node-viewer <span class="nt">--extra-labels</span> topology.kubernetes.io/zone
+    
+<span class="c"># Sort by CPU usage in descending order</span>
+eks-node-viewer <span class="nt">--node-sort</span><span class="o">=</span>eks-node-viewer/node-cpu-usage<span class="o">=</span>dsc
+    
+<span class="c"># Specify a particular AWS profile and region</span>
+<span class="nv">AWS_PROFILE</span><span class="o">=</span>myprofile <span class="nv">AWS_REGION</span><span class="o">=</span>us-west-2
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>kube-ops-view 설치 및 사용법
+<img src="/assets/2024/20240727_terraform_w7_eks_karpenter_20.png" alt="kube-ops-view" class="image-center" />
+<em class="image-caption">kube-ops-view</em></p>
+
+    <ul>
+      <li>노드의 파드 상태정보를 웹페이지에서 실시간으로 출력해줍니다.</li>
+      <li>설치 및 사용
+        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>helm repo add geek-cookbook https://geek-cookbook.github.io/charts/
+<span class="c"># =&gt; "geek-cookbook" has been added to your repositories</span>
+    
+<span class="nv">$ </span>helm <span class="nb">install </span>kube-ops-view geek-cookbook/kube-ops-view <span class="nt">--version</span> 1.2.2 <span class="nt">--set</span> env.TZ<span class="o">=</span><span class="s2">"Asia/Seoul"</span> <span class="nt">--namespace</span> kube-system
+
+<span class="c"># 포트포워딩</span>
+<span class="nv">$ </span>kubectl port-forward deployment/kube-ops-view <span class="nt">-n</span> kube-system 8080:8080 &amp;
+
+<span class="c"># 접속 주소 확인 : 각각 1배, 1.5배, 3배 크기</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080"</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080/#scale=1.5"</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080/#scale=3"</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="실습-karpenter-on-eks-fargate">[실습] Karpenter on EKS Fargate</h3>
+
+<p>이번에는 <code class="language-plaintext highlighter-rouge">Karpenter</code>를 사용해 앞서 설치한 EKS와 Fargate로 구성한 클러스터를 관리해보겠습니다.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Karpenter</code>는 AWS에서 제공하는 오픈소스 프로젝트로, Kubernetes 클러스터를 관리하는데 사용되는 <strong>오토스케일링 프로비저닝 엔진</strong>입니다. Node Auto Scaling과 비슷하나
+AWS API를 통해 빠르고 <strong>효율적으로 워커노드를 스케일링</strong>하며, <strong>높은 가용성</strong>, <strong>비용최적화</strong>를 제공합니다. <a href="https://karpenter.sh/">Karpenter 소개</a></p>
+
+<p>먼저 replicas가 0인 pod를 생성하고, replica 수를 늘려서 <code class="language-plaintext highlighter-rouge">Karpenter</code>를 이용하여 autoscaling을 진행해보겠습니다.</p>
+
+<ul>
+  <li>karpenter.yml 생성
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># karpenter.yml</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">karpenter.k8s.aws/v1beta1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">EC2NodeClass</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">amiFamily</span><span class="pi">:</span> <span class="s">AL2</span>
+  <span class="na">role</span><span class="pi">:</span> <span class="s">karpenter-t101-karpenter</span>
+  <span class="na">subnetSelectorTerms</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">tags</span><span class="pi">:</span>
+        <span class="na">karpenter.sh/discovery</span><span class="pi">:</span> <span class="s">t101-karpenter</span>
+  <span class="na">securityGroupSelectorTerms</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">tags</span><span class="pi">:</span>
+        <span class="na">karpenter.sh/discovery</span><span class="pi">:</span> <span class="s">t101-karpenter</span>
+  <span class="na">tags</span><span class="pi">:</span>
+    <span class="na">karpenter.sh/discovery</span><span class="pi">:</span> <span class="s">t101-karpenter</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">karpenter.sh/v1beta1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">NodePool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">spec</span><span class="pi">:</span>
+      <span class="na">nodeClassRef</span><span class="pi">:</span>
+        <span class="na">name</span><span class="pi">:</span> <span class="s">default</span>
+      <span class="na">requirements</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">key</span><span class="pi">:</span> <span class="s2">"</span><span class="s">karpenter.k8s.aws/instance-category"</span>
+          <span class="na">operator</span><span class="pi">:</span> <span class="s">In</span>
+          <span class="na">values</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">c"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">m"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">r"</span><span class="pi">]</span>
+        <span class="pi">-</span> <span class="na">key</span><span class="pi">:</span> <span class="s2">"</span><span class="s">karpenter.k8s.aws/instance-cpu"</span>
+          <span class="na">operator</span><span class="pi">:</span> <span class="s">In</span>
+          <span class="na">values</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">4"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">8"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">16"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">32"</span><span class="pi">]</span>
+        <span class="pi">-</span> <span class="na">key</span><span class="pi">:</span> <span class="s2">"</span><span class="s">karpenter.k8s.aws/instance-hypervisor"</span>
+          <span class="na">operator</span><span class="pi">:</span> <span class="s">In</span>
+          <span class="na">values</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">nitro"</span><span class="pi">]</span>
+        <span class="pi">-</span> <span class="na">key</span><span class="pi">:</span> <span class="s2">"</span><span class="s">karpenter.k8s.aws/instance-generation"</span>
+          <span class="na">operator</span><span class="pi">:</span> <span class="s">Gt</span>
+          <span class="na">values</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">2"</span><span class="pi">]</span>
+  <span class="na">limits</span><span class="pi">:</span>
+    <span class="na">cpu</span><span class="pi">:</span> <span class="m">1000</span>
+  <span class="na">disruption</span><span class="pi">:</span>
+    <span class="na">consolidationPolicy</span><span class="pi">:</span> <span class="s">WhenEmpty</span>
+    <span class="na">consolidateAfter</span><span class="pi">:</span> <span class="s">30s</span>   
+</code></pre></div>    </div>
+  </li>
+  <li>example.yml 생성
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">apps/v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Deployment</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">inflate</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">replicas</span><span class="pi">:</span> <span class="m">0</span>
+  <span class="na">selector</span><span class="pi">:</span>
+    <span class="na">matchLabels</span><span class="pi">:</span>
+      <span class="na">app</span><span class="pi">:</span> <span class="s">inflate</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">metadata</span><span class="pi">:</span>
+      <span class="na">labels</span><span class="pi">:</span>
+        <span class="na">app</span><span class="pi">:</span> <span class="s">inflate</span>
+    <span class="na">spec</span><span class="pi">:</span>
+      <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+      <span class="na">containers</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">inflate</span>
+          <span class="na">image</span><span class="pi">:</span> <span class="s">public.ecr.aws/eks-distro/kubernetes/pause:3.7</span>
+          <span class="na">resources</span><span class="pi">:</span>
+            <span class="na">requests</span><span class="pi">:</span>
+              <span class="na">cpu</span><span class="pi">:</span> <span class="s">1</span>     
+</code></pre></div>    </div>
+  </li>
+  <li>karpenter 실행
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl apply <span class="nt">-f</span> karpenter.yml                           
+<span class="c"># =&gt; ec2nodeclass.karpenter.k8s.aws/default created</span>
+<span class="c">#    nodepool.karpenter.sh/default created</span>
+    
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl get ec2nodeclass,nodepool
+<span class="c"># =&gt; NAME                                     AGE</span>
+<span class="c">#    ec2nodeclass.karpenter.k8s.aws/default   98s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                            NODECLASS</span>
+<span class="c">#    nodepool.karpenter.sh/default   default</span>
+    
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> example.yml
+    
+<span class="nv">$ </span>kubectl get deploy
+<span class="c"># =&gt; NAME      READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    inflate   0/0     0            0           11s</span>
+    
+<span class="nv">$ </span>karpenter 컨트롤러 로그 확인
+<span class="nv">$ </span>kubectl logs <span class="nt">-f</span> <span class="nt">-n</span> karpenter <span class="nt">-l</span> app.kubernetes.io/name<span class="o">=</span>karpenter <span class="nt">-c</span> controller
+
+<span class="c"># karpenter를 이용한 autoscaling 확인</span>
+<span class="nv">$ </span>kubectl scale deployment inflate <span class="nt">--replicas</span><span class="o">=</span>3 <span class="o">&amp;&amp;</span> kubectl get pod <span class="nt">-w</span>
+<span class="c"># =&gt; deployment.apps/inflate scaled</span>
+<span class="c">#    NAME                       READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    inflate-66fb68585c-8wnvs   0/1     Pending   0          0s</span>
+<span class="c">#    inflate-66fb68585c-p5j7d   0/1     Pending   0          0s</span>
+<span class="c">#    inflate-66fb68585c-sdqzz   0/1     Pending   0          0s</span>
+</code></pre></div>    </div>
+
+    <p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_25.png" alt="autoscaling 이 진행되지 않고 대기중인 모습" class="image-center" />
+<em class="image-caption">autoscaling 이 진행되지 않고 대기중인 모습</em></p>
+
+    <ul>
+      <li>위의 그림처럼 scaling 후 pending 상태로 오래 대기중이어서 log를 확인해보겠습니다.
+        <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># karpenter 컨트롤러 로그 확인</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-f</span> <span class="nt">-n</span> karpenter <span class="nt">-l</span> app.kubernetes.io/name<span class="o">=</span>karpenter <span class="nt">-c</span> controller
+<span class="c"># =&gt; {</span>
+<span class="c">#      "level":"ERROR","time":"2024-07-25T15:36:58.791Z",</span>
+<span class="c">#      ...</span>
+<span class="c">#      "error":"launching nodeclaim, creating instance, with fleet error(s), </span>
+<span class="c">#               AuthFailure.ServiceLinkedRoleCreationNotPermitted: </span>
+<span class="c">#               The provided credentials do not have permission to </span>
+<span class="c">#               create the service-linked role for EC2 Spot Instances."</span>
+<span class="c">#    }</span>
+</code></pre></div>        </div>
+        <ul>
+          <li>현재 ServiceLinkedRole 관련 기능이 없어서 생기는 문제 인것 같습니다. 아래의 명령을 실행하면 role이 생성되면서 오토 스케일링이 진행됩니다.
+            <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws iam create-service-linked-role <span class="nt">--aws-service-name</span> spot.amazonaws.com
+</code></pre></div>            </div>
+          </li>
+        </ul>
+
+        <p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_26.png" alt="정상적으로 Autoscaling 된 결과" class="image-center" />
+<em class="image-caption image-caption--img-shadow">정상적으로 Autoscaling 된 결과</em></p>
+
+        <p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_30.png" alt="정상적으로 Autoscaling 된 결과 (Pod 상세 정보)" class="image-center" />
+<em class="image-caption image-caption--img-shadow">정상적으로 Autoscaling 된 결과 (Pod 상세 정보)</em></p>
+
+        <ul>
+          <li>위의 그림들 처럼 정상적으로 autoscaling이 진행되고, 5개 =&gt; 6개로 Node 가 추가되고 pod가 생성되어 실행되는 것을 확인할 수 있습니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>karpenter 삭제
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-L</span> karpenter.sh/nodepool <span class="nt">-L</span> node.kubernetes.io/instance-type <span class="nt">-L</span> topology.kubernetes.io/zone <span class="nt">-L</span> karpenter.sh/capacity-type
+<span class="c"># =&gt; NAME                                                      STATUS   ROLES    AGE    VERSION               NODEPOOL   INSTANCE-TYPE   ZONE              CAPACITY-TYPE</span>
+<span class="c">#    fargate-ip-10-10-18-179.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   53m    v1.30.0-eks-404b9c6                              ap-northeast-2b</span>
+<span class="c">#    fargate-ip-10-10-25-19.ap-northeast-2.compute.internal    Ready    &lt;none&gt;   30m    v1.30.0-eks-404b9c6                              ap-northeast-2b</span>
+<span class="c">#    fargate-ip-10-10-26-139.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   53m    v1.30.0-eks-404b9c6                              ap-northeast-2b</span>
+<span class="c">#    fargate-ip-10-10-41-162.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   53m    v1.30.0-eks-404b9c6                              ap-northeast-2c</span>
+<span class="c">#    fargate-ip-10-10-44-218.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   53m    v1.30.0-eks-404b9c6                              ap-northeast-2c</span>
+<span class="c">#    ip-10-10-30-139.ap-northeast-2.compute.internal           Ready    &lt;none&gt;   2m3s   v1.30.0-eks-036c24b   default    c6gn.xlarge     ap-northeast-2b   spot</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get nodeclaims
+<span class="c"># =&gt; default-mkbpj   c6gn.xlarge   ap-northeast-2b   ip-10-10-30-139.ap-northeast-2.compute.internal   True    18m</span>
+<span class="nv">$ </span>kubectl get nodeclaims <span class="nt">-o</span> yaml | kubectl neat
+    
+<span class="c"># deploy 삭제 &gt;&gt; 노드 변화 확인 해보기!</span>
+<span class="nv">$ </span>kubectl delete <span class="nt">-f</span> example.yml
+<span class="c"># =&gt; deployment.apps "inflate" deleted</span>
+    
+<span class="c"># karpenter 정책 삭제</span>
+<span class="nv">$ </span>kubectl delete <span class="nt">-f</span> karpenter.yml
+<span class="c"># =&gt; ec2nodeclass.karpenter.k8s.aws "default" deleted</span>
+<span class="c">#    nodepool.karpenter.sh "default" deleted</span>
+</code></pre></div>    </div>
+  </li>
+  <li>삭제
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># kube-ops-view 삭제</span>
+<span class="nv">$ </span>helm uninstall kube-ops-view <span class="nt">-n</span> kube-system
+    
+<span class="c"># addon &amp; karpenter helm 삭제</span>
+<span class="nv">$ </span>terraform destroy <span class="nt">-target</span><span class="o">=</span><span class="s2">"module.eks_blueprints_addons"</span> <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; Destroy complete! Resources: 24 destroyed.</span>
+    
+<span class="c"># EKS 삭제</span>
+<span class="nv">$ </span>terraform destroy <span class="nt">-target</span><span class="o">=</span><span class="s2">"module.eks"</span> <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; Destroy complete! Resources: 24 destroyed.</span>
+    
+<span class="c"># VPC 삭제 : vpc 삭제가 잘 안될 경우 aws 콘솔에서 vpc 수동 삭제 -&gt; vnic 등 남아 있을 경우 해당 vnic 강제 삭제</span>
+<span class="nv">$ </span>terraform destroy <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; Destroy complete! Resources: 23 destroyed.</span>
+    
+<span class="c"># VPC 삭제 확인</span>
+<span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+<span class="c"># =&gt; Vpcs: []</span>
+    
+<span class="c"># 잘 삭제되었습니다.</span>
+    
+<span class="c"># kubeconfig 삭제</span>
+<span class="nv">$ </span><span class="nb">rm</span> <span class="nt">-rf</span> ~/.kube/config
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h2 id="eks-workshop">EKS Workshop</h2>
+
+<ul>
+  <li>이번에는 AWS에서 제공하는 EKS Workshop에서 소개하는 방법으로 EKS를 배포해보겠습니다.
+    <ul>
+      <li>관련링크 :
+<a href="https://eksworkshop.com/docs/introduction/">EKS Workshop 소개</a>, 
+<a href="https://github.com/aws-samples/eks-workshop-v2">EKS Workshop Github</a>,
+<a href="https://www.youtube.com/watch?v=E956xeOt050">유튜브</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="실습-eks-배포">[실습] EKS 배포</h3>
+
+<h4 id="사전준비-1">사전준비</h4>
+
+<ul>
+  <li>awscli, terraform, kubectl 설치</li>
+  <li>코드 준비 <a href="https://github.com/aws-samples/eks-workshop-v2">Github</a>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/aws-samples/eks-workshop-v2
+<span class="nv">$ </span><span class="nb">cd </span>eks-workshop-v2/cluster/terraform
+</code></pre></div>    </div>
+    <ul>
+      <li>providers.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+  <span class="nx">default_tags</span> <span class="p">{</span>
+    <span class="nx">tags</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">tags</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+    
+<span class="k">terraform</span> <span class="p">{</span>
+  <span class="nx">required_providers</span> <span class="p">{</span>
+    <span class="nx">aws</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"hashicorp/aws"</span>
+      <span class="nx">version</span> <span class="p">=</span> <span class="s2">"&gt;= 4.67.0"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+    
+  <span class="nx">required_version</span> <span class="p">=</span> <span class="s2">"&gt;= 1.4.2"</span>
+<span class="p">}</span> 
+</code></pre></div>        </div>
+      </li>
+      <li>variables.tf - cluster 이름, cluster 버전, ami 버전, vpc cidr 변경 가능
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">variable</span> <span class="s2">"cluster_name"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"Name of the EKS cluster"</span>
+  <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+  <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"t101-eks-workshop"</span>
+<span class="p">}</span>
+    
+<span class="k">variable</span> <span class="s2">"cluster_version"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"EKS cluster version."</span>
+  <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+  <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"1.30"</span>
+<span class="p">}</span>
+    
+<span class="k">variable</span> <span class="s2">"ami_release_version"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"Default EKS AMI release version for node groups"</span>
+  <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+  <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"1.30.0-20240625"</span>
+<span class="p">}</span>
+    
+<span class="k">variable</span> <span class="s2">"vpc_cidr"</span> <span class="p">{</span>
+  <span class="nx">description</span> <span class="p">=</span> <span class="s2">"Defines the CIDR block used on Amazon VPC created for Amazon EKS."</span>
+  <span class="nx">type</span>        <span class="p">=</span> <span class="nx">string</span>
+  <span class="nx">default</span>     <span class="p">=</span> <span class="s2">"10.42.0.0/16"</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>vpc.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">locals</span> <span class="p">{</span>
+  <span class="nx">private_subnets</span> <span class="p">=</span> <span class="p">[</span><span class="nx">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">in</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span> <span class="err">:</span> <span class="nx">cidrsubnet</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">vpc_cidr</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nx">k</span> <span class="err">+</span> <span class="mi">3</span><span class="p">)]</span>
+  <span class="nx">public_subnets</span>  <span class="p">=</span> <span class="p">[</span><span class="nx">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="nx">in</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span> <span class="err">:</span> <span class="nx">cidrsubnet</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">vpc_cidr</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nx">k</span><span class="p">)]</span>
+  <span class="nx">azs</span>             <span class="p">=</span> <span class="nx">slice</span><span class="p">(</span><span class="k">data</span><span class="p">.</span><span class="nx">aws_availability_zones</span><span class="p">.</span><span class="nx">available</span><span class="p">.</span><span class="nx">names</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="p">}</span>
+    
+<span class="k">data</span> <span class="s2">"aws_availability_zones"</span> <span class="s2">"available"</span> <span class="p">{</span>
+  <span class="nx">state</span> <span class="p">=</span> <span class="s2">"available"</span>
+<span class="p">}</span>
+    
+<span class="k">module</span> <span class="s2">"vpc"</span> <span class="p">{</span>
+  <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"terraform-aws-modules/vpc/aws"</span>
+  <span class="nx">version</span> <span class="p">=</span> <span class="s2">"~&gt; 5.1"</span>
+    
+  <span class="nx">name</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="nx">cidr</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">vpc_cidr</span>
+    
+  <span class="nx">azs</span>                   <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">azs</span>
+  <span class="nx">public_subnets</span>        <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">public_subnets</span>
+  <span class="nx">private_subnets</span>       <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">private_subnets</span>
+  <span class="nx">public_subnet_suffix</span>  <span class="p">=</span> <span class="s2">"SubnetPublic"</span>
+  <span class="nx">private_subnet_suffix</span> <span class="p">=</span> <span class="s2">"SubnetPrivate"</span>
+    
+  <span class="nx">enable_nat_gateway</span>   <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">create_igw</span>           <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">enable_dns_hostnames</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">single_nat_gateway</span>   <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="c1"># Manage so we can name</span>
+  <span class="nx">manage_default_network_acl</span>    <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">default_network_acl_tags</span>      <span class="p">=</span> <span class="p">{</span> <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span><span class="k">}</span><span class="s2">-default"</span> <span class="p">}</span>
+  <span class="nx">manage_default_route_table</span>    <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">default_route_table_tags</span>      <span class="p">=</span> <span class="p">{</span> <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span><span class="k">}</span><span class="s2">-default"</span> <span class="p">}</span>
+  <span class="nx">manage_default_security_group</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">default_security_group_tags</span>   <span class="p">=</span> <span class="p">{</span> <span class="nx">Name</span> <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span><span class="k">}</span><span class="s2">-default"</span> <span class="p">}</span>
+    
+  <span class="nx">public_subnet_tags</span> <span class="p">=</span> <span class="nx">merge</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">tags</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">"kubernetes.io/role/elb"</span> <span class="p">=</span> <span class="s2">"1"</span>
+  <span class="p">})</span>
+  <span class="nx">private_subnet_tags</span> <span class="p">=</span> <span class="nx">merge</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">tags</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">"karpenter.sh/discovery"</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="p">})</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="kd">local</span><span class="p">.</span><span class="nx">tags</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>main.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">locals</span> <span class="p">{</span>
+  <span class="nx">tags</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">created-by</span> <span class="p">=</span> <span class="s2">"eks-workshop-v2"</span>
+    <span class="nx">study</span>      <span class="p">=</span> <span class="s2">"t101"</span>             <span class="c1"># 태그 추가</span>
+    <span class="nx">for</span>        <span class="p">=</span> <span class="s2">"Sweet Little Bird"</span>
+    <span class="nx">env</span>        <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>        </div>
+      </li>
+      <li>eks.tf
+        <div class="language-tf highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="s2">"eks"</span> <span class="p">{</span>
+  <span class="nx">source</span>  <span class="p">=</span> <span class="s2">"terraform-aws-modules/eks/aws"</span>
+  <span class="nx">version</span> <span class="p">=</span> <span class="s2">"~&gt; 20.0"</span>
+    
+  <span class="nx">cluster_name</span>                   <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="nx">cluster_version</span>                <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_version</span>
+  <span class="nx">cluster_endpoint_public_access</span> <span class="p">=</span> <span class="kc">true</span>
+    
+  <span class="nx">cluster_addons</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">vpc-cni</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">before_compute</span> <span class="p">=</span> <span class="kc">true</span>
+      <span class="nx">most_recent</span>    <span class="p">=</span> <span class="kc">true</span>
+      <span class="nx">configuration_values</span> <span class="p">=</span> <span class="nx">jsonencode</span><span class="p">({</span>
+        <span class="nx">env</span> <span class="p">=</span> <span class="p">{</span>
+          <span class="nx">ENABLE_POD_ENI</span>                    <span class="p">=</span> <span class="s2">"true"</span>
+          <span class="nx">ENABLE_PREFIX_DELEGATION</span>          <span class="p">=</span> <span class="s2">"true"</span>
+          <span class="nx">POD_SECURITY_GROUP_ENFORCING_MODE</span> <span class="p">=</span> <span class="s2">"standard"</span>
+        <span class="p">}</span>
+        <span class="nx">nodeAgent</span> <span class="p">=</span> <span class="p">{</span>
+          <span class="nx">enablePolicyEventLogs</span> <span class="p">=</span> <span class="s2">"true"</span>
+        <span class="p">}</span>
+        <span class="nx">enableNetworkPolicy</span> <span class="p">=</span> <span class="s2">"true"</span>
+      <span class="p">})</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+    
+  <span class="nx">vpc_id</span>     <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">vpc</span><span class="p">.</span><span class="nx">vpc_id</span>
+  <span class="nx">subnet_ids</span> <span class="p">=</span> <span class="k">module</span><span class="p">.</span><span class="nx">vpc</span><span class="p">.</span><span class="nx">private_subnets</span>
+    
+  <span class="nx">create_cluster_security_group</span> <span class="p">=</span> <span class="kc">false</span>
+  <span class="nx">create_node_security_group</span>    <span class="p">=</span> <span class="kc">false</span>
+    
+  <span class="nx">eks_managed_node_groups</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="nx">default</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">instance_types</span>       <span class="p">=</span> <span class="p">[</span><span class="s2">"m5.large"</span><span class="p">]</span>
+      <span class="nx">force_update_version</span> <span class="p">=</span> <span class="kc">true</span>
+      <span class="nx">release_version</span>      <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">ami_release_version</span>
+    
+      <span class="nx">min_size</span>     <span class="p">=</span> <span class="mi">3</span>
+      <span class="nx">max_size</span>     <span class="p">=</span> <span class="mi">6</span>
+      <span class="nx">desired_size</span> <span class="p">=</span> <span class="mi">3</span>
+    
+      <span class="nx">update_config</span> <span class="p">=</span> <span class="p">{</span>
+        <span class="nx">max_unavailable_percentage</span> <span class="p">=</span> <span class="mi">50</span>
+      <span class="p">}</span>
+    
+      <span class="nx">labels</span> <span class="p">=</span> <span class="p">{</span>
+        <span class="nx">workshop-default</span> <span class="p">=</span> <span class="s2">"yes"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+    
+  <span class="nx">tags</span> <span class="p">=</span> <span class="nx">merge</span><span class="p">(</span><span class="kd">local</span><span class="p">.</span><span class="nx">tags</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">"karpenter.sh/discovery"</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="p">})</span>
+<span class="p">}</span>    
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="terraform-init">terraform init</h4>
+
+<p>테라폼을 사용하기위해 초기화하고, 설치된 모듈 및 프로바이더 정보를 확인해보겠습니다.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>terraform init
+<span class="nv">$ </span>tree .terraform
+
+<span class="c"># 설치된 모듈 확인</span>
+<span class="nv">$ </span><span class="nb">cat</span> .terraform/modules/modules.json | jq
+
+<span class="c"># 설치된 프로바이더 및 버전 확인</span>
+<span class="nv">$ </span>tree .terraform/providers/registry.terraform.io/hashicorp <span class="nt">-L</span> 2
+<span class="c"># =&gt; .terraform/providers/registry.terraform.io/hashicorp</span>
+<span class="c">#    ├── aws</span>
+<span class="c">#    │   └── 5.60.0</span>
+<span class="c">#    ├── cloudinit</span>
+<span class="c">#    │   └── 2.3.4</span>
+<span class="c">#    ├── null</span>
+<span class="c">#    │   └── 3.2.2</span>
+<span class="c">#    ├── time</span>
+<span class="c">#    │   └── 0.12.0</span>
+<span class="c">#    └── tls</span>
+<span class="c">#        └── 4.0.5</span>
+</code></pre></div></div>
+
+<h4 id="vpc-배포-1">VPC 배포</h4>
+
+<p>VPC를 먼저 배포하고 관련 정보를 확인해보겠습니다.
+EKS와 한꺼번에 배포해도 되지만 진행 상황을 확인하기 위해 VPC를 먼저 배포해보겠습니다.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 설치전 VPC 정보 확인</span>
+<span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+<span class="c"># =&gt; Vpcs: []     # 현재 VPC가 없습니다.</span>
+
+<span class="c"># VPC 배포</span>
+<span class="nv">$ </span>terraform apply <span class="nt">-target</span><span class="o">=</span><span class="s2">"module.vpc"</span> <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; Apply complete! Resources: 23 added, 0 changed, 0 destroyed.</span>
+
+<span class="c"># 배포 확인</span>
+<span class="nv">$ </span>terraform state list
+<span class="nv">$ </span>terraform show
+<span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+<span class="c"># =&gt; Vpcs:</span>
+<span class="c">#    - CidrBlock: 10.42.0.0/16</span>
+<span class="c">#      CidrBlockAssociationSet:</span>
+<span class="c">#      - AssociationId: vpc-cidr-assoc-0c375c03935938c89</span>
+<span class="c">#        CidrBlock: 10.42.0.0/16</span>
+<span class="c">#      ...</span>
+<span class="c">#      State: available</span>
+<span class="c">#      Tags:</span>
+<span class="c">#      ...</span>
+<span class="c">#      - Key: study                   # 추가한 태그 확인    </span>
+<span class="c">#        Value: t101</span>
+<span class="c">#      - Key: Name</span>
+<span class="c">#        Value: t101-eks-workshop</span>
+<span class="c">#      VpcId: vpc-0247fb591c49eab40</span>
+
+<span class="c"># 사용가능한 가용성 존 확인 </span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"data.aws_availability_zones.available"</span> | terraform console
+
+<span class="c"># VPC/subnet 상세 정보 및 tag 확인</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_vpc.this[0]'</span>
+
+<span class="nv">$ VPCID</span><span class="o">=</span><span class="si">$(</span><span class="nb">echo </span>module.vpc.vpc_id | terraform console<span class="si">)</span>   <span class="c"># 현재 VPC ID를 $VPCID 변수에 저장</span>
+<span class="c"># VPC 의 Subnet 상세 정보 확인 (json)</span>
+<span class="nv">$ </span>aws ec2 describe-subnets <span class="nt">--filters</span> <span class="s2">"Name=vpc-id,Values=</span><span class="nv">$VPCID</span><span class="s2">"</span> | jq
+<span class="c"># VPC 의 Subnet 상세 정보 확인 (텍스트)</span>
+<span class="nv">$ </span>aws ec2 describe-subnets <span class="nt">--filters</span> <span class="s2">"Name=vpc-id,Values=</span><span class="nv">$VPCID</span><span class="s2">"</span> <span class="nt">--output</span> text
+
+<span class="c"># public 서브넷과 private 서브넷 CIDR 확인</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_subnet.public[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.vpc.aws_subnet.private[0]'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_37.png" alt="VPC 배포 결과 (subnet)" class="image-center" />
+<em class="image-caption">VPC 배포 결과 (subnet)</em></p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_38.png" alt="VPC 배포 결과 (subnet 태그 정보)" class="image-center" />
+<em class="image-caption">VPC 배포 결과 (subnet 태그 정보)</em></p>
+
+<h4 id="eks-배포">EKS 배포</h4>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># EKS 배포</span>
+<span class="nv">$ </span>terraform apply <span class="nt">-auto-approve</span> 
+<span class="c"># =&gt; Apply complete! Resources: 24 added, 0 changed, 0 destroyed.</span>
+
+<span class="c"># EKS 배포 확인</span>
+<span class="nv">$ </span>terraform state list
+<span class="c"># =&gt; data.aws_availability_zones.available</span>
+<span class="c">#    module.eks.data.aws_caller_identity.current</span>
+<span class="c">#    module.eks.data.aws_eks_addon_version.this["vpc-cni"]</span>
+<span class="c">#    module.eks.data.aws_iam_policy_document.assume_role_policy[0]</span>
+<span class="c">#    module.eks.data.aws_iam_session_context.current</span>
+<span class="c">#    module.eks.data.aws_partition.current</span>
+<span class="c">#    module.eks.data.tls_certificate.this[0]</span>
+<span class="c">#    module.eks.aws_cloudwatch_log_group.this[0]</span>
+<span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["created-by"]</span>
+<span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["env"]</span>
+<span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["karpenter.sh/discovery"]</span>
+<span class="c">#    module.eks.aws_ec2_tag.cluster_primary_security_group["study"]</span>
+<span class="c">#    module.eks.aws_eks_addon.before_compute["vpc-cni"]</span>
+<span class="c">#    module.eks.aws_eks_cluster.this[0]</span>
+<span class="c">#    module.eks.aws_iam_openid_connect_provider.oidc_provider[0]</span>
+<span class="c">#    module.eks.aws_iam_policy.cluster_encryption[0]</span>
+<span class="c">#    module.eks.aws_iam_role.this[0]</span>
+<span class="c">#    ...</span>
+<span class="c">#    module.eks.module.kms.data.aws_caller_identity.current[0]</span>
+<span class="c">#    module.eks.module.kms.data.aws_iam_policy_document.this[0]</span>
+<span class="c">#    module.eks.module.kms.data.aws_partition.current[0]</span>
+<span class="c">#    module.eks.module.kms.aws_kms_alias.this["cluster"]</span>
+<span class="c">#    module.eks.module.kms.aws_kms_key.this[0]</span>
+<span class="c">#    module.eks.module.eks_managed_node_group["default"].module.user_data.null_resource.validate_cluster_service_cidr</span>
+
+<span class="c"># EKS 자격 증명 설정 및 확인</span>
+<span class="c">## aws eks --region &lt;REGION&gt; update-kubeconfig --name &lt;CLUSTER_NAME&gt; --alias &lt;CLUSTER_NAME&gt;</span>
+<span class="nv">$ </span>aws eks <span class="nt">--region</span> ap-northeast-2 update-kubeconfig <span class="nt">--name</span> t101-eks-workshop
+<span class="nv">$ </span><span class="nb">cat</span> ~/.kube/config
+
+<span class="c"># k8s 클러스터 정보 확인</span>
+<span class="nv">$ </span>kubectl cluster-info
+<span class="c"># =&gt; error: You must be logged in to the server (Unauthorized)</span>
+</code></pre></div></div>
+
+<p>정상적으로 배포하였고 EKS 자격증명을 설정하였음에도 kubectl 사용시 권한이 없다고 나옵니다.</p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_40.png" alt="EKS 배포 결과 (IAM 권한 없음)" class="image-center" /></p>
+
+<p>또한 EKS 콘솔에서도 권한이 없다고 나옵니다.
+이는 현재 사용중인 IAM이 해당 k8s 클러스터에 대한 권한이 없기 때문입니다.
+권한을 부여하는 작업을 진행하고 계속 배포상태를 확인해보겠습니다.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># EKS 관리용 IAM User 의 access entry 생성</span>
+<span class="nv">$ ACCOUNT_ID</span><span class="o">=</span><span class="si">$(</span>aws sts get-caller-identity <span class="nt">--query</span> <span class="s1">'Account'</span> <span class="nt">--output</span> text<span class="si">)</span>
+<span class="c"># $ MYIAMUSER=&lt;각자 자신의 IAM User&gt;</span>
+<span class="nv">$ MYIAMUSER</span><span class="o">=</span>admin
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$ACCOUNT_ID</span> <span class="nv">$MYIAMUSER</span>
+<span class="nv">$ </span>aws eks create-access-entry <span class="nt">--cluster-name</span> t101-eks-workshop <span class="nt">--principal-arn</span> arn:aws:iam::<span class="k">${</span><span class="nv">ACCOUNT_ID</span><span class="k">}</span>:user/<span class="k">${</span><span class="nv">MYIAMUSER</span><span class="k">}</span>
+<span class="nv">$ </span>aws eks list-access-entries <span class="nt">--cluster-name</span> t101-eks-workshop
+
+<span class="c"># EKS 관리용 IAM User에 AmazonEKSClusterAdminPolicy 연동</span>
+<span class="nv">$ </span>aws eks associate-access-policy <span class="nt">--cluster-name</span> t101-eks-workshop <span class="nt">--principal-arn</span> arn:aws:iam::<span class="k">${</span><span class="nv">ACCOUNT_ID</span><span class="k">}</span>:user/<span class="k">${</span><span class="nv">MYIAMUSER</span><span class="k">}</span> <span class="se">\</span>
+  <span class="nt">--policy-arn</span> arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy <span class="nt">--access-scope</span> <span class="nb">type</span><span class="o">=</span>cluster
+
+<span class="nv">$ </span>aws eks list-associated-access-policies <span class="nt">--cluster-name</span> t101-eks-workshop <span class="nt">--principal-arn</span> arn:aws:iam::<span class="k">${</span><span class="nv">ACCOUNT_ID</span><span class="k">}</span>:user/<span class="k">${</span><span class="nv">MYIAMUSER</span><span class="k">}</span> | jq
+<span class="nv">$ </span>aws eks describe-access-entry <span class="nt">--cluster-name</span> t101-eks-workshop <span class="nt">--principal-arn</span> arn:aws:iam::<span class="k">${</span><span class="nv">ACCOUNT_ID</span><span class="k">}</span>:user/<span class="k">${</span><span class="nv">MYIAMUSER</span><span class="k">}</span> | jq
+ 
+<span class="c"># (참고) context name 변경</span>
+<span class="nv">$ </span>kubectl config rename-context <span class="s2">"arn:aws:eks:ap-northeast-2:</span><span class="si">$(</span>aws sts get-caller-identity <span class="nt">--query</span> <span class="s1">'Account'</span> <span class="nt">--output</span> text<span class="si">)</span><span class="s2">:cluster/t101-eks-workshop"</span> <span class="s2">"T101-Lab"</span>
+<span class="c"># =&gt; Context "arn:aws:eks:ap-northeast-2:123456:cluster/t101-eks-workshop" renamed to "T101-Lab".</span>
+
+<span class="c"># k8s 클러스터, 노드, 파드 정보 확인 - 이제 정상적으로 조회 됩니다.</span>
+<span class="nv">$ </span>kubectl cluster-info
+<span class="c"># =&gt; Kubernetes control plane is running at https://79B209921C6987FCA6A542FDE1272C2E.gr7.ap-northeast-2.eks.amazonaws.com</span>
+<span class="c">#    CoreDNS is running at https://79B209921C6987FCA6A542FDE1272C2E.gr7.ap-northeast-2.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy</span>
+
+<span class="nv">$ </span>kubectl get node
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-L</span> node.kubernetes.io/instance-type <span class="nt">-L</span> topology.kubernetes.io/zone
+<span class="c"># =&gt; NAME                                               STATUS   ROLES    AGE   VERSION               INSTANCE-TYPE   ZONE</span>
+<span class="c">#    ip-10-42-103-44.ap-northeast-2.compute.internal    Ready    &lt;none&gt;   16m   v1.30.0-eks-036c24b   m5.large        ap-northeast-2a</span>
+<span class="c">#    ip-10-42-153-180.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   16m   v1.30.0-eks-036c24b   m5.large        ap-northeast-2b</span>
+<span class="c">#    ip-10-42-171-220.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   16m   v1.30.0-eks-036c24b   m5.large        ap-northeast-2c</span>
+
+<span class="nv">$ </span>kubectl get pod <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE     NAME                      READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    kube-system   aws-node-2jnd5            2/2     Running   0          16m</span>
+<span class="c">#    kube-system   aws-node-ftb8g            2/2     Running   0          16m</span>
+<span class="c">#    kube-system   aws-node-gn6nx            2/2     Running   0          16m</span>
+<span class="c">#    kube-system   coredns-5b9dfbf96-f8bfr   1/1     Running   0          19m</span>
+<span class="c">#    kube-system   coredns-5b9dfbf96-rtwfs   1/1     Running   0          19m</span>
+<span class="c">#    kube-system   kube-proxy-5zkxj          1/1     Running   0          16m</span>
+<span class="c">#    kube-system   kube-proxy-n645w          1/1     Running   0          16m</span>
+<span class="c">#    kube-system   kube-proxy-rcbvk          1/1     Running   0          16m</span>
+ 
+<span class="c"># 상세 정보 확인</span>
+<span class="nv">$ </span>terraform show
+<span class="nv">$ </span>terraform state list
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_ec2_tag.cluster_primary_security_group["study"]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_eks_addon.before_compute["vpc-cni"]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_eks_cluster.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_iam_openid_connect_provider.oidc_provider[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.aws_iam_policy.cluster_encryption[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.time_sleep.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.eks_managed_node_group["default"].aws_iam_role.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.eks_managed_node_group["default"].aws_launch_template.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.eks_managed_node_group["default"].module.user_data.null_resource.validate_cluster_service_cidr'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.kms.aws_kms_key.this[0]'</span>
+<span class="nv">$ </span>terraform state show <span class="s1">'module.eks.module.kms.aws_kms_alias.this["cluster"]'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_41.png" alt="EKS 배포 결과 (정상)" class="image-center" /></p>
+
+<h4 id="kube-ops-view-설치-및-사용">kube-ops-view 설치 및 사용</h4>
+<p>앞서 설치해보았던 kube-ops-view를 이번 kubernetes 클러스터에도 설치해보겠습니다.</p>
+
+<p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_42.png" alt="kube-ops-view" class="image-center" />
+  <em class="image-caption image-caption--img-shadow">kube-ops-view</em></p>
+
+<ul>
+  <li>노드의 파드 상태정보를 웹페이지에서 실시간으로 출력해줍니다.</li>
+  <li>설치 및 사용
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>helm repo add geek-cookbook https://geek-cookbook.github.io/charts/
+<span class="c"># =&gt; "geek-cookbook" has been added to your repositories</span>
+    
+<span class="nv">$ </span>helm <span class="nb">install </span>kube-ops-view geek-cookbook/kube-ops-view <span class="nt">--version</span> 1.2.2 <span class="nt">--set</span> env.TZ<span class="o">=</span><span class="s2">"Asia/Seoul"</span> <span class="nt">--namespace</span> kube-system
+
+<span class="c"># 포트포워딩</span>
+<span class="nv">$ </span>kubectl port-forward deployment/kube-ops-view <span class="nt">-n</span> kube-system 8080:8080 &amp;
+
+<span class="c"># 접속 주소 확인 : 각각 1배, 1.5배, 3배 크기</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080"</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080/#scale=1.5"</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KUBE-OPS-VIEW URL = http://localhost:8080/#scale=3"</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="pod-배포">Pod 배포</h4>
+
+<p>EKS Blueprint에서 제공하는 예제를 이용하여 Pod를 배포해보겠습니다.</p>
+
+<ul>
+  <li>example.yml 생성
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">apps/v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Deployment</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">inflate</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">replicas</span><span class="pi">:</span> <span class="m">0</span>
+  <span class="na">selector</span><span class="pi">:</span>
+    <span class="na">matchLabels</span><span class="pi">:</span>
+      <span class="na">app</span><span class="pi">:</span> <span class="s">inflate</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">metadata</span><span class="pi">:</span>
+      <span class="na">labels</span><span class="pi">:</span>
+        <span class="na">app</span><span class="pi">:</span> <span class="s">inflate</span>
+    <span class="na">spec</span><span class="pi">:</span>
+      <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+      <span class="na">containers</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">inflate</span>
+          <span class="na">image</span><span class="pi">:</span> <span class="s">public.ecr.aws/eks-distro/kubernetes/pause:3.7</span>
+          <span class="na">resources</span><span class="pi">:</span>
+            <span class="na">requests</span><span class="pi">:</span>
+              <span class="na">cpu</span><span class="pi">:</span> <span class="s">1</span>     
+</code></pre></div>    </div>
+  </li>
+  <li>Pod 배포 실습
+    <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl create <span class="nt">-f</span> example.yml
+<span class="c"># =&gt; deployment.apps/inflate created</span>
+  
+<span class="nv">$ </span>kubectl get deploy   <span class="c"># replicas가 0이어서 생성된 pod가 없습니다.</span>
+<span class="c"># =&gt; NAME      READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    inflate   0/0     0            0           16s</span>
+  
+<span class="c"># 3개로 scale 해보겠습니다.</span>
+<span class="nv">$ </span>kubectl scale deployment inflate <span class="nt">--replicas</span><span class="o">=</span>3 <span class="o">&amp;&amp;</span> kubectl get pod <span class="nt">-w</span>
+<span class="c"># =&gt; deployment.apps/inflate scaled</span>
+<span class="c">#    NAME                       READY   STATUS              RESTARTS   AGE</span>
+<span class="c">#    inflate-66fb68585c-8j7wr   0/1     ContainerCreating   0          1s</span>
+<span class="c">#    inflate-66fb68585c-j6bh4   0/1     ContainerCreating   0          1s</span>
+<span class="c">#    inflate-66fb68585c-sqwmc   0/1     ContainerCreating   0          1s</span>
+<span class="c">#    ... 잠시후 ...</span>
+<span class="c">#    inflate-66fb68585c-8j7wr   1/1     Running             0          4s</span>
+<span class="c">#    inflate-66fb68585c-j6bh4   1/1     Running             0          5s</span>
+<span class="c">#    inflate-66fb68585c-sqwmc   1/1     Running             0          5s</span>
+</code></pre></div>    </div>
+    <p><img src="/assets/2024/20240727_terraform_w7_eks_karpenter_43.png" alt="Pod 배포 결과" class="image-center" />
+<em class="image-caption image-caption--img-shadow">Pod 배포 결과</em></p>
+  </li>
+</ul>
+
+<h4 id="eks-클러스터-및-vpc-삭제">EKS 클러스터 및 VPC 삭제</h4>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># kube-ops-view 삭제</span>
+<span class="nv">$ </span>helm uninstall kube-ops-view <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; release "kube-ops-view" uninstalled</span>
+
+<span class="c"># 삭제 : vpc 삭제가 잘 안될 경우 aws 콘솔에서 vpc 수동 삭제 -&gt; vnic 등 남아 있을 경우 해당 vnic 강제 삭제 : 9분 소요</span>
+<span class="nv">$ </span>terraform destroy <span class="nt">-auto-approve</span>
+<span class="c"># =&gt; Destroy complete! Resources: 47 destroyed.</span>
+
+<span class="c"># VPC 삭제 확인</span>
+<span class="nv">$ </span>aws ec2 describe-vpcs <span class="nt">--filter</span> <span class="s1">'Name=isDefault,Values=false'</span> <span class="nt">--output</span> yaml
+<span class="c"># =&gt; Vpcs: []</span>
+
+<span class="c"># kubeconfig 삭제</span>
+<span class="nv">$ </span><span class="nb">rm</span> <span class="nt">-rf</span> ~/.kube/config
+</code></pre></div></div>
+
+<h2 id="마치며">마치며</h2>
+
+<p>이번 주에는 EKS Blueprint를 이용한 방법과 EKS Workshop을 이용한 방법을 통해 Terraform을 활용하여 EKS 배포를 진행해보았습니다.
+이번 실습을 통해 놀란점은 <strong>EKS 배포가 참 복잡하고 많은 AWS 기능을 사용해야 하는구나</strong> 하는것과
+<strong>Terraform을 활용하면 이렇게 쉽게 클러스터를 배포</strong> 할 수 있구나 하는것입니다.</p>
+
+<p>아무리 복잡한 배포 과정이 필요하더라도 <strong>Terraform 모듈을 잘 만들어두면</strong>
+이후에는 <strong>누구라도 쉽게</strong> 몇 줄의 명령어 만으로 배포가 가능하다는 것을 느꼈고
+Terraform의 강력함을 느꼈습니다.</p>
+
+<p>이번 실습을 거치면서 AWS와 Terraform에 대해 조금더 알게 되었고, 한 발자국 더 가까워진 느낌입니다.
+좋은 실습 기회를 주신 가시다 님과 Terraform 101 스터디를 진행하신 분들께 감사드립니다.
+다음 스터디가 마지막이어서 아쉽기도 하면서 기대도 됩니다. 마지막까지 열심히 달려보겠습니다.</p>]]></content><author><name></name></author><category term="terraform" /><category term="terraform," /><category term="cloud," /><category term="aws" /><summary type="html"><![CDATA[이번 주에는 테라폼으로 AWS EKS 배포를 하는것을 테라폼으로 시작하는 IaC를 통해 알아 보겠습니다.]]></summary></entry><entry><title type="html">[T101 4기] Runner</title><link href="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/" rel="alternate" type="text/html" title="[T101 4기] Runner" /><published>2024-07-13T02:08:00+09:00</published><updated>2024-07-13T02:08:00+09:00</updated><id>https://sweetlittlebird.github.io/posts/T101%20Study%20-%20Terraform%20Week%205b</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-07-13-T101-Study-Terraform-Week-5b/"><![CDATA[<h2 id="들어가며">들어가며</h2>
 
 <p>이번 주에는 <code class="language-plaintext highlighter-rouge">Module</code>과 <code class="language-plaintext highlighter-rouge">Runner</code>에 대해
 <a href="https://product.kyobobook.co.kr/detail/S000202478097">테라폼으로 시작하는 IaC</a>를 통해 알아 보는 중입니다.
@@ -2761,11 +4177,9 @@ DNSimple, CloudFlare 등이 있습니다.
 
             <svg width="173pt" height="44pt" viewBox="0.00 0.00 173.25 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
-<title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-40 169.25,-40 169.25,4 -4,4" />
 <!-- aws_instance.peter_srv1 -->
 <g id="node1" class="node">
-<title>aws_instance.peter_srv1</title>
 <polygon fill="none" stroke="black" points="165.25,-36 0,-36 0,0 165.25,0 165.25,-36" />
 <text text-anchor="middle" x="82.62" y="-12.2" font-family="sans-serif" font-size="14.00">aws_instance.peter_srv1</text>
 </g>
@@ -4043,7 +5457,7 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
       <span class="nx">host</span> <span class="p">=</span> <span class="nx">aws_eip</span><span class="p">.</span><span class="nx">myeip</span><span class="p">.</span><span class="nx">public_ip</span>
       <span class="nx">type</span> <span class="p">=</span> <span class="s2">"ssh"</span>
       <span class="nx">user</span> <span class="p">=</span> <span class="s2">"ubuntu"</span>
-      <span class="nx">private_key</span> <span class="p">=</span>  <span class="nx">file</span><span class="p">(</span><span class="s2">"/Users/psyche/.ssh/aws-ec2-key.cer"</span><span class="p">)</span> <span class="c1"># 각자 자신의 EC2 SSH Keypair 파일 위치 지정</span>
+      <span class="nx">private_key</span> <span class="p">=</span>  <span class="nx">file</span><span class="p">(</span><span class="s2">"/Users/admin/.ssh/aws-ec2-key.cer"</span><span class="p">)</span> <span class="c1"># 각자 자신의 EC2 SSH Keypair 파일 위치 지정</span>
       <span class="c1">#password = "qwe123"</span>
     <span class="p">}</span>
     <span class="nx">inline</span> <span class="p">=</span> <span class="p">[</span>
@@ -4097,137 +5511,114 @@ Windows(PowerShell) : C:/windows/temp/terraform_%RAND%.ps1
 
 <svg width="1076pt" height="206pt" viewBox="0.00 0.00 1075.75 206.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 202)">
-<title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-202 1071.75,-202 1071.75,4 -4,4" />
 <!-- aws_eip.myeip -->
 <g id="node1" class="node">
-<title>aws_eip.myeip</title>
 <polygon fill="none" stroke="black" points="865,-36 759,-36 759,0 865,0 865,-36" />
 <text text-anchor="middle" x="812" y="-12.2" font-family="sans-serif" font-size="14.00">aws_eip.myeip</text>
 </g>
 <!-- aws_instance.example -->
 <g id="node2" class="node">
-<title>aws_instance.example</title>
 <polygon fill="none" stroke="black" points="645.75,-36 492.5,-36 492.5,0 645.75,0 645.75,-36" />
 <text text-anchor="middle" x="569.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_instance.example</text>
 </g>
 <!-- aws_eip.myeip&#45;&gt;aws_instance.example -->
 <g id="edge1" class="edge">
-<title>aws_eip.myeip&#45;&gt;aws_instance.example</title>
 <path fill="none" stroke="black" d="M758.73,-18C729.15,-18 691.38,-18 657.42,-18" />
 <polygon fill="black" stroke="black" points="657.58,-14.5 647.58,-18 657.58,-21.5 657.58,-14.5" />
 </g>
 <!-- aws_security_group.instance -->
 <g id="node7" class="node">
-<title>aws_security_group.instance</title>
 <polygon fill="none" stroke="black" points="368.38,-36 178.38,-36 178.38,0 368.38,0 368.38,-36" />
 <text text-anchor="middle" x="273.38" y="-12.2" font-family="sans-serif" font-size="14.00">aws_security_group.instance</text>
 </g>
 <!-- aws_instance.example&#45;&gt;aws_security_group.instance -->
 <g id="edge2" class="edge">
-<title>aws_instance.example&#45;&gt;aws_security_group.instance</title>
 <path fill="none" stroke="black" d="M492.1,-18C457.97,-18 417.14,-18 380.1,-18" />
 <polygon fill="black" stroke="black" points="380.26,-14.5 370.26,-18 380.26,-21.5 380.26,-14.5" />
 </g>
 <!-- aws_subnet.peter_subnet -->
 <g id="node8" class="node">
-<title>aws_subnet.peter_subnet</title>
 <polygon fill="none" stroke="black" points="358.62,-90 188.12,-90 188.12,-54 358.62,-54 358.62,-90" />
 <text text-anchor="middle" x="273.38" y="-66.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet</text>
 </g>
 <!-- aws_instance.example&#45;&gt;aws_subnet.peter_subnet -->
 <g id="edge3" class="edge">
-<title>aws_instance.example&#45;&gt;aws_subnet.peter_subnet</title>
 <path fill="none" stroke="black" d="M492.1,-31.98C454.88,-38.82 409.69,-47.12 370.15,-54.39" />
 <polygon fill="black" stroke="black" points="369.58,-50.94 360.37,-56.19 370.84,-57.83 369.58,-50.94" />
 </g>
 <!-- aws_internet_gateway.peter_igw -->
 <g id="node3" class="node">
-<title>aws_internet_gateway.peter_igw</title>
 <polygon fill="none" stroke="black" points="379.25,-198 167.5,-198 167.5,-162 379.25,-162 379.25,-198" />
 <text text-anchor="middle" x="273.38" y="-174.2" font-family="sans-serif" font-size="14.00">aws_internet_gateway.peter_igw</text>
 </g>
 <!-- aws_vpc.peter_vpc -->
 <g id="node9" class="node">
-<title>aws_vpc.peter_vpc</title>
 <polygon fill="none" stroke="black" points="131.5,-117 0,-117 0,-81 131.5,-81 131.5,-117" />
 <text text-anchor="middle" x="65.75" y="-93.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
 </g>
 <!-- aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge4" class="edge">
-<title>aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M192.43,-161.56C183.92,-158.97 175.47,-156.11 167.5,-153 146.54,-144.82 124.38,-133.3 106.2,-122.99" />
 <polygon fill="black" stroke="black" points="107.99,-119.98 97.58,-118.02 104.49,-126.05 107.99,-119.98" />
 </g>
 <!-- aws_route.peter_defaultroute -->
 <g id="node4" class="node">
-<title>aws_route.peter_defaultroute</title>
 <polygon fill="none" stroke="black" points="664.88,-184 473.38,-184 473.38,-148 664.88,-148 664.88,-184" />
 <text text-anchor="middle" x="569.12" y="-160.2" font-family="sans-serif" font-size="14.00">aws_route.peter_defaultroute</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw -->
 <g id="edge5" class="edge">
-<title>aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw</title>
 <path fill="none" stroke="black" d="M473.16,-170.53C446.93,-171.78 418.18,-173.15 390.88,-174.45" />
 <polygon fill="black" stroke="black" points="391.03,-170.94 381.21,-174.91 391.36,-177.93 391.03,-170.94" />
 </g>
 <!-- aws_route_table.peter_rt -->
 <g id="node5" class="node">
-<title>aws_route_table.peter_rt</title>
 <polygon fill="none" stroke="black" points="356,-144 190.75,-144 190.75,-108 356,-108 356,-144" />
 <text text-anchor="middle" x="273.38" y="-120.2" font-family="sans-serif" font-size="14.00">aws_route_table.peter_rt</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge6" class="edge">
-<title>aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt</title>
 <path fill="none" stroke="black" d="M473.16,-153.07C439.27,-148.45 401.16,-143.26 367.44,-138.67" />
 <polygon fill="black" stroke="black" points="368.06,-135.22 357.68,-137.34 367.12,-142.16 368.06,-135.22" />
 </g>
 <!-- aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge7" class="edge">
-<title>aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M190.52,-115.25C174.83,-113.19 158.47,-111.04 142.98,-109.01" />
 <polygon fill="black" stroke="black" points="143.74,-105.58 133.37,-107.75 142.83,-112.52 143.74,-105.58" />
 </g>
 <!-- aws_route_table_association.peter_rtassociation -->
 <g id="node6" class="node">
-<title>aws_route_table_association.peter_rtassociation</title>
 <polygon fill="none" stroke="black" points="723,-117 415.25,-117 415.25,-81 723,-81 723,-117" />
 <text text-anchor="middle" x="569.12" y="-93.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation</text>
 </g>
 <!-- aws_route_table_association.peter_rtassociation&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge8" class="edge">
-<title>aws_route_table_association.peter_rtassociation&#45;&gt;aws_route_table.peter_rt</title>
 <path fill="none" stroke="black" d="M414.8,-113.09C398.72,-114.57 382.75,-116.04 367.66,-117.43" />
 <polygon fill="black" stroke="black" points="367.44,-113.93 357.8,-118.33 368.08,-120.9 367.44,-113.93" />
 </g>
 <!-- aws_route_table_association.peter_rtassociation&#45;&gt;aws_subnet.peter_subnet -->
 <g id="edge9" class="edge">
-<title>aws_route_table_association.peter_rtassociation&#45;&gt;aws_subnet.peter_subnet</title>
 <path fill="none" stroke="black" d="M414.8,-84.91C399.65,-83.51 384.59,-82.13 370.27,-80.81" />
 <polygon fill="black" stroke="black" points="370.75,-77.34 360.47,-79.91 370.11,-84.31 370.75,-77.34" />
 </g>
 <!-- aws_security_group.instance&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge10" class="edge">
-<title>aws_security_group.instance&#45;&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M192.43,-36.44C183.92,-39.03 175.47,-41.89 167.5,-45 146.54,-53.18 124.38,-64.7 106.2,-75.01" />
 <polygon fill="black" stroke="black" points="104.49,-71.95 97.58,-79.98 107.99,-78.02 104.49,-71.95" />
 </g>
 <!-- aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge11" class="edge">
-<title>aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc</title>
 <path fill="none" stroke="black" d="M187.85,-83.1C172.93,-85.06 157.48,-87.09 142.82,-89.01" />
 <polygon fill="black" stroke="black" points="142.73,-85.49 133.27,-90.26 143.64,-92.43 142.73,-85.49" />
 </g>
 <!-- null_resource.echomyeip -->
 <g id="node10" class="node">
-<title>null_resource.echomyeip</title>
 <polygon fill="none" stroke="black" points="1067.75,-36 901,-36 901,0 1067.75,0 1067.75,-36" />
 <text text-anchor="middle" x="984.38" y="-12.2" font-family="sans-serif" font-size="14.00">null_resource.echomyeip</text>
 </g>
 <!-- null_resource.echomyeip&#45;&gt;aws_eip.myeip -->
 <g id="edge12" class="edge">
-<title>null_resource.echomyeip&#45;&gt;aws_eip.myeip</title>
 <path fill="none" stroke="black" d="M900.68,-18C892.59,-18 884.48,-18 876.62,-18" />
 <polygon fill="black" stroke="black" points="876.84,-14.5 866.84,-18 876.84,-21.5 876.84,-14.5" />
 </g>
@@ -4597,36 +5988,30 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
 
             <svg width="389pt" height="44pt" viewBox="0.00 0.00 389.00 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
-  <title>G</title>
-  <polygon fill="white" stroke="none" points="-4,4 -4,-40 385,-40 385,4 -4,4" />
+              <polygon fill="white" stroke="none" points="-4,4 -4,-40 385,-40 385,4 -4,4" />
   <!-- data.local_file.abc -->
   <g id="node1" class="node">
-  <title>data.local_file.abc</title>
-  <polygon fill="none" stroke="black" points="254,-36 130,-36 130,0 254,0 254,-36" />
+              <polygon fill="none" stroke="black" points="254,-36 130,-36 130,0 254,0 254,-36" />
   <text text-anchor="middle" x="192" y="-12.2" font-family="sans-serif" font-size="14.00">data.local_file.abc</text>
   </g>
   <!-- local_file.abc -->
   <g id="node2" class="node">
-  <title>local_file.abc</title>
-  <polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
+              <polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
   <text text-anchor="middle" x="47" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.abc</text>
   </g>
   <!-- data.local_file.abc&#45;&gt;local_file.abc -->
   <g id="edge1" class="edge">
-  <title>data.local_file.abc&#45;&gt;local_file.abc</title>
-  <path fill="none" stroke="black" d="M129.53,-18C121.59,-18 113.49,-18 105.62,-18" />
+              <path fill="none" stroke="black" d="M129.53,-18C121.59,-18 113.49,-18 105.62,-18" />
   <polygon fill="black" stroke="black" points="105.82,-14.5 95.82,-18 105.82,-21.5 105.82,-14.5" />
   </g>
   <!-- local_file.def -->
   <g id="node3" class="node">
-  <title>local_file.def</title>
-  <polygon fill="none" stroke="black" points="381,-36 290,-36 290,0 381,0 381,-36" />
+              <polygon fill="none" stroke="black" points="381,-36 290,-36 290,0 381,0 381,-36" />
   <text text-anchor="middle" x="335.5" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.def</text>
   </g>
   <!-- local_file.def&#45;&gt;data.local_file.abc -->
   <g id="edge2" class="edge">
-  <title>local_file.def&#45;&gt;data.local_file.abc</title>
-  <path fill="none" stroke="black" d="M289.73,-18C282.08,-18 273.96,-18 265.8,-18" />
+              <path fill="none" stroke="black" d="M289.73,-18C282.08,-18 273.96,-18 265.8,-18" />
   <polygon fill="black" stroke="black" points="265.81,-14.5 255.81,-18 265.81,-21.5 265.81,-14.5" />
   </g>
   </g>
@@ -5330,36 +6715,30 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
 
     <svg width="455pt" height="98pt" viewBox="0.00 0.00 454.75 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-94 450.75,-94 450.75,4 -4,4" />
+  <polygon fill="white" stroke="none" points="-4,4 -4,-94 450.75,-94 450.75,4 -4,4" />
 <!-- data.aws_availability_zones.available -->
 <g id="node1" class="node">
-<title>data.aws_availability_zones.available</title>
-<polygon fill="none" stroke="black" points="240.25,-90 0,-90 0,-54 240.25,-54 240.25,-90" />
+  <polygon fill="none" stroke="black" points="240.25,-90 0,-90 0,-54 240.25,-54 240.25,-90" />
 <text text-anchor="middle" x="120.12" y="-66.2" font-family="sans-serif" font-size="14.00">data.aws_availability_zones.available</text>
 </g>
 <!-- aws_subnet.peter_subnet -->
 <g id="node2" class="node">
-<title>aws_subnet.peter_subnet</title>
-<polygon fill="none" stroke="black" points="446.75,-63 276.25,-63 276.25,-27 446.75,-27 446.75,-63" />
+  <polygon fill="none" stroke="black" points="446.75,-63 276.25,-63 276.25,-27 446.75,-27 446.75,-63" />
 <text text-anchor="middle" x="361.5" y="-39.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet</text>
 </g>
 <!-- aws_subnet.peter_subnet&#45;&gt;data.aws_availability_zones.available -->
 <g id="edge1" class="edge">
-<title>aws_subnet.peter_subnet&#45;&gt;data.aws_availability_zones.available</title>
-<path fill="none" stroke="black" d="M275.77,-54.56C268,-55.43 260.01,-56.33 251.96,-57.24" />
+  <path fill="none" stroke="black" d="M275.77,-54.56C268,-55.43 260.01,-56.33 251.96,-57.24" />
 <polygon fill="black" stroke="black" points="251.59,-53.76 242.05,-58.36 252.38,-60.72 251.59,-53.76" />
 </g>
 <!-- aws_vpc.peter_vpc -->
 <g id="node3" class="node">
-<title>aws_vpc.peter_vpc</title>
-<polygon fill="none" stroke="black" points="185.88,-36 54.38,-36 54.38,0 185.88,0 185.88,-36" />
+  <polygon fill="none" stroke="black" points="185.88,-36 54.38,-36 54.38,0 185.88,0 185.88,-36" />
 <text text-anchor="middle" x="120.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
 </g>
 <!-- aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge2" class="edge">
-<title>aws_subnet.peter_subnet&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M275.77,-35.44C250.23,-32.56 222.36,-29.42 197.4,-26.6" />
+  <path fill="none" stroke="black" d="M275.77,-35.44C250.23,-32.56 222.36,-29.42 197.4,-26.6" />
 <polygon fill="black" stroke="black" points="197.99,-23.15 187.66,-25.5 197.2,-30.1 197.99,-23.15" />
 </g>
 </g>
@@ -5404,7 +6783,7 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
 <span class="c">#          "DhcpOptionsId": "dopt-0c264ef627294fd1f",</span>
 <span class="c">#          "State": "available",</span>
 <span class="c">#          "VpcId": "vpc-0e1ad43009a8fe8fa",</span>
-<span class="c">#          "OwnerId": "654654550747",</span>
+<span class="c">#          "OwnerId": "123456789012",</span>
 <span class="c">#          "InstanceTenancy": "default",</span>
 <span class="c">#          "CidrBlockAssociationSet": [</span>
 <span class="c">#            {</span>
@@ -5532,36 +6911,30 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
 
         <svg width="354pt" height="98pt" viewBox="0.00 0.00 353.50 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-94 349.5,-94 349.5,4 -4,4" />
+    <polygon fill="white" stroke="none" points="-4,4 -4,-94 349.5,-94 349.5,4 -4,4" />
 <!-- aws_subnet.peter_subnet1 -->
 <g id="node1" class="node">
-<title>aws_subnet.peter_subnet1</title>
-<polygon fill="none" stroke="black" points="345.5,-90 167.5,-90 167.5,-54 345.5,-54 345.5,-90" />
+    <polygon fill="none" stroke="black" points="345.5,-90 167.5,-90 167.5,-54 345.5,-54 345.5,-90" />
 <text text-anchor="middle" x="256.5" y="-66.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet1</text>
 </g>
 <!-- aws_vpc.peter_vpc -->
 <g id="node3" class="node">
-<title>aws_vpc.peter_vpc</title>
-<polygon fill="none" stroke="black" points="131.5,-63 0,-63 0,-27 131.5,-27 131.5,-63" />
+    <polygon fill="none" stroke="black" points="131.5,-63 0,-63 0,-27 131.5,-27 131.5,-63" />
 <text text-anchor="middle" x="65.75" y="-39.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
 </g>
 <!-- aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge1" class="edge">
-<title>aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M167.2,-59.37C159.21,-58.23 151.16,-57.07 143.28,-55.95" />
+    <path fill="none" stroke="black" d="M167.2,-59.37C159.21,-58.23 151.16,-57.07 143.28,-55.95" />
 <polygon fill="black" stroke="black" points="143.78,-52.48 133.38,-54.53 142.79,-59.41 143.78,-52.48" />
 </g>
 <!-- aws_subnet.peter_subnet2 -->
 <g id="node2" class="node">
-<title>aws_subnet.peter_subnet2</title>
-<polygon fill="none" stroke="black" points="345.5,-36 167.5,-36 167.5,0 345.5,0 345.5,-36" />
+    <polygon fill="none" stroke="black" points="345.5,-36 167.5,-36 167.5,0 345.5,0 345.5,-36" />
 <text text-anchor="middle" x="256.5" y="-12.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet2</text>
 </g>
 <!-- aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge2" class="edge">
-<title>aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M167.2,-30.63C159.21,-31.77 151.16,-32.93 143.28,-34.05" />
+    <path fill="none" stroke="black" d="M167.2,-30.63C159.21,-31.77 151.16,-32.93 143.28,-34.05" />
 <polygon fill="black" stroke="black" points="142.79,-30.59 133.38,-35.47 143.78,-37.52 142.79,-30.59" />
 </g>
 </g>
@@ -5772,186 +7145,155 @@ Windows PowerShell: <span class="nv">$Env</span>:&lt;환경 변수 이름&gt;<sp
   <li>그래프 확인
     <svg width="753pt" height="341pt" viewBox="0.00 0.00 752.75 341.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 337)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-337 748.75,-337 748.75,4 -4,4" />
+  <polygon fill="white" stroke="none" points="-4,4 -4,-337 748.75,-337 748.75,4 -4,4" />
 <!-- data.aws_ami.peter_amazonlinux2 -->
 <g id="node1" class="node">
-<title>data.aws_ami.peter_amazonlinux2</title>
-<polygon fill="none" stroke="black" points="393.5,-252 167.5,-252 167.5,-216 393.5,-216 393.5,-252" />
+  <polygon fill="none" stroke="black" points="393.5,-252 167.5,-252 167.5,-216 393.5,-216 393.5,-252" />
 <text text-anchor="middle" x="280.5" y="-228.2" font-family="sans-serif" font-size="14.00">data.aws_ami.peter_amazonlinux2</text>
 </g>
 <!-- aws_instance.peter_ec2 -->
 <g id="node2" class="node">
-<title>aws_instance.peter_ec2</title>
-<polygon fill="none" stroke="black" points="667.88,-198 506.38,-198 506.38,-162 667.88,-162 667.88,-198" />
+  <polygon fill="none" stroke="black" points="667.88,-198 506.38,-198 506.38,-162 667.88,-162 667.88,-198" />
 <text text-anchor="middle" x="587.12" y="-174.2" font-family="sans-serif" font-size="14.00">aws_instance.peter_ec2</text>
 </g>
 <!-- aws_instance.peter_ec2&#45;&gt;data.aws_ami.peter_amazonlinux2 -->
 <g id="edge1" class="edge">
-<title>aws_instance.peter_ec2&#45;&gt;data.aws_ami.peter_amazonlinux2</title>
-<path fill="none" stroke="black" d="M506.09,-194.19C472.7,-200.11 433.28,-207.09 396.86,-213.55" />
+  <path fill="none" stroke="black" d="M506.09,-194.19C472.7,-200.11 433.28,-207.09 396.86,-213.55" />
 <polygon fill="black" stroke="black" points="396.39,-210.08 387.15,-215.27 397.61,-216.97 396.39,-210.08" />
 </g>
 <!-- aws_internet_gateway.peter_igw -->
 <g id="node3" class="node">
-<title>aws_internet_gateway.peter_igw</title>
-<polygon fill="none" stroke="black" points="386.38,-198 174.62,-198 174.62,-162 386.38,-162 386.38,-198" />
+  <polygon fill="none" stroke="black" points="386.38,-198 174.62,-198 174.62,-162 386.38,-162 386.38,-198" />
 <text text-anchor="middle" x="280.5" y="-174.2" font-family="sans-serif" font-size="14.00">aws_internet_gateway.peter_igw</text>
 </g>
 <!-- aws_instance.peter_ec2&#45;&gt;aws_internet_gateway.peter_igw -->
 <g id="edge2" class="edge">
-<title>aws_instance.peter_ec2&#45;&gt;aws_internet_gateway.peter_igw</title>
-<path fill="none" stroke="black" d="M506.09,-180C473.02,-180 434.03,-180 397.91,-180" />
+  <path fill="none" stroke="black" d="M506.09,-180C473.02,-180 434.03,-180 397.91,-180" />
 <polygon fill="black" stroke="black" points="398.31,-176.5 388.31,-180 398.31,-183.5 398.31,-176.5" />
 </g>
 <!-- aws_security_group.peter_sg -->
 <g id="node8" class="node">
-<title>aws_security_group.peter_sg</title>
-<polygon fill="none" stroke="black" points="376.62,-306 184.38,-306 184.38,-270 376.62,-270 376.62,-306" />
+  <polygon fill="none" stroke="black" points="376.62,-306 184.38,-306 184.38,-270 376.62,-270 376.62,-306" />
 <text text-anchor="middle" x="280.5" y="-282.2" font-family="sans-serif" font-size="14.00">aws_security_group.peter_sg</text>
 </g>
 <!-- aws_instance.peter_ec2&#45;&gt;aws_security_group.peter_sg -->
 <g id="edge3" class="edge">
-<title>aws_instance.peter_ec2&#45;&gt;aws_security_group.peter_sg</title>
-<path fill="none" stroke="black" d="M517.9,-198.43C489.7,-207.34 457.2,-219.31 429.5,-234 411.83,-243.37 411.59,-252.48 393.5,-261 390,-262.65 386.39,-264.2 382.71,-265.66" />
+  <path fill="none" stroke="black" d="M517.9,-198.43C489.7,-207.34 457.2,-219.31 429.5,-234 411.83,-243.37 411.59,-252.48 393.5,-261 390,-262.65 386.39,-264.2 382.71,-265.66" />
 <polygon fill="black" stroke="black" points="381.76,-262.28 373.58,-269.03 384.18,-268.85 381.76,-262.28" />
 </g>
 <!-- aws_subnet.peter_subnet1 -->
 <g id="node11" class="node">
-<title>aws_subnet.peter_subnet1</title>
-<polygon fill="none" stroke="black" points="369.5,-144 191.5,-144 191.5,-108 369.5,-108 369.5,-144" />
+  <polygon fill="none" stroke="black" points="369.5,-144 191.5,-144 191.5,-108 369.5,-108 369.5,-144" />
 <text text-anchor="middle" x="280.5" y="-120.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet1</text>
 </g>
 <!-- aws_instance.peter_ec2&#45;&gt;aws_subnet.peter_subnet1 -->
 <g id="edge4" class="edge">
-<title>aws_instance.peter_ec2&#45;&gt;aws_subnet.peter_subnet1</title>
-<path fill="none" stroke="black" d="M506.02,-166.35C481.46,-162.12 454.36,-157.41 429.5,-153 413.83,-150.22 397.23,-147.23 381.04,-144.3" />
+  <path fill="none" stroke="black" d="M506.02,-166.35C481.46,-162.12 454.36,-157.41 429.5,-153 413.83,-150.22 397.23,-147.23 381.04,-144.3" />
 <polygon fill="black" stroke="black" points="381.86,-140.89 371.4,-142.54 380.61,-147.78 381.86,-140.89" />
 </g>
 <!-- aws_vpc.peter_vpc -->
 <g id="node13" class="node">
-<title>aws_vpc.peter_vpc</title>
-<polygon fill="none" stroke="black" points="131.5,-144 0,-144 0,-108 131.5,-108 131.5,-144" />
+  <polygon fill="none" stroke="black" points="131.5,-144 0,-144 0,-108 131.5,-108 131.5,-144" />
 <text text-anchor="middle" x="65.75" y="-120.2" font-family="sans-serif" font-size="14.00">aws_vpc.peter_vpc</text>
 </g>
 <!-- aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge5" class="edge">
-<title>aws_internet_gateway.peter_igw&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M201.71,-161.52C190.23,-158.71 178.55,-155.81 167.5,-153 159.51,-150.97 151.17,-148.8 142.86,-146.62" />
+  <path fill="none" stroke="black" d="M201.71,-161.52C190.23,-158.71 178.55,-155.81 167.5,-153 159.51,-150.97 151.17,-148.8 142.86,-146.62" />
 <polygon fill="black" stroke="black" points="144.02,-143.3 133.46,-144.13 142.23,-150.07 144.02,-143.3" />
 </g>
 <!-- aws_route.peter_defaultroute -->
 <g id="node4" class="node">
-<title>aws_route.peter_defaultroute</title>
-<polygon fill="none" stroke="black" points="682.88,-144 491.38,-144 491.38,-108 682.88,-108 682.88,-144" />
+  <polygon fill="none" stroke="black" points="682.88,-144 491.38,-144 491.38,-108 682.88,-108 682.88,-144" />
 <text text-anchor="middle" x="587.12" y="-120.2" font-family="sans-serif" font-size="14.00">aws_route.peter_defaultroute</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw -->
 <g id="edge6" class="edge">
-<title>aws_route.peter_defaultroute&#45;&gt;aws_internet_gateway.peter_igw</title>
-<path fill="none" stroke="black" d="M491.26,-142.2C470.88,-145.72 449.47,-149.46 429.5,-153 417.69,-155.1 405.35,-157.31 393.05,-159.53" />
+  <path fill="none" stroke="black" d="M491.26,-142.2C470.88,-145.72 449.47,-149.46 429.5,-153 417.69,-155.1 405.35,-157.31 393.05,-159.53" />
 <polygon fill="black" stroke="black" points="392.49,-156.07 383.28,-161.3 393.74,-162.96 392.49,-156.07" />
 </g>
 <!-- aws_route_table.peter_rt -->
 <g id="node5" class="node">
-<title>aws_route_table.peter_rt</title>
-<polygon fill="none" stroke="black" points="363.12,-90 197.88,-90 197.88,-54 363.12,-54 363.12,-90" />
+  <polygon fill="none" stroke="black" points="363.12,-90 197.88,-90 197.88,-54 363.12,-54 363.12,-90" />
 <text text-anchor="middle" x="280.5" y="-66.2" font-family="sans-serif" font-size="14.00">aws_route_table.peter_rt</text>
 </g>
 <!-- aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge7" class="edge">
-<title>aws_route.peter_defaultroute&#45;&gt;aws_route_table.peter_rt</title>
-<path fill="none" stroke="black" d="M491.26,-109.8C470.88,-106.28 449.47,-102.54 429.5,-99 411.72,-95.85 392.74,-92.42 374.52,-89.11" />
+  <path fill="none" stroke="black" d="M491.26,-109.8C470.88,-106.28 449.47,-102.54 429.5,-99 411.72,-95.85 392.74,-92.42 374.52,-89.11" />
 <polygon fill="black" stroke="black" points="375.24,-85.69 364.77,-87.34 373.99,-92.57 375.24,-85.69" />
 </g>
 <!-- aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge8" class="edge">
-<title>aws_route_table.peter_rt&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M201.71,-90.48C190.23,-93.29 178.55,-96.19 167.5,-99 159.51,-101.03 151.17,-103.2 142.86,-105.38" />
+  <path fill="none" stroke="black" d="M201.71,-90.48C190.23,-93.29 178.55,-96.19 167.5,-99 159.51,-101.03 151.17,-103.2 142.86,-105.38" />
 <polygon fill="black" stroke="black" points="142.23,-101.93 133.46,-107.87 144.02,-108.7 142.23,-101.93" />
 </g>
 <!-- aws_route_table_association.peter_rtassociation1 -->
 <g id="node6" class="node">
-<title>aws_route_table_association.peter_rtassociation1</title>
-<polygon fill="none" stroke="black" points="744.75,-90 429.5,-90 429.5,-54 744.75,-54 744.75,-90" />
+  <polygon fill="none" stroke="black" points="744.75,-90 429.5,-90 429.5,-54 744.75,-54 744.75,-90" />
 <text text-anchor="middle" x="587.12" y="-66.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation1</text>
 </g>
 <!-- aws_route_table_association.peter_rtassociation1&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge9" class="edge">
-<title>aws_route_table_association.peter_rtassociation1&#45;&gt;aws_route_table.peter_rt</title>
-<path fill="none" stroke="black" d="M429.35,-72C410.7,-72 392.13,-72 374.77,-72" />
+  <path fill="none" stroke="black" d="M429.35,-72C410.7,-72 392.13,-72 374.77,-72" />
 <polygon fill="black" stroke="black" points="375.07,-68.5 365.07,-72 375.07,-75.5 375.07,-68.5" />
 </g>
 <!-- aws_route_table_association.peter_rtassociation1&#45;&gt;aws_subnet.peter_subnet1 -->
 <g id="edge10" class="edge">
-<title>aws_route_table_association.peter_rtassociation1&#45;&gt;aws_subnet.peter_subnet1</title>
-<path fill="none" stroke="black" d="M478.26,-90.45C461.92,-93.29 445.26,-96.2 429.5,-99 413.83,-101.78 397.23,-104.77 381.04,-107.7" />
+  <path fill="none" stroke="black" d="M478.26,-90.45C461.92,-93.29 445.26,-96.2 429.5,-99 413.83,-101.78 397.23,-104.77 381.04,-107.7" />
 <polygon fill="black" stroke="black" points="380.61,-104.22 371.4,-109.46 381.86,-111.11 380.61,-104.22" />
 </g>
 <!-- aws_route_table_association.peter_rtassociation2 -->
 <g id="node7" class="node">
-<title>aws_route_table_association.peter_rtassociation2</title>
-<polygon fill="none" stroke="black" points="744.75,-36 429.5,-36 429.5,0 744.75,0 744.75,-36" />
+  <polygon fill="none" stroke="black" points="744.75,-36 429.5,-36 429.5,0 744.75,0 744.75,-36" />
 <text text-anchor="middle" x="587.12" y="-12.2" font-family="sans-serif" font-size="14.00">aws_route_table_association.peter_rtassociation2</text>
 </g>
 <!-- aws_route_table_association.peter_rtassociation2&#45;&gt;aws_route_table.peter_rt -->
 <g id="edge11" class="edge">
-<title>aws_route_table_association.peter_rtassociation2&#45;&gt;aws_route_table.peter_rt</title>
-<path fill="none" stroke="black" d="M478.26,-36.45C461.92,-39.29 445.26,-42.2 429.5,-45 411.72,-48.15 392.74,-51.58 374.52,-54.89" />
+  <path fill="none" stroke="black" d="M478.26,-36.45C461.92,-39.29 445.26,-42.2 429.5,-45 411.72,-48.15 392.74,-51.58 374.52,-54.89" />
 <polygon fill="black" stroke="black" points="373.99,-51.43 364.77,-56.66 375.24,-58.31 373.99,-51.43" />
 </g>
 <!-- aws_subnet.peter_subnet2 -->
 <g id="node12" class="node">
-<title>aws_subnet.peter_subnet2</title>
-<polygon fill="none" stroke="black" points="369.5,-36 191.5,-36 191.5,0 369.5,0 369.5,-36" />
+  <polygon fill="none" stroke="black" points="369.5,-36 191.5,-36 191.5,0 369.5,0 369.5,-36" />
 <text text-anchor="middle" x="280.5" y="-12.2" font-family="sans-serif" font-size="14.00">aws_subnet.peter_subnet2</text>
 </g>
 <!-- aws_route_table_association.peter_rtassociation2&#45;&gt;aws_subnet.peter_subnet2 -->
 <g id="edge12" class="edge">
-<title>aws_route_table_association.peter_rtassociation2&#45;&gt;aws_subnet.peter_subnet2</title>
-<path fill="none" stroke="black" d="M429.35,-18C412.93,-18 396.57,-18 381.05,-18" />
+  <path fill="none" stroke="black" d="M429.35,-18C412.93,-18 396.57,-18 381.05,-18" />
 <polygon fill="black" stroke="black" points="381.42,-14.5 371.42,-18 381.42,-21.5 381.42,-14.5" />
 </g>
 <!-- aws_security_group.peter_sg&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge13" class="edge">
-<title>aws_security_group.peter_sg&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M184.02,-270C178.24,-267.4 172.68,-264.41 167.5,-261 126.88,-234.21 96.5,-185.22 80.21,-154.2" />
+  <path fill="none" stroke="black" d="M184.02,-270C178.24,-267.4 172.68,-264.41 167.5,-261 126.88,-234.21 96.5,-185.22 80.21,-154.2" />
 <polygon fill="black" stroke="black" points="83.39,-152.72 75.73,-145.39 77.15,-155.89 83.39,-152.72" />
 </g>
 <!-- aws_security_group_rule.peter_sginbound -->
 <g id="node9" class="node">
-<title>aws_security_group_rule.peter_sginbound</title>
-<polygon fill="none" stroke="black" points="722.25,-333 452,-333 452,-297 722.25,-297 722.25,-333" />
+  <polygon fill="none" stroke="black" points="722.25,-333 452,-333 452,-297 722.25,-297 722.25,-333" />
 <text text-anchor="middle" x="587.12" y="-309.2" font-family="sans-serif" font-size="14.00">aws_security_group_rule.peter_sginbound</text>
 </g>
 <!-- aws_security_group_rule.peter_sginbound&#45;&gt;aws_security_group.peter_sg -->
 <g id="edge14" class="edge">
-<title>aws_security_group_rule.peter_sginbound&#45;&gt;aws_security_group.peter_sg</title>
-<path fill="none" stroke="black" d="M451.63,-303.08C430.38,-301.2 408.66,-299.27 388.16,-297.45" />
+  <path fill="none" stroke="black" d="M451.63,-303.08C430.38,-301.2 408.66,-299.27 388.16,-297.45" />
 <polygon fill="black" stroke="black" points="388.68,-293.99 378.41,-296.59 388.07,-300.96 388.68,-293.99" />
 </g>
 <!-- aws_security_group_rule.peter_sgoutbound -->
 <g id="node10" class="node">
-<title>aws_security_group_rule.peter_sgoutbound</title>
-<polygon fill="none" stroke="black" points="726.38,-279 447.88,-279 447.88,-243 726.38,-243 726.38,-279" />
+  <polygon fill="none" stroke="black" points="726.38,-279 447.88,-279 447.88,-243 726.38,-243 726.38,-279" />
 <text text-anchor="middle" x="587.12" y="-255.2" font-family="sans-serif" font-size="14.00">aws_security_group_rule.peter_sgoutbound</text>
 </g>
 <!-- aws_security_group_rule.peter_sgoutbound&#45;&gt;aws_security_group.peter_sg -->
 <g id="edge15" class="edge">
-<title>aws_security_group_rule.peter_sgoutbound&#45;&gt;aws_security_group.peter_sg</title>
-<path fill="none" stroke="black" d="M447.63,-273.28C427.75,-275.04 407.56,-276.83 388.42,-278.52" />
+  <path fill="none" stroke="black" d="M447.63,-273.28C427.75,-275.04 407.56,-276.83 388.42,-278.52" />
 <polygon fill="black" stroke="black" points="388.12,-275.04 378.47,-279.4 388.74,-282.01 388.12,-275.04" />
 </g>
 <!-- aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge16" class="edge">
-<title>aws_subnet.peter_subnet1&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M191.12,-126C175.14,-126 158.59,-126 142.99,-126" />
+  <path fill="none" stroke="black" d="M191.12,-126C175.14,-126 158.59,-126 142.99,-126" />
 <polygon fill="black" stroke="black" points="143.34,-122.5 133.34,-126 143.34,-129.5 143.34,-122.5" />
 </g>
 <!-- aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc -->
 <g id="edge17" class="edge">
-<title>aws_subnet.peter_subnet2&#45;&gt;aws_vpc.peter_vpc</title>
-<path fill="none" stroke="black" d="M191.07,-35.39C182.93,-38.15 174.95,-41.34 167.5,-45 139.2,-58.91 111.62,-81.94 92.49,-99.9" />
+  <path fill="none" stroke="black" d="M191.07,-35.39C182.93,-38.15 174.95,-41.34 167.5,-45 139.2,-58.91 111.62,-81.94 92.49,-99.9" />
 <polygon fill="black" stroke="black" points="90.21,-97.25 85.42,-106.7 95.06,-102.29 90.21,-97.25" />
 </g>
 </g>
@@ -6367,18 +7709,15 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
     <svg width="102pt" height="98pt" viewBox="0.00 0.00 102.00 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-94 98,-94 98,4 -4,4" />
+  <polygon fill="white" stroke="none" points="-4,4 -4,-94 98,-94 98,4 -4,4" />
 <!-- local_file.abc -->
 <g id="node1" class="node">
-<title>local_file.abc</title>
-<polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
+  <polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
 <text text-anchor="middle" x="47" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.abc</text>
 </g>
 <!-- local_file.def -->
 <g id="node2" class="node">
-<title>local_file.def</title>
-<polygon fill="none" stroke="black" points="92.5,-90 1.5,-90 1.5,-54 92.5,-54 92.5,-90" />
+  <polygon fill="none" stroke="black" points="92.5,-90 1.5,-90 1.5,-54 92.5,-54 92.5,-90" />
 <text text-anchor="middle" x="47" y="-66.2" font-family="sans-serif" font-size="14.00">local_file.def</text>
 </g>
 </g>
@@ -6401,24 +7740,20 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
     <svg width="229pt" height="44pt" viewBox="0.00 0.00 229.00 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-40 225,-40 225,4 -4,4" />
+  <polygon fill="white" stroke="none" points="-4,4 -4,-40 225,-40 225,4 -4,4" />
 <!-- local_file.abc -->
 <g id="node1" class="node">
-<title>local_file.abc</title>
-<polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
+  <polygon fill="none" stroke="black" points="94,-36 0,-36 0,0 94,0 94,-36" />
 <text text-anchor="middle" x="47" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.abc</text>
 </g>
 <!-- local_file.def -->
 <g id="node2" class="node">
-<title>local_file.def</title>
-<polygon fill="none" stroke="black" points="221,-36 130,-36 130,0 221,0 221,-36" />
+  <polygon fill="none" stroke="black" points="221,-36 130,-36 130,0 221,0 221,-36" />
 <text text-anchor="middle" x="175.5" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.def</text>
 </g>
 <!-- local_file.def&#45;&gt;local_file.abc -->
 <g id="edge1" class="edge">
-<title>local_file.def&#45;&gt;local_file.abc</title>
-<path fill="none" stroke="black" d="M129.54,-18C121.73,-18 113.5,-18 105.4,-18" />
+  <path fill="none" stroke="black" d="M129.54,-18C121.73,-18 113.5,-18 105.4,-18" />
 <polygon fill="black" stroke="black" points="105.61,-14.5 95.61,-18 105.61,-21.5 105.61,-14.5" />
 </g>
 </g>
@@ -6445,24 +7780,20 @@ HCL은 네이티브 문법과 json 호환 문법을 지원합니다. 네이티�
 
     <svg width="229pt" height="44pt" viewBox="0.00 0.00 229.00 44.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40)">
-<title>G</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-40 225,-40 225,4 -4,4" />
+  <polygon fill="white" stroke="none" points="-4,4 -4,-40 225,-40 225,4 -4,4" />
 <!-- local_file.abc -->
 <g id="node1" class="node">
-<title>local_file.abc</title>
-<polygon fill="none" stroke="black" points="221,-36 127,-36 127,0 221,0 221,-36" />
+  <polygon fill="none" stroke="black" points="221,-36 127,-36 127,0 221,0 221,-36" />
 <text text-anchor="middle" x="174" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.abc</text>
 </g>
 <!-- local_file.def -->
 <g id="node2" class="node">
-<title>local_file.def</title>
-<polygon fill="none" stroke="black" points="91,-36 0,-36 0,0 91,0 91,-36" />
+  <polygon fill="none" stroke="black" points="91,-36 0,-36 0,0 91,0 91,-36" />
 <text text-anchor="middle" x="45.5" y="-12.2" font-family="sans-serif" font-size="14.00">local_file.def</text>
 </g>
 <!-- local_file.abc&#45;&gt;local_file.def -->
 <g id="edge1" class="edge">
-<title>local_file.abc&#45;&gt;local_file.def</title>
-<path fill="none" stroke="black" d="M126.61,-18C118.75,-18 110.52,-18 102.45,-18" />
+  <path fill="none" stroke="black" d="M126.61,-18C118.75,-18 110.52,-18 102.45,-18" />
 <polygon fill="black" stroke="black" points="102.71,-14.5 92.71,-18 102.71,-21.5 102.71,-14.5" />
 </g>
 </g>
