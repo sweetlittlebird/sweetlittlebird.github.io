@@ -23,6 +23,7 @@
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-07-06T02:08:00+09:00","datePublished":"2024-07-06T02:08:00+09:00","description":"드디어 HCL 기본 문법 스터디가 끝나고 다른 주제로 넘어가게 되었습니다. 물론 HCL 문법을 계속 사용해야 하는 이상 지속적인 공부와 추가/변경되는 문법을 계속 팔로우 해야겠지만, 한 단계를 넘겼다는 느낌에 뿌듯합니다.","headline":"[T101 4기] Provider &amp; State","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2024-07-06-T101-Study-Terraform-Week-4/"},"url":"https://sweetlittlebird.github.io/posts/2024-07-06-T101-Study-Terraform-Week-4/"}</script>
 <!-- End Jekyll SEO tag -->
 
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
   <link rel="stylesheet" href="/assets/dist/main.min.css">
   <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
   
@@ -1491,10 +1492,58 @@ this.page.identifier = "/posts/T101 Study - Terraform Week 4";
   </div>
 
 </footer>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
 
     
-    <script src="/assets/dist/app.min.js"></script>
+    <script async src="/assets/dist/app.min.js"></script>
     
   
     <a href="#" id="back-to-top"><span>Back to Top</span></a>

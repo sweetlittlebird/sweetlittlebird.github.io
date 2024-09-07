@@ -23,6 +23,7 @@
 {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-08-27T22:50:18+09:00","datePublished":"2024-08-27T22:50:18+09:00","description":"지난 테라폼 스터디에 이어 이번 주 부터 KANS 스터디를 시작하게 되었습니다! KANS는 Kubernetes Advanced Networking Study의 줄임말로 쿠버네티스 네트워킹에 대한 심도있게 공부하는 스터디입니다. 이번 스터디도 과제할 걱정도 되지만 재미있을것 같아 기대됩니다.","headline":"[KANS 3기] 컨테이너 격리","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2024-08-27-KANS-Study-Week1/"},"url":"https://sweetlittlebird.github.io/posts/2024-08-27-KANS-Study-Week1/"}</script>
 <!-- End Jekyll SEO tag -->
 
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
   <link rel="stylesheet" href="/assets/dist/main.min.css">
   <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
   
@@ -156,7 +157,7 @@ KANS는 <strong>K</strong>ubernetes <strong>A</strong>dvanced <strong>N</strong>
 마치 컨테이너에 화물을 싣듯이 프로그램을 배포할 수 있게 되었습니다. 
 도커의 로고가 컨테이너를 싣고 있는 배를 형상화한것도 이러한 의미에서 나온것입니다.</p>
 
-    <p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_3.png" alt="Docker Logo" loading="lazy" width="285" height="163"></p>
+    <p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_3.png" alt="Docker Logo" class="image-center" loading="lazy" width="285" height="163"></p>
   </li>
   <li>
     <p>컨테이너 이외에도 가상 머신(Virtual Machine)이라는 기술이 있습니다. 
@@ -178,7 +179,7 @@ KANS는 <strong>K</strong>ubernetes <strong>A</strong>dvanced <strong>N</strong>
   <li>가상머신은 게스트 OS를 올리기 때문에 무겁고 느리지만, 높은 격리(Strong Isolation) 수준을 가집니다.
     <ul>
       <li>낮은 격리 수준을 보완하기 위해 리눅스의 pivot-root, namespace, cgroup 등의 기능들을 활용함으로써 프로세스 단위의 격리 환경과 리소스 제어를 제공합니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_6.png" alt="img.png" loading="lazy" width="524" height="139">
+<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_6.png" alt="img.png" class="image-center" loading="lazy" width="524" height="139">
 </li>
     </ul>
   </li>
@@ -1661,6 +1662,8 @@ root가 아닌 유저로 docker 명령을 실행하면 다음과 같은 에러�
   <a class="prev" href="/posts/2024-08-03-T101-Study-Terraform-Week-8/">« [T101 4기] OpenTofu</a>
   
   
+  <a class="next" href="/posts/2024-09-07-KANS-Study-Week2/">[KANS 3기] K8S Flannel CNI &amp; PAUSE »</a>
+  
 </div>
 
 <div id="disqus_thread"></div>
@@ -1699,10 +1702,58 @@ this.page.identifier = "/posts/KANS Study - Week1";
   </div>
 
 </footer>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
 
     
-    <script src="/assets/dist/app.min.js"></script>
+    <script async src="/assets/dist/app.min.js"></script>
     
   
     <a href="#" id="back-to-top"><span>Back to Top</span></a>
