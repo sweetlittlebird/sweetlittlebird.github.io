@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>[KANS 3기] K8S Calico CNI | Sweet Little Bird</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="[KANS 3기] K8S Calico CNI">
+<meta property="og:locale" content="ko">
+<meta name="description" content="지난주에 이어 이번주에는 Calico CNI와 Calico Network Mode에 대해 알아보겠습니다.">
+<meta property="og:description" content="지난주에 이어 이번주에는 Calico CNI와 Calico Network Mode에 대해 알아보겠습니다.">
+<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2024-09-22-KANS-Study-Week3/">
+<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2024-09-22-KANS-Study-Week3/">
+<meta property="og:site_name" content="Sweet Little Bird">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2024-09-22T02:00:18+09:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="[KANS 3기] K8S Calico CNI">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-09-22T02:00:18+09:00","datePublished":"2024-09-22T02:00:18+09:00","description":"지난주에 이어 이번주에는 Calico CNI와 Calico Network Mode에 대해 알아보겠습니다.","headline":"[KANS 3기] K8S Calico CNI","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2024-09-22-KANS-Study-Week3/"},"url":"https://sweetlittlebird.github.io/posts/2024-09-22-KANS-Study-Week3/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
+  <link rel="stylesheet" href="/assets/dist/main.min.css">
+  <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!--  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&display=swap" rel="stylesheet">-->
+  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&amp;family=Milonga&amp;display=swap" rel="stylesheet">
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+<link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird">
+</head>
+<body>
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">[KANS 3기] K8S Calico CNI</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-09-22T02:00:18+09:00" itemprop="datePublished">2024년 09월 22일에 작성
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <div class="table-of-content">
+      <header>목차</header>
+      <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#calico-cni">Calico CNI</a>
+<ul>
+<li class="toc-entry toc-h3">
+<a href="#calico-%EC%86%8C%EA%B0%9C">Calico 소개</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#calico%EB%9E%80">Calico란?</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#calico-%EC%84%A4%EC%B9%98">Calico 설치</a></li>
+<li class="toc-entry toc-h3">
+<a href="#calico-cni-%EA%B5%AC%EC%84%B1%EC%9A%94%EC%86%8C">Calico CNI 구성요소</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#calico-%EA%B5%AC%EC%84%B1%EC%9A%94%EC%86%8C-%ED%99%95%EC%9D%B8">Calico 구성요소 확인</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%85%B8%EB%93%9C%EA%B0%84%EC%9D%98-bgp-%EC%A0%84%EB%8B%AC%EA%B3%BC%EC%A0%95-%ED%99%95%EC%9D%B8">노드간의 BGP 전달과정 확인</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#calico-%ED%86%B5%EC%8B%A0-%ED%9D%90%EB%A6%84-%ED%99%95%EC%9D%B8">Calico 통신 흐름 확인</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EB%8F%99%EC%9D%BC-%EB%85%B8%EB%93%9C%EC%97%90%EC%84%9C-%ED%8C%8C%EB%93%9Cpod-%EA%B0%84-%ED%86%B5%EC%8B%A0">동일 노드에서 파드(Pod) 간 통신</a></li>
+<li class="toc-entry toc-h4"><a href="#%ED%8C%8C%EB%93%9C---%EC%99%B8%EB%B6%80%EC%9D%B8%ED%84%B0%EB%84%B7-%ED%86%B5%EC%8B%A0">파드 -&gt; 외부(인터넷) 통신</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%8B%A4%EB%A5%B8-%EB%85%B8%EB%93%9C%EC%9D%98-%ED%8C%8C%EB%93%9C--%ED%8C%8C%EB%93%9C%EA%B0%84-%ED%86%B5%EC%8B%A0">다른 노드의 파드 &lt;=&gt; 파드간 통신</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#calico-%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-%EB%AA%A8%EB%93%9C">Calico 네트워크 모드</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#ipip-%EB%AA%A8%EB%93%9C">IPIP 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#direct-%EB%AA%A8%EB%93%9C">Direct 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#vxlan-%EB%AA%A8%EB%93%9C">VXLAN 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#%ED%8C%8C%EB%93%9C-%ED%8C%A8%ED%82%B7-%EC%95%94%ED%98%B8%ED%99%94-%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-%EB%A0%88%EB%B2%A8">파드 패킷 암호화 (네트워크 레벨)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+    </div>
+    <h2 id="들어가며">들어가며</h2>
+
+<p>지난주에 이어 이번주에는 Calico CNI와 Calico Network Mode에 대해 알아보겠습니다.
+KANS 3기 3주차 스터디를 시작하겠습니다.</p>
+
+<hr>
+
+<h2 id="calico-cni">Calico CNI</h2>
+
+<h3 id="calico-소개">Calico 소개</h3>
+
+<h4 id="calico란">Calico란?</h4>
+
+<p>Calico CNI는 Kubernetes 클러스터에서 네트워크를 관리하는 CNI(Container Network Interface) 플러그인 중 하나로
+Kubernetes와 non-Kubernetes/legacy 네트워크를 연결하는 역할을 합니다.
+특징으로는 L3/L4 네트워크를 제공하며, BGP 프로토콜을 사용하여 라우팅을 수행합니다.
+(모드에 따라 BGP를 사용하지 않을 수도 있습니다.)</p>
+
+<h3 id="calico-설치">Calico 설치</h3>
+
+<ul>
+  <li>컨트롤플레인에서 <code class="language-plaintext highlighter-rouge">kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml</code> 명령어를 실행하여
+Calico CNI를 설치할 수 있습니다. 이때 실습환경에 맞추기 위해 <code class="language-plaintext highlighter-rouge">CALICO_IPV4POOL_BLOCK_SIZE</code>를 “24”로 설정해야 합니다.</li>
+  <li>
+    <p>해당 부분이 적용된 yaml 파일인 <a href="https://raw.githubusercontent.com/gasida/KANS/main/kans3/calico-kans.yaml">calico-kans.yaml</a>를 사용하여 설치하였습니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 모니터링</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'kubectl get pod -A -owide'</span>
+  
+<span class="c"># 컨트롤플레인(k8s-m)에서 calico cni 설치 실행</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml
+<span class="c"># 기본 yaml 에 4946줄 이동 후 아래 내용 추가 해둠</span>
+<span class="c">##            # Block size to use for the IPv4 POOL created at startup. Block size for IPv4 should be in the range 20-32. default 24</span>
+<span class="c">##            - name: CALICO_IPV4POOL_BLOCK_SIZE</span>
+<span class="c">##              value: "24"</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/gasida/KANS/main/kans3/calico-kans.yaml
+<span class="c"># =&gt; poddisruptionbudget.policy/calico-kube-controllers created</span>
+<span class="c">#    serviceaccount/calico-kube-controllers created</span>
+<span class="c">#    serviceaccount/calico-node created</span>
+<span class="c">#    serviceaccount/calico-cni-plugin created</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># 설치 확인</span>
+<span class="nv">$ </span>tree /opt/cni/bin/
+<span class="c"># =&gt; /opt/cni/bin/</span>
+<span class="c">#    ├── bandwidth</span>
+<span class="c">#    ├── bridge</span>
+<span class="c">#    ├── calico</span>
+<span class="c">#    ├── calico-ipam</span>
+<span class="c">#    ├── dhcp</span>
+<span class="c">#    ├── dummy</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /opt/cni/bin/
+<span class="nv">$ </span>ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    172.16.34.0/24 via 192.168.20.100 dev tunl0 proto bird onlink</span>
+<span class="c">#    blackhole 172.16.116.0/24 proto bird</span>
+<span class="c">#    172.16.158.0/24 via 192.168.10.101 dev tunl0 proto bird onlink</span>
+<span class="c">#    172.16.184.0/24 via 192.168.10.102 dev tunl0 proto bird onlink</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> addr
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-L</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-L</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-L</span> | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-L</span> | <span class="nb">wc</span> <span class="nt">-l</span>
+  
+<span class="c"># calicoctl 설치</span>
+<span class="nv">$ </span>curl <span class="nt">-L</span> https://github.com/projectcalico/calico/releases/download/v3.28.1/calicoctl-linux-amd64 <span class="nt">-o</span> calicoctl
+<span class="nv">$ </span><span class="nb">chmod</span> +x calicoctl <span class="o">&amp;&amp;</span> <span class="nb">mv </span>calicoctl /usr/bin
+<span class="nv">$ </span>calicoctl version
+  
+<span class="c"># CNI 설치 후 파드 상태 확인</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE     IP               NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    kube-system   calico-kube-controllers-77d59654f4-wbzth   1/1     Running   0             4m22s   172.16.34.2      k8s-w0   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    kube-system   calico-node-545hj                          1/1     Running   0             4m22s   192.168.20.100   k8s-w0   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    kube-system   calico-node-p5xpt                          1/1     Running   0             4m22s   192.168.10.10    k8s-m    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    kube-system   calico-node-rmzvb                          1/1     Running   0             4m22s   192.168.10.101   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    kube-system   calico-node-sd9x8                          1/1     Running   0             4m22s   192.168.10.102   k8s-w2   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    ...</span>
+</code></pre></div>    </div>
+  </li>
+  <li>설치 확인을 했을때 위와 같이 정상적으로 설치가 되었다면 Calico CNI가 정상적으로 동작하고 있는 것입니다.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">ip -c route</code> 명령어를 통해 Bird 라우팅 테이블에 Calico CNI가 적용된 것을 확인할 수 있습니다.
+그 중에서 <code class="language-plaintext highlighter-rouge">blackhole</code>은 해당 명령어를 실행하는 노드를 의미합니다.</li>
+  <li>실습을 위해서 metrics-server를 설치하고, <code class="language-plaintext highlighter-rouge">kubectl top node</code> 명령어를 통해 노드의 리소스 사용량을 확인해보겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># metrics-server 설치</span>
+<span class="nv">$ </span>helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+<span class="c"># =&gt; "metrics-server" has been added to your repositories</span>
+<span class="nv">$ </span>helm upgrade <span class="nt">--install</span> metrics-server metrics-server/metrics-server <span class="nt">--set</span> <span class="s1">'args[0]=--kubelet-insecure-tls'</span> <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; Release "metrics-server" does not exist. Installing it now.</span>
+<span class="c">#    ...</span>
+<span class="c">#      Chart version: 3.12.1</span>
+<span class="c">#      App version:   0.7.1</span>
+<span class="c">#      Image tag:     registry.k8s.io/metrics-server/metrics-server:v0.7.1</span>
+<span class="nv">$ </span>kubectl get all <span class="nt">-n</span> kube-system <span class="nt">-l</span> app.kubernetes.io/instance<span class="o">=</span>metrics-server
+<span class="nv">$ </span>kubectl get apiservices |egrep <span class="s1">'(AVAILABLE|metrics)'</span>
+<span class="c"># =&gt; NAME                                   SERVICE                      AVAILABLE                  AGE</span>
+<span class="c">#    v1beta1.metrics.k8s.io                 kube-system/metrics-server   False (MissingEndpoints)   16s</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl top node  <span class="c"># 노드 리소스 사용량 확인</span>
+<span class="c"># =&gt; NAME     CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%</span>
+<span class="c">#    k8s-m    218m         5%     1131Mi          29%</span>
+<span class="c">#    k8s-w0   95m          2%     807Mi           43%</span>
+<span class="c">#    k8s-w1   77m          1%     768Mi           41%</span>
+<span class="c">#    k8s-w2   62m          1%     806Mi           43%</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'cpu'</span>    <span class="c"># 파드 리소스 사용량을 CPU 사용량 순으로 정렬해서 확인</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'memory'</span> <span class="c"># 파드 리소스 사용량을 Memory 사용량 순으로 정렬해서 확인</span>
+
+<span class="c"># (참고) 삭제</span>
+<span class="nv">$ </span>helm uninstall <span class="nt">-n</span> kube-system metrics-server
+</code></pre></div></div>
+
+<h3 id="calico-cni-구성요소">Calico CNI 구성요소</h3>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_1.png" alt="img.png" class="image-center" loading="lazy" width="726" height="190">
+<em class="image-caption">출처: 추가예정</em></p>
+<ul>
+  <li>
+<strong>Calico Datastore</strong> : Calico의 구성 정보를 저장하는 데이터베이스입니다. Kubernetes API 서버(기본값) 또는 etcd에 저장됩니다.</li>
+  <li>
+<strong>Bird</strong> : 오픈소스 라우팅 데몬으로, Calico CNI에서 라우팅을 수행합니다.
+Bird는 BGP 프로토콜을 이용한 라우팅 데몬으로
+Calico나 Kubernetes에서만 사용되는것이 아닌 일반적인 라우팅 데몬입니다.
+노드의 파드 네트워크 대역을 BGP 라우팅 프로토콜을 통해서 광고(advertise)합니다.</li>
+  <li>
+<strong>Felix</strong> : Bird를 통해 배포된 라우팅 정보를 수신하여, 노드의 파드 네트워크 대역을 호스트의 라우팅 테이블에
+업데이트 하는 역할을 합니다. 또한 Iptables 등 방화벽 규칙 설정 관리를 합니다.</li>
+  <li>
+<strong>Confd</strong> : Calico 구성 정보를 관리하는 데몬으로, BGP 설정등으로 Calico 데이터 저장소에 변경이 발생하면
+Bird의 설정 파일을 만들고, 변경된 설정 파일을 반영하게 합니다.</li>
+  <li>
+<strong>CNI IPAM Plugin</strong> : Calico가 제공하는 IPAM(IP Address Management) 플러그인으로
+Calico CNI에서 IP 주소를 할당하는 역할을 합니다. (Flannel CNI의 경우 기본 IPAM인 host-local IPAM을 사용합니다.)</li>
+  <li>
+<strong>calico-kube-controllers</strong> : Calico의 동작을 감시 및 제어하는 컨트롤러입니다.</li>
+  <li>
+<strong>Typha</strong> : Calico의 성능을 향상시키기 위한 컴포넌트로, Calico의 데이터베이스에 대한 읽기 전용 요청을 처리합니다.
+워커노드 수가 많지 않은 경우 생략해도 무방합니다.</li>
+  <li>
+<strong>calicoctl</strong> : Calico를 제어할 수 있는 CLI 인터페이스로, datastore에 접근하여 Calico의 구성 정보를 관리할 수 있습니다.</li>
+</ul>
+
+<h4 id="calico-구성요소-확인">Calico 구성요소 확인</h4>
+
+<ul>
+  <li>
+    <p>설치된 구성요소를 명령들을 사용해서 살펴보겠습니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 버전 확인 - 링크</span>
+<span class="c">## kdd 의미는 쿠버네티스 API 를 데이터저장소로 사용 : k8s API datastore(kdd)</span>
+<span class="nv">$ </span>calicoctl version
+<span class="c"># =&gt; Client Version:    v3.28.1</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># calico 관련 정보 확인</span>
+<span class="nv">$ </span>kubectl get daemonset <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; NAME          DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE</span>
+<span class="c">#    calico-node   4         4         4       4            4           kubernetes.io/os=linux   26m</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>calico-node <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                READY   STATUS    RESTARTS   AGE   IP               NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    calico-node-545hj   1/1     Running   0          26m   192.168.20.100   k8s-w0   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-p5xpt   1/1     Running   0          26m   192.168.10.10    k8s-m    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-rmzvb   1/1     Running   0          26m   192.168.10.101   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-sd9x8   1/1     Running   0          26m   192.168.10.102   k8s-w2   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c"># calico-node 는 데몬셋으로 모든 노드에 배포되어 있음을 확인할 수 있습니다.</span>
+  
+<span class="c"># calico-kube-controllers 정보 확인</span>
+<span class="nv">$ </span>kubectl get deploy <span class="nt">-n</span> kube-system calico-kube-controllers
+<span class="c"># =&gt; NAME                      READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    calico-kube-controllers   1/1     1            1           27m</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>calico-kube-controllers <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                                       READY   STATUS    RESTARTS   AGE   IP            NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    calico-kube-controllers-77d59654f4-wbzth   1/1     Running   0          28m   172.16.34.2   k8s-w0   &lt;none&gt;           &lt;none&gt;</span>
+  
+<span class="c"># 칼리코 IPAM 정보 확인 : 칼리코 CNI 를 사용한 파드가 생성된 노드에 podCIDR 네트워크 대역 확인 - 링크</span>
+<span class="nv">$ </span>calicoctl ipam show
+<span class="c"># =&gt; +----------+---------------+-----------+------------+--------------+</span>
+<span class="c">#    | GROUPING |     CIDR      | IPS TOTAL | IPS IN USE |   IPS FREE   |</span>
+<span class="c">#    +----------+---------------+-----------+------------+--------------+</span>
+<span class="c">#    | IP Pool  | 172.16.0.0/16 |     65536 | 8 (0%)     | 65528 (100%) |</span>
+<span class="c">#    +----------+---------------+-----------+------------+--------------+</span>
+  
+<span class="c"># Block 는 각 노드에 할당된 podCIDR 정보</span>
+<span class="nv">$ </span>calicoctl ipam show <span class="nt">--show-blocks</span>
+<span class="c"># =&gt; +----------+-----------------+-----------+------------+--------------+</span>
+<span class="c">#    | GROUPING |      CIDR       | IPS TOTAL | IPS IN USE |   IPS FREE   |</span>
+<span class="c">#    +----------+-----------------+-----------+------------+--------------+</span>
+<span class="c">#    | IP Pool  | 172.16.0.0/16   |     65536 | 8 (0%)     | 65528 (100%) |</span>
+<span class="c">#    | Block    | 172.16.116.0/24 |       256 | 1 (0%)     | 255 (100%)   |</span>
+<span class="c">#    | Block    | 172.16.158.0/24 |       256 | 2 (1%)     | 254 (99%)    |</span>
+<span class="c">#    | Block    | 172.16.184.0/24 |       256 | 1 (0%)     | 255 (100%)   |</span>
+<span class="c">#    | Block    | 172.16.34.0/24  |       256 | 4 (2%)     | 252 (98%)    |</span>
+<span class="c">#    +----------+-----------------+-----------+------------+--------------+</span>
+<span class="nv">$ </span>calicoctl ipam show <span class="nt">--show-borrowed</span>
+<span class="nv">$ </span>calicoctl ipam show <span class="nt">--show-configuration</span>
+  
+<span class="c"># host-local IPAM 정보 확인 : k8s-m 노드의 podCIDR 은 host-local 대신 칼리코 IPAM 를 사용함</span>
+  
+<span class="c"># 워커 노드마다 할당된 dedicated subnet (podCIDR) 확인</span>
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[*].spec.podCIDR}'</span> <span class="p">;</span><span class="nb">echo</span>
+<span class="c"># =&gt; 172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.4.0/24</span>
+  
+<span class="c"># 컨트롤플레인의 pod에 할당되는 podCIDR 확인</span>
+<span class="nv">$ </span>kubectl get node k8s-m <span class="nt">-o</span> json | jq <span class="s1">'.spec.podCIDR'</span>
+<span class="c"># =&gt; "172.16.0.0/24"</span>
+  
+<span class="c"># CNI Plugin 정보 확인 - 링크</span>
+<span class="nv">$ </span>tree /etc/cni/net.d/
+<span class="c"># =&gt; /etc/cni/net.d/</span>
+<span class="c">#    ├── 10-calico.conflist</span>
+<span class="c">#    └── calico-kubeconfig</span>
+<span class="nv">$ </span><span class="nb">cat</span> /etc/cni/net.d/10-calico.conflist | jq
+<span class="c"># =&gt; ...</span>
+<span class="c">#    "datastore_type": "kubernetes", # 칼리코 데이터저장소는 쿠버네티스 API 를 사용</span>
+<span class="c">#    "ipam": { </span>
+<span class="c">#      "type": "calico-ipam" # IPAM 은 칼리코 자체 IPAM 을 사용</span>
+<span class="c">#    },</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># calicoctl node 정보 확인 : Bird 데몬(BGP)을 통한 BGP 네이버 연결 정보(bgp peer 는 노드의 IP로 연결) - 링크</span>
+<span class="nv">$ </span>calicoctl node status
+<span class="c"># =&gt; Calico process is running.</span>
+<span class="c">#    </span>
+<span class="c">#    IPv4 BGP status</span>
+<span class="c">#    +----------------+-------------------+-------+----------+-------------+</span>
+<span class="c">#    |  PEER ADDRESS  |     PEER TYPE     | STATE |  SINCE   |    INFO     |</span>
+<span class="c">#    +----------------+-------------------+-------+----------+-------------+</span>
+<span class="c">#    | 192.168.20.100 | node-to-node mesh | up    | 14:13:02 | Established |</span>
+<span class="c">#    | 192.168.10.101 | node-to-node mesh | up    | 14:13:31 | Established |</span>
+<span class="c">#    | 192.168.10.102 | node-to-node mesh | up    | 14:12:44 | Established |</span>
+<span class="c">#    +----------------+-------------------+-------+----------+-------------+</span>
+<span class="nv">$ </span>calicoctl node checksystem
+<span class="c"># =&gt; Checking kernel version...</span>
+<span class="c">#       5.15.0-119-generic  					OK</span>
+<span class="c">#    Checking kernel modules...</span>
+<span class="c">#       xt_mark             					OK</span>
+  
+<span class="c"># ippool 정보 확인 : 클러스터가 사용하는 IP 대역 정보와 칼리코 모드 정보 확인</span>
+<span class="nv">$ </span>calicoctl get ippool <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME                  CIDR            NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR</span>
+<span class="c">#    default-ipv4-ippool   172.16.0.0/16   true   Always     Never       false      false              all()</span>
+  
+<span class="c"># 파드와 서비스 사용 네트워크 대역 정보 확인 </span>
+<span class="nv">$ </span>kubectl cluster-info dump | <span class="nb">grep</span> <span class="nt">-m</span> 2 <span class="nt">-E</span> <span class="s2">"cluster-cidr|service-cluster-ip-range"</span>  
+<span class="c"># =&gt; "--service-cluster-ip-range=10.200.1.0/24",</span>
+<span class="c">#    "--cluster-cidr=172.16.0.0/16",</span>
+                              
+<span class="nv">$ </span>kubectl get cm <span class="nt">-n</span> kube-system kubeadm-config <span class="nt">-oyaml</span> | <span class="nb">grep</span> <span class="nt">-i</span> subnet
+<span class="c"># =&gt; podSubnet: 172.16.0.0/16</span>
+<span class="c">#    serviceSubnet: 10.200.1.0/24</span>
+   
+<span class="c"># calico endpoint (파드)의 정보 확인 : WORKLOAD 는 파드 이름이며, 어떤 노드에 배포되었고 IP 와 cali 인터페이스와 연결됨을 확인</span>
+<span class="nv">$ </span>calicoctl get workloadEndpoint
+<span class="nv">$ </span>calicoctl get workloadEndpoint <span class="nt">-A</span>
+<span class="nv">$ </span>calicoctl get workloadEndpoint <span class="nt">-o</span> wide <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE     NAME                                                            WORKLOAD                                   NODE     NETWORKS          INTERFACE         PROFILES                                                  NATS</span>
+<span class="c">#    kube-system   k8s--w0-k8s-calico--kube--controllers--77d59654f4--wbzth-eth0   calico-kube-controllers-77d59654f4-wbzth   k8s-w0   172.16.34.5/32    cali544ab3155a5   kns.kube-system,ksa.kube-system.calico-kube-controllers</span>
+<span class="c">#    kube-system   k8s--w0-k8s-coredns--55cb58b774--7qvtv-eth0                     coredns-55cb58b774-7qvtv                   k8s-w0   172.16.34.6/32    cali6be4c908feb   kns.kube-system,ksa.kube-system.coredns</span>
+<span class="c">#    kube-system   k8s--w0-k8s-coredns--55cb58b774--8q4f6-eth0                     coredns-55cb58b774-8q4f6                   k8s-w0   172.16.34.4/32    cali23a9e6edc85   kns.kube-system,ksa.kube-system.coredns</span>
+<span class="c">#    kube-system   k8s--w1-k8s-metrics--server--68cfccbdf6--wjjs2-eth0             metrics-server-68cfccbdf6-wjjs2            k8s-w1   172.16.158.2/32   cali2789c1b51d6   kns.kube-system,ksa.kube-system.metrics-server</span>
+  
+<span class="c"># 노드에서 컨테이너(프로세스) 확인</span>
+<span class="nv">$ </span>ps axf 
+<span class="c"># =&gt;    1325 ?        Sl     0:02 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 4b2a9892a9147b1a3b73b4864bec5270f18da7d8393b82f8863dc8a6cee8ac0c -address /run/containerd/conta</span>
+<span class="c">#       1352 ?        Ss     0:00  \_ /pause</span>
+<span class="c">#       1762 ?        Ss     0:00  \_ /usr/local/bin/runsvdir -P /etc/service/enabled</span>
+<span class="c">#       1838 ?        Ss     0:00      \_ runsv confd</span>
+<span class="c">#       1853 ?        Sl     0:00      |   \_ calico-node -confd</span>
+<span class="c">#       1839 ?        Ss     0:00      \_ runsv bird</span>
+<span class="c">#       2032 ?        S      0:00      |   \_ bird -R -s /var/run/calico/bird.ctl -d -c /etc/calico/confd/config/bird.cfg</span>
+<span class="c">#       1840 ?        Ss     0:00      \_ runsv node-status-reporter</span>
+<span class="c">#       1847 ?        Sl     0:00      |   \_ calico-node -status-reporter</span>
+<span class="c">#       1841 ?        Ss     0:00      \_ runsv monitor-addresses</span>
+<span class="c">#       1851 ?        Sl     0:00      |   \_ calico-node -monitor-addresses</span>
+<span class="c">#       1842 ?        Ss     0:00      \_ runsv felix</span>
+<span class="c">#       1849 ?        Sl     0:27      |   \_ calico-node -felix</span>
+<span class="c">#       1843 ?        Ss     0:00      \_ runsv allocate-tunnel-addrs</span>
+<span class="c">#       1846 ?        Sl     0:00      |   \_ calico-node -allocate-tunnel-addrs</span>
+<span class="c">#       1844 ?        Ss     0:00      \_ runsv cni</span>
+<span class="c">#       1848 ?        Sl     0:00      |   \_ calico-node -monitor-token</span>
+<span class="c">#       1845 ?        Ss     0:00      \_ runsv bird6</span>
+<span class="c">#       2033 ?        S      0:00          \_ bird6 -R -s /var/run/calico/bird6.ctl -d -c /etc/calico/confd/config/bird6.cfg</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>felix</strong> : Host의 Network Interface, Routing Table, Iptables를 관리합니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># Calico의 Felix를 통해 설정된 iptables 규칙 설정 확인</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span> | <span class="nb">grep </span>cali
+<span class="c"># =&gt; -N cali-FORWARD</span>
+<span class="c">#    -N cali-INPUT</span>
+<span class="c">#    -N cali-OUTPUT</span>
+<span class="c">#    -N cali-cidr-block</span>
+<span class="c">#    -N cali-from-hep-forward</span>
+<span class="c">#    -N cali-from-host-endpoint</span>
+<span class="c">#    -N cali-from-wl-dispatch</span>
+<span class="c">#    -N cali-to-hep-forward</span>
+<span class="c">#    -N cali-to-host-endpoint</span>
+<span class="c">#    -N cali-to-wl-dispatch</span>
+<span class="c">#    -N cali-wl-to-host</span>
+<span class="c">#    -A INPUT -m comment --comment "cali:Cz_u1IQiXIMmKD4c" -j cali-INPUT</span>
+<span class="c">#    -A FORWARD -m comment --comment "cali:wUHhoiAYhphO9Mso" -j cali-FORWARD</span>
+<span class="c">#    -A FORWARD -m comment --comment "cali:S93hcgKJrXEqnTfs" -m comment --comment "Policy explicitly accepted packet." -j ACCEPT</span>
+<span class="c">#    -A FORWARD -m comment --comment "cali:mp77cMpurHhyjLrM" -j MARK --set-xmark 0x10000/0x10000</span>
+<span class="c">#    -A OUTPUT -m comment --comment "cali:tVnHkvAo15HuiPy0" -j cali-OUTPUT</span>
+<span class="c">#    -A cali-FORWARD -m comment --comment "cali:vjrMJCRpqwy5oRoX" -j MARK --set-xmark 0x0/0xe0000</span>
+<span class="c">#    -A cali-FORWARD -m comment --comment "cali:A_sPAO0mcxbT9mOV" -j cali-from-hep-forward</span>
+<span class="c">#    -A cali-FORWARD -i cali+ -m comment --comment "cali:8ZoYfO5HKXWbB3pk" -j cali-from-wl-dispatch</span>
+<span class="c">#    -A cali-FORWARD -o cali+ -m comment --comment "cali:jdEuaPBe14V2hutn" -j cali-to-wl-dispatch</span>
+<span class="c">#    -A cali-FORWARD -m comment --comment "cali:12bc6HljsMKsmfr-" -j cali-to-hep-forward</span>
+<span class="c">#    -A cali-FORWARD -m comment --comment "cali:NOSxoaGx8OIstr1z" -j cali-cidr-block</span>
+<span class="c">#    -A cali-INPUT -p ipencap -m comment --comment "cali:PajejrV4aFdkZojI" -m comment --comment "Allow IPIP packets from Calico hosts" -m set --match-set cali40all-hosts-net src -m addrtype --dst-type LOCAL -j ACCEPT</span>
+<span class="c">#    -A cali-INPUT -p ipencap -m comment --comment "cali:_wjq-Yrma8Ly1Svo" -m comment --comment "Drop IPIP packets from non-Calico hosts" -j DROP</span>
+<span class="c">#    -A cali-INPUT -i cali+ -m comment --comment "cali:8TZGxLWh_Eiz66wc" -g cali-wl-to-host</span>
+<span class="c">#    -A cali-INPUT -m comment --comment "cali:6McIeIDvPdL6PE1T" -j ACCEPT</span>
+<span class="c">#    -A cali-INPUT -m comment --comment "cali:YGPbrUms7NId8xVa" -j MARK --set-xmark 0x0/0xf0000</span>
+<span class="c">#    -A cali-INPUT -m comment --comment "cali:2gmY7Bg2i0i84Wk_" -j cali-from-host-endpoint</span>
+<span class="c">#    -A cali-INPUT -m comment --comment "cali:q-Vz2ZT9iGE331LL" -m comment --comment "Host endpoint policy accepted packet." -j ACCEPT</span>
+<span class="c">#    -A cali-OUTPUT -m comment --comment "cali:Mq1_rAdXXH3YkrzW" -j ACCEPT</span>
+<span class="c">#    -A cali-OUTPUT -o cali+ -m comment --comment "cali:69FkRTJDvD5Vu6Vl" -j RETURN</span>
+<span class="c">#    -A cali-OUTPUT -p ipencap -m comment --comment "cali:AnEsmO6bDZbQntWW" -m comment --comment "Allow IPIP packets to other Calico hosts" -m set --match-set cali40all-hosts-net dst -m addrtype --src-type LOCAL -j ACCEPT</span>
+<span class="c">#    -A cali-OUTPUT -m comment --comment "cali:9e9Uf3GU5tX--Lxy" -j MARK --set-xmark 0x0/0xf0000</span>
+<span class="c">#    -A cali-OUTPUT -m comment --comment "cali:0f3LDz_VKuHFaA2K" -m conntrack ! --ctstate DNAT -j cali-to-host-endpoint</span>
+<span class="c">#    -A cali-OUTPUT -m comment --comment "cali:OgU2f8BVEAZ_fwkq" -m comment --comment "Host endpoint policy accepted packet." -j ACCEPT</span>
+<span class="c">#    -A cali-from-wl-dispatch -m comment --comment "cali:zTj6P0TIgYvgz-md" -m comment --comment "Unknown interface" -j DROP</span>
+<span class="c">#    -A cali-to-wl-dispatch -m comment --comment "cali:7KNphB1nNHw80nIO" -m comment --comment "Unknown interface" -j DROP</span>
+<span class="c">#    -A cali-wl-to-host -m comment --comment "cali:Ee9Sbo10IpVujdIY" -j cali-from-wl-dispatch</span>
+<span class="c">#    -A cali-wl-to-host -m comment --comment "cali:nSZbcOoG1xPONxb8" -m comment --comment "Configured DefaultEndpointToHostAction" -j ACCEPT</span>
+  
+<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> | <span class="nb">grep </span>cali
+<span class="c"># =&gt; -N cali-OUTPUT</span>
+<span class="c">#    -N cali-POSTROUTING</span>
+<span class="c">#    -N cali-PREROUTING</span>
+<span class="c">#    -N cali-fip-dnat</span>
+<span class="c">#    -N cali-fip-snat</span>
+<span class="c">#    -N cali-nat-outgoing</span>
+<span class="c">#    -A PREROUTING -m comment --comment "cali:6gwbT8clXdHdC1b1" -j cali-PREROUTING</span>
+<span class="c">#    -A OUTPUT -m comment --comment "cali:tVnHkvAo15HuiPy0" -j cali-OUTPUT</span>
+<span class="c">#    -A POSTROUTING -m comment --comment "cali:O3lYWMrLQYEMJtB5" -j cali-POSTROUTING</span>
+<span class="c">#    -A cali-OUTPUT -m comment --comment "cali:GBTAv2p5CwevEyJm" -j cali-fip-dnat</span>
+<span class="c">#    -A cali-POSTROUTING -m comment --comment "cali:Z-c7XtVd2Bq7s_hA" -j cali-fip-snat</span>
+<span class="c">#    -A cali-POSTROUTING -m comment --comment "cali:nYKhEzDlr11Jccal" -j cali-nat-outgoing</span>
+<span class="c">#    -A cali-POSTROUTING -o tunl0 -m comment --comment "cali:SXWvdsbh4Mw7wOln" -m addrtype ! --src-type LOCAL --limit-iface-out -m addrtype --src-type LOCAL -j MASQUERADE --random-fully</span>
+<span class="c">#    -A cali-PREROUTING -m comment --comment "cali:r6XmIziWUJsdOK6Z" -j cali-fip-dnat</span>
+<span class="c">#    -A cali-nat-outgoing -m comment --comment "cali:flqWnvo8yq4ULQLa" -m set --match-set cali40masq-ipam-pools src -m set ! --match-set cali40all-ipam-pools dst -j MASQUERADE --random-fully</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>bird</strong> : BGP 라우팅 데몬으로, Calico CNI에서 라우팅을 수행합니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>calico-node <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME                READY   STATUS    RESTARTS      AGE   IP               NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    calico-node-p5xpt   1/1     Running   1 (42m ago)   24h   192.168.10.10    k8s-m    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-545hj   1/1     Running   1 (42m ago)   24h   192.168.20.100   k8s-w0   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-rmzvb   1/1     Running   1 (42m ago)   24h   192.168.10.101   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    calico-node-sd9x8   1/1     Running   1 (42m ago)   24h   192.168.10.102   k8s-w2   &lt;none&gt;           &lt;none&gt;</span>
+  
+<span class="c"># Bird 라우팅 테이블 확인</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system <span class="nb">exec</span> <span class="nt">-it</span> calico-node-545hj <span class="nt">--</span> birdcl show route
+<span class="c"># =&gt; BIRD v0.3.3+birdv1.6.8 ready.</span>
+<span class="c">#    0.0.0.0/0          via 10.0.2.2 on enp0s3 [kernel1 14:13:00] * (10)</span>
+<span class="c">#    10.0.2.2/32        dev enp0s3 [kernel1 14:13:00] * (10)</span>
+<span class="c">#    10.0.2.3/32        dev enp0s3 [kernel1 14:13:00] * (10)</span>
+<span class="c">#    10.0.2.0/24        dev enp0s3 [direct1 14:12:59] * (240)</span>
+<span class="c">#    172.16.184.0/24    via 192.168.20.254 on enp0s8 [Mesh_192_168_10_102 14:13:01 from 192.168.10.102] * (100/?) [i]</span>
+<span class="c">#    192.168.10.0/24    via 192.168.20.254 on enp0s8 [kernel1 14:13:00] * (10)</span>
+<span class="c">#    172.16.158.0/24    via 192.168.20.254 on enp0s8 [Mesh_192_168_10_101 14:13:30 from 192.168.10.101] * (100/?) [i]</span>
+<span class="c">#    192.168.20.0/24    dev enp0s8 [direct1 14:12:59] * (240)</span>
+<span class="c">#    172.16.116.0/24    via 192.168.20.254 on enp0s8 [Mesh_192_168_10_10 14:13:01 from 192.168.10.10] * (100/?) [i]</span>
+<span class="c">#    172.16.34.0/24     blackhole [static1 14:12:59] * (200)</span>
+<span class="c">#    172.16.34.0/32     dev tunl0 [direct1 14:12:59] * (240)</span>
+<span class="c">#    172.16.34.6/32     dev cali6be4c908feb [kernel1 14:13:09] * (10)</span>
+<span class="c">#    172.16.34.5/32     dev cali544ab3155a5 [kernel1 14:13:08] * (10)</span>
+<span class="c">#    172.16.34.4/32     dev cali23a9e6edc85 [kernel1 14:13:08] * (10)</span>
+  
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system <span class="nb">exec</span> <span class="nt">-it</span> calico-node-545hj <span class="nt">--</span> birdcl show protocol
+<span class="c"># =&gt; BIRD v0.3.3+birdv1.6.8 ready.</span>
+<span class="c">#    name     proto    table    state  since       info</span>
+<span class="c">#    static1  Static   master   up     14:13:00</span>
+<span class="c">#    kernel1  Kernel   master   up     14:13:00</span>
+<span class="c">#    device1  Device   master   up     14:13:00</span>
+<span class="c">#    direct1  Direct   master   up     14:13:00</span>
+<span class="c">#    Mesh_192_168_10_10 BGP      master   up     14:13:02    Established</span>
+<span class="c">#    Mesh_192_168_10_101 BGP      master   up     14:13:31    Established</span>
+<span class="c">#    Mesh_192_168_10_102 BGP      master   up     14:13:02    Established</span>
+  
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system <span class="nb">exec</span> <span class="nt">-it</span> calico-node-545hj <span class="nt">--</span> birdcl show status
+<span class="c"># =&gt; BIRD v0.3.3+birdv1.6.8 ready.</span>
+<span class="c">#    BIRD v0.3.3+birdv1.6.8</span>
+<span class="c">#    Router ID is 192.168.20.100</span>
+<span class="c">#    Current server time is 2024-09-19 14:57:39</span>
+<span class="c">#    Last reboot on 2024-09-19 14:13:00</span>
+<span class="c">#    Last reconfiguration on 2024-09-19 14:13:00</span>
+<span class="c">#    Daemon is up and running</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="노드간의-bgp-전달과정-확인">노드간의 BGP 전달과정 확인</h4>
+
+<ul>
+  <li>Calico CNI에서는 BGP 프로토콜을 사용하여 노드간의 라우팅 정보를 교환합니다.
+해당 역할을 BIRD가 수행하는데 그림으로 살펴보면 아래와 같습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_3.png" alt="img.png" class="image-center" loading="lazy" width="686" height="293">
+<em class="image-caption">Bird와 Felix의 역할 모식도 (출처: 추가예정)</em></p>
+
+<ul>
+  <li>노드간의 BGP 전달을 패킷을 캡쳐해서 확인해보겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 워커 노드를 종료한 상태에서 아래의 작업을 시작합니다.</span>
+
+<span class="c"># 노드에서 패킷 캡쳐</span>
+<span class="nv">$ </span>vagrant ssh k8s-m
+
+<span class="c"># BGP는 TCP 179 포트를 사용하므로 해당 포트로 패킷을 캡쳐합니다.</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s8 tcp port 179 <span class="nt">-w</span> bgp.cap
+
+<span class="c"># 종료된 워커 노드를 시작합니다.</span>
+<span class="c"># 워커 노드가 시작되면 BGP 연결이 재설정되고 패킷이 전송됩니다.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>캡쳐된 패킷이 bgp.cap 파일로 저장되었으면, Wireshark를 사용하여 패킷을 확인합니다.</p>
+
+    <p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_4.png" alt="20240921_kans_w3_4.png" loading="lazy" width="844" height="492"></p>
+  </li>
+  <li>
+    <p>워커 노드에 접속해서 노드 ip와 ipip tunneling ip를 확인합니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 워커노드 k8s-w2 접속</span>
+<span class="nv">$ </span>vagrant ssh k8s-w2
+  
+<span class="nv">$ </span>ip addr
+<span class="c"># =&gt; ...</span>
+<span class="c">#    3: enp0s8: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span>
+<span class="c">#        link/ether 08:00:27:af:2e:7a brd ff:ff:ff:ff:ff:ff</span>
+<span class="c">#        inet &lt;span style="color: red;"&gt;192.168.10.102&lt;/span&gt;/24 brd 192.168.10.255 scope global enp0s8  &lt;span style="color: red;"&gt;# node ip&lt;/span&gt;   </span>
+<span class="c">#           valid_lft forever preferred_lft forever</span>
+<span class="c">#    4: tunl0@NONE: &lt;NOARP,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UNKNOWN group default qlen 1000</span>
+<span class="c">#        link/ipip 0.0.0.0 brd 0.0.0.0                                  </span>
+<span class="c">#        inet &lt;span style="color: red;"&gt;172.16.184.0&lt;/span&gt;/32 scope global tunl0                        &lt;span style="color: red;"&gt;# ipip tunneling ip&lt;/span&gt;</span>
+<span class="c">#           valid_lft forever preferred_lft forever </span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>컨트롤 플레인 노드에 접속해서 라우팅 테이블을 확인해보겠습니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 컨트롤 플레인 노드 k8s-m 접속</span>
+<span class="nv">$ </span>vagrant ssh k8s-m
+  
+<span class="c"># 라우팅 테이블 확인</span>
+<span class="nv">$ </span>ip route show 172.16.184.0/24
+<span class="c"># =&gt; &lt;span style="color: red;"&gt;172.16.184.0&lt;/span&gt;/24 via &lt;span style="color: red;"&gt;192.168.10.102&lt;/span&gt; dev tunl0 proto bird onlink</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>위와 같이 BGP를 통해 노드간 라우팅 정보를 교환하고, 라우팅 테이블을 업데이트하는 것을 확인할 수 있었습니다.</p>
+  </li>
+</ul>
+
+<h3 id="calico-통신-흐름-확인">Calico 통신 흐름 확인</h3>
+
+<ul>
+  <li>Calico CNI를 사용한 통신을 확인해보겠습니다.</li>
+</ul>
+
+<h4 id="동일-노드에서-파드pod-간-통신">동일 노드에서 파드(Pod) 간 통신</h4>
+
+<ul>
+  <li>동일 노드에서 파드간 통신은 기본적으로 직접 통신합니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_5.png" alt="img.png" class="w-80 image-center" loading="lazy" width="1080" height="576"></p>
+
+<ul>
+  <li>iptables FORWARD Rule 정책에서 파드간 포워딩 정책을 허용합니다.</li>
+  <li>calice# 인터페이스에 proxy arp 설정을 통해 게이트웨이의 MAC 주소를 파드가 전달 받아 사용합니다.</li>
+  <li>동일 노드 내의 파드 간 통신에서는 tunnel interface를 사용하지 않습니다.</li>
+</ul>
+
+<h5 id="파드-배포-전-기본-상태-확인">파드 배포 전 기본 상태 확인</h5>
+
+<ul>
+  <li>파드 배포 전에는 아래와 같이 파드가 없는 상태입니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_6.png" alt="img.png" class="w-70 image-center" loading="lazy" width="811" height="601">
+<em class="image-caption">파드 배포 전 상태 (출처: 추가예정)</em></p>
+
+<ul>
+  <li>
+    <p>파드 생성 전 노드(k8s-w1) Shell 에서 기본 정보 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 네트워크 인터페이스 정보 확인 : 터널(ipip) 인터페이스가 존재</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> <span class="nt">-d</span> addr show tunl0
+<span class="c"># =&gt; 4: tunl0@NONE: &lt;NOARP,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UNKNOWN group default qlen 1000</span>
+<span class="c">#        link/ipip 0.0.0.0 brd 0.0.0.0 promiscuity 0 minmtu 0 maxmtu 0</span>
+<span class="c">#        &lt;span style="color: red;"&gt;ipip&lt;/span&gt; any remote any local any ttl inherit nopmtudisc numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535</span>
+<span class="c">#        inet &lt;span style="color: red;"&gt;172.16.158.0/32&lt;/span&gt; scope global tunl0</span>
+<span class="c">#           valid_lft forever preferred_lft forever</span>
+  
+<span class="c"># 네트워크 네임스페이스 확인</span>
+<span class="nv">$ </span>lsns <span class="nt">-t</span> net
+<span class="c"># =&gt;         NS TYPE NPROCS   PID USER     NETNSID NSFS                                                COMMAND</span>
+<span class="c">#    4026531840 net     145     1 root  unassigned                                                     /sbin/i</span>
+<span class="c">#    4026532204 net       2  2009 65535          0 /run/netns/cni-6923c332-7c35-669a-8787-232597fa3fa8 /pause</span>
+  
+<span class="c"># 네트워크 라우팅 경로 정보 확인</span>
+<span class="c"># 이중 bird 는 bird 데몬이 BGP 라우팅 프로토콜에 의해 파드 네트워크 대역을 전달받거나 전달하는 경로 → 각각 노드의 파드 대역입니다</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> route | <span class="nb">grep </span>bird
+<span class="c"># =&gt; blackhole 172.16.158.0/24 proto bird</span>
+<span class="c"># =&gt; 172.16.34.0/24 via 192.168.20.100 dev tunl0 proto bird onlink</span>
+<span class="c"># =&gt; 172.16.116.0/24 via 192.168.10.10 dev tunl0 proto bird onlink</span>
+<span class="c"># =&gt; 172.16.184.0/24 via 192.168.10.102 dev tunl0 proto bird onlink</span>
+  
+<span class="c"># 아래 tunl0 Iface 에 목적지 네트워크 대역은 ipip 인캡슐레이션에 의해서 각 노드에 전달됩니다 → 각각 노드의 파드 대역입니다</span>
+<span class="nv">$ </span>route <span class="nt">-n</span>
+<span class="c"># =&gt; Kernel IP routing table</span>
+<span class="c">#    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span>
+<span class="c">#    172.16.34.0     192.168.20.100  255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.116.0    192.168.10.10   255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.158.0    0.0.0.0         255.255.255.0   U     0      0        0 *</span>
+<span class="c">#    172.16.184.0    192.168.10.102  255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># (옵션) iptables rule 갯수 확인</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span> | <span class="nb">grep </span>cali | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt; 69</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> | <span class="nb">grep </span>cali | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt; 15</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h5 id="파드-배포-후-상태-확인">파드 배포 후 상태 확인</h5>
+
+<ul>
+  <li>노드(k8s-w1)에 파드가 배포되면 아래와 같이 파드가 생성되고, 통신이 가능한 상태입니다.</li>
+  <li>
+    <p>node1-pod2.yaml 파일 작성</p>
+
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c1"># node1-pod2.yaml </span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Pod</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">nodeName</span><span class="pi">:</span> <span class="s">k8s-w1</span>  
+  <span class="na">containers</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">nicolaka/netshoot</span>  
+    <span class="na">command</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">tail"</span><span class="pi">]</span>
+    <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">/dev/null"</span><span class="pi">]</span>
+  <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Pod</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">pod2</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">nodeName</span><span class="pi">:</span> <span class="s">k8s-w1</span>
+  <span class="na">containers</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">pod2</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">nicolaka/netshoot</span>
+    <span class="na">command</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">tail"</span><span class="pi">]</span>
+    <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">/dev/null"</span><span class="pi">]</span>
+  <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+</code></pre></div>    </div>
+  </li>
+  <li>파드 생성
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl apply <span class="nt">-f</span> node1-pod2.yaml
+<span class="c"># =&gt; pod/pod1 created</span>
+<span class="c">#    pod/pod2 created</span>
+</code></pre></div>    </div>
+  </li>
+  <li>컨트롤 플레인에서 파드 생성 후 확인</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_7.png" alt="img.png" class="w-80 image-center" loading="lazy" width="805" height="528"></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>vagrant ssh k8s-m 
+
+<span class="c"># [터미널1] k8s-m 모니터링</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> calicoctl get workloadEndpoint
+
+<span class="c"># 생성된 파드 정보 확인</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME   READY   STATUS    RESTARTS        AGE   IP             NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    pod1   1/1     Running   1 (6m56s ago)   16h   172.16.158.9   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    pod2   1/1     Running   1 (6m56s ago)   16h   172.16.158.8   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="c"># calicoctl 이용한 endpoint 확인</span>
+<span class="nv">$ </span>calicoctl get workloadendpoints
+<span class="c"># =&gt; WORKLOAD   NODE     NETWORKS          INTERFACE</span>
+<span class="c">#    pod1       k8s-w1   172.16.158.9/32   calice0906292e2</span>
+<span class="c">#    pod2       k8s-w1   172.16.158.8/32   calibd2348b4f67</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>워커노드에서 파드 생성 후 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>vagrant ssh k8s-w1 
+  
+<span class="c"># 네트워크 인터페이스 정보 확인 : calice#~ 2개 추가됨!, 각각 net ns(네임스페이스) 0, 1로 호스트와 구별됨</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> <span class="nb">link</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    4: tunl0@NONE: &lt;NOARP,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000</span>
+<span class="c">#        link/ipip 0.0.0.0 brd 0.0.0.0</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;7: cali2789c1b51d6@if3: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UP mode DEFAULT group default qlen 1000&lt;/span&gt;</span>
+<span class="c">#        &lt;span style="color: #393;"&gt;link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns cni-a67773eb-f809-7ce1-72f5-e16e93cbe4c4&lt;/span&gt;</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;8: calibd2348b4f67@if3: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UP mode DEFAULT group default qlen 1000&lt;/span&gt;</span>
+<span class="c">#        &lt;span style="color: #393;"&gt;link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns cni-511c24a7-0a0a-0c9a-29c2-345cfcc0dd21&lt;/span&gt;</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;9: calice0906292e2@if3: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UP mode DEFAULT group default qlen 1000&lt;/span&gt;</span>
+<span class="c">#        &lt;span style="color: #393;"&gt;link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns cni-47754704-48d2-04a9-28fe-e8bff1be17ba&lt;/span&gt;</span>
+  
+<span class="c"># 네트워크 네임스페이스 확인 : 아래 2개 pause(infra 컨테이너)가 각각 파드별로 생성됨 - 위 link-netnsid 0, link-netnsid 1 매칭됨</span>
+<span class="nv">$ </span>lsns <span class="nt">-t</span> net
+<span class="c"># =&gt;         NS TYPE NPROCS   PID USER     NETNSID NSFS                                                COMMAND</span>
+<span class="c">#    4026531840 net     146     1 root  unassigned                                                     /sbin/init</span>
+<span class="c">#    4026532205 net       2  2092 65535          0 /run/netns/cni-a67773eb-f809-7ce1-72f5-e16e93cbe4c4 /pause</span>
+<span class="c">#    4026532282 net       2  2317 65535          1 /run/netns/cni-511c24a7-0a0a-0c9a-29c2-345cfcc0dd21 /pause</span>
+<span class="c">#    4026532343 net       2  2431 65535          2 /run/netns/cni-47754704-48d2-04a9-28fe-e8bff1be17ba /pause</span>
+  
+<span class="c"># 파드의 IP/32bit 호스트 라우팅 대역이 라우팅 테이블에 추가됨</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    blackhole 172.16.158.0/24 proto bird</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;172.16.158.7 dev cali2789c1b51d6 scope link&lt;/span&gt;</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;172.16.158.8 dev calibd2348b4f67 scope link&lt;/span&gt;</span>
+<span class="c">#    &lt;span style="color: #393;"&gt;172.16.158.9 dev calice0906292e2 scope link&lt;/span&gt;</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># (옵션) iptables rule 갯수 확인</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span> | <span class="nb">grep </span>cali | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt; 121</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> | <span class="nb">grep </span>cali | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt; 15</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h5 id="파드간-통신-실행-및-확인">파드간 통신 실행 및 확인</h5>
+
+<ul>
+  <li>
+    <p>파드간 통신 실행 이해를 위한 준비
+<img src="/assets/2024/kans-3th/w3/20240921_kans_w3_8.png" alt="img.png" class="w-80 image-center" loading="lazy" width="801" height="529"></p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># iptables 필터 테이블에 FORWARD 리스트 중 cali-FORWARD 룰 정보를 필터링해서 watch 로 확인</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="nt">-n</span> 1 <span class="s2">"iptables -v --numeric --table filter --list FORWARD | egrep '(cali-FORWARD|pkts)'"</span> 
+  
+<span class="c"># (컨트롤플레인) 파드 연결된 veth 를 변수를 확인</span>
+<span class="nv">$ VETH1</span><span class="o">=</span><span class="si">$(</span>calicoctl get workloadEndpoint | <span class="nb">grep </span>pod1 | <span class="nb">awk</span> <span class="s1">'{print $4}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$VETH1</span>
+<span class="c"># =&gt; calice0906292e2</span>
+<span class="nv">$ VETH2</span><span class="o">=</span><span class="si">$(</span>calicoctl get workloadEndpoint | <span class="nb">grep </span>pod2 | <span class="nb">awk</span> <span class="s1">'{print $4}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$VETH2</span>
+<span class="c"># =&gt; calibd2348b4f67</span>
+  
+<span class="c"># (워커노드1) 위에서 확인한 파드 연결된 veth 를 변수에 지정</span>
+<span class="nv">$ VETH1</span><span class="o">=</span>calice0906292e2
+<span class="nv">$ VETH2</span><span class="o">=</span>calibd2348b4f67
+  
+<span class="c"># 노드1 calice# 인터페이스의 proxy arp 설정 확인</span>
+<span class="c"># cat /proc/sys/net/ipv4/conf/&lt;자신의 pod1에 연결된 calice# 이름&gt;/proxy_arp</span>
+<span class="nv">$ </span><span class="nb">cat</span> /proc/sys/net/ipv4/conf/<span class="nv">$VETH1</span>/proxy_arp
+<span class="c"># =&gt; 1</span>
+<span class="nv">$ </span><span class="nb">cat</span> /proc/sys/net/ipv4/conf/<span class="nv">$VETH2</span>/proxy_arp
+<span class="c"># =&gt; 1</span>
+  
+<span class="c"># 파드1 혹은 파드2에 veth 로 연결된 호스트 네트워크 인터페이스 calice# 중 1개 선택해서 tcpdump</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> <span class="nv">$VETH1</span> <span class="nt">-nn</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> <span class="nv">$VETH2</span> <span class="nt">-nn</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>파드1 -&gt; 파드2 ping 통신을 확인해 보겠습니다.</p>
+  </li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_9.png" alt="img.png" class="w-80 image-center" loading="lazy" width="800" height="528"></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 파드1 Shell 에서 실행 : 정상 통신!</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec </span>pod1 <span class="nt">-it</span> <span class="nt">--</span> zsh
+<span class="c"># --------------------</span>
+<span class="c"># ping -c 10 &lt;파드2 IP&gt;</span>
+<span class="nv">$ </span>ping <span class="nt">-c</span> 10 172.16.158.8
+
+<span class="c"># 게이트웨이 169.254.1.1 의 MAC 주소를 ARP 에 의해서 학습되었습니다.</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> <span class="nt">-s</span> neigh
+<span class="c"># =&gt; 10.0.2.15 dev eth0 lladdr ee:ee:ee:ee:ee:ee  used 675/735/675probes 0 STALE</span>
+<span class="c">#    &lt;span style="color: #900;"&gt;169.254.1.1&lt;/span&gt; dev eth0 lladdr &lt;span style="color: #900;"&gt;ee:ee:ee:ee:ee:ee&lt;/span&gt;  ref 1 used 3/3/3probes 1 REACHABLE</span>
+
+<span class="c"># 노드에서 확인</span>
+<span class="c"># iptables 에 기본 FORWARD 는 DROP 이지만, 아래 cali-FORWARD Rule에 의해 허용되며, pkts 카운트가 증가합니다.</span>
+<span class="nv">$ </span>iptables <span class="nt">-v</span> <span class="nt">--numeric</span> <span class="nt">--table</span> filter <span class="nt">--list</span> FORWARD | egrep <span class="s1">'(cali-FORWARD|pkts)'</span>
+<span class="c"># =&gt; pkts bytes target     prot opt in     out     source               destination</span>
+<span class="c">#    29375 6505K cali-FORWARD  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* cali:wUHhoiAYhphO9Mso */</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s2">"iptables -v --numeric --table filter --list FORWARD | egrep '(cali-FORWARD|pkts)'"</span>
+
+<span class="c"># 파드1에서 게이트웨이의 IP인 169.254.1.1 의 MAC 주소를 알기 위해서 ARP Request 를 보낸다</span>
+<span class="c"># 이때 veth 연결된 calice#~ 에 proxy arp 설정이 되어 있고, 자신의 mac 주소(ee:ee:ee:ee:ee:ee)를 알려주고, 이후 정상 통신됨</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> <span class="nv">$VETH1</span> <span class="nt">-nn</span>
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
+<span class="c">#    listening on calice0906292e2, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
+<span class="c">#    11:27:01.638238 IP 172.16.158.9 &gt; 172.16.158.8: ICMP echo request, id 134, seq 1, length 64</span>
+<span class="c">#    11:27:01.638430 IP 172.16.158.8 &gt; 172.16.158.9: ICMP echo reply, id 134, seq 1, length 64</span>
+<span class="c">#    ...</span>
+<span class="c">#    11:27:06.675426 &lt;span style="color: #900;"&gt;ARP, Request who-has 169.254.1.1&lt;/span&gt; tell 172.16.158.9, length 28</span>
+<span class="c">#    11:27:06.675498 &lt;span style="color: #900;"&gt;ARP, Reply 169.254.1.1 is-at ee:ee:ee:ee:ee:ee&lt;/span&gt;, length 28</span>
+
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> <span class="nv">$VETH2</span> <span class="nt">-nn</span>
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
+<span class="c">#    listening on calibd2348b4f67, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
+<span class="c">#    11:27:01.638389 IP 172.16.158.9 &gt; 172.16.158.8: ICMP echo request, id 134, seq 1, length 64</span>
+<span class="c">#    11:27:01.638409 IP 172.16.158.8 &gt; 172.16.158.9: ICMP echo reply, id 134, seq 1, length 64</span>
+<span class="c">#    ...</span>
+<span class="c">#    11:27:16.151004 &lt;span style="color: #900;"&gt;ARP, Request who-has 169.254.1.1&lt;/span&gt; tell 172.16.158.8, length 28</span>
+<span class="c">#    11:27:16.151780 &lt;span style="color: #900;"&gt;ARP, Reply 169.254.1.1 is-at ee:ee:ee:ee:ee:ee&lt;/span&gt;, length 28</span>
+
+<span class="c"># 호스트에서 calice0906292e2 의 MAC 주소 다시 확인</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> <span class="nt">-d</span> <span class="nb">link</span>
+<span class="c"># =&gt; ... </span>
+<span class="c">#    9: &lt;span style="color: #900;"&gt;calice0906292e2&lt;/span&gt;@if3: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1480 qdisc noqueue state UP mode DEFAULT group default qlen 1000</span>
+<span class="c">#        link/ether &lt;span style="color: #900;"&gt;ee:ee:ee:ee:ee:ee&lt;/span&gt; brd ff:ff:ff:ff:ff:ff link-netns cni-47754704-48d2-04a9-28fe-e8bff1be17ba promiscuity 1 minmtu 68 maxmtu 65535</span>
+<span class="c">#        veth addrgenmode eui64 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_10.png" alt="img.png" class="image-center mb-0" loading="lazy" width="1740" height="1075">
+<em class="image-caption">파드간 통신 확인 실습</em></p>
+
+<ul>
+  <li>실습결과 calice# 인터페이스에 proxy arp 설정을 통해 게이트웨이의 MAC 주소를 파드가 전달 받아 사용하는 것을 확인할 수 있었습니다.</li>
+  <li>169.254.1.1은 Calico CNI에서 사용하는 게이트웨이 주소로, 같은 노드의 파드끼리 통신시 사용되는 것을 확인하였습니다.</li>
+</ul>
+
+<h4 id="파드---외부인터넷-통신">파드 -&gt; 외부(인터넷) 통신</h4>
+
+<ul>
+  <li>이번에는 파드에서 외부(인터넷)로 통신하는 과정을 확인해보겠습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_11.png" alt="img.png" class="w-80 image-center" loading="lazy" width="981" height="725"></p>
+
+<ul>
+  <li>calico는 기본 설정에 <code class="language-plaintext highlighter-rouge">natOutgoing: true</code>여서 파드에서 외부로 통신할 때는 노드의 IP 주소로 MASQUERADE(Source NAT)을 수행하여 외부로 통신합니다.</li>
+  <li>calice# 인터페이스에 proxy arp 설정을 통해 게이트웨이의 MAC 주소를 파드가 전달 받아 사용합니다.</li>
+  <li>외부로 통신할 때는 tunnel interface를 사용하지 않습니다.</li>
+</ul>
+
+<h5 id="파드-배포-전-기본-상태-확인-1">파드 배포 전 기본 상태 확인</h5>
+
+<ul>
+  <li>calico 설정 및 노드의 iptables 설정을 확인하겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 마스터 노드에서 확인 : natOutgoing 의 기본값은 true 이다</span>
+<span class="nv">$ </span>calicoctl get ippool <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME                  CIDR            NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR</span>
+<span class="c">#    default-ipv4-ippool   172.16.0.0/16   true   Always     Never       false      false              all()</span>
+
+<span class="c"># 노드에서 확인 : 노드에서 외부로 통신 시 MASQUERADE 동작 Rule 확인</span>
+<span class="nv">$ </span>iptables <span class="nt">-n</span> <span class="nt">-t</span> nat <span class="nt">--list</span> cali-nat-outgoing
+<span class="c"># =&gt; Chain cali-nat-outgoing (1 references)</span>
+<span class="c">#    target     prot opt source               destination</span>
+<span class="c">#    MASQUERADE  all  --  0.0.0.0/0            0.0.0.0/0            /* cali:flqWnvo8yq4ULQLa */ match-set cali40masq-ipam-pools src ! match-set cali40all-ipam-pools dst random-fully</span>
+
+<span class="nv">$ </span>ipset list
+<span class="nv">$ </span>ipset list cali40masq-ipam-pools
+<span class="c"># =&gt; Name: cali40masq-ipam-pools</span>
+<span class="c">#    Type: hash:net</span>
+<span class="c">#    Revision: 7</span>
+<span class="c">#    Header: family inet hashsize 1024 maxelem 1048576 bucketsize 12 initval 0xe6c37fa0</span>
+<span class="c">#    Size in memory: 504</span>
+<span class="c">#    References: 1</span>
+<span class="c">#    Number of entries: 1</span>
+<span class="c">#    Members:</span>
+<span class="c">#    172.16.0.0/16</span>
+</code></pre></div></div>
+
+<h5 id="파드-배포-및-외부-통신-확인">파드 배포 및 외부 통신 확인</h5>
+
+<ul>
+  <li>
+    <p>node1-pod1.yaml 파일 작성</p>
+
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Pod</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">nodeName</span><span class="pi">:</span> <span class="s">k8s-w1</span>
+  <span class="na">containers</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+      <span class="na">image</span><span class="pi">:</span> <span class="s">nicolaka/netshoot</span>
+      <span class="na">command</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">tail"</span><span class="pi">]</span>
+      <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">/dev/null"</span><span class="pi">]</span>
+  <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>파드 생성 후 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 파드 생성</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> node1-pod1.yaml
+  
+<span class="c"># 생성된 파드 확인</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME   READY   STATUS    RESTARTS   AGE   IP              NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    pod1   1/1     Running   0          25s   172.16.158.10   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>파드간 통신 실행 이해를 위한 준비</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 노드에서 실행</span>
+<span class="c"># iptables NAT MASQUERADE 모니터링 : pkts 증가 확인</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'iptables -n -v -t nat --list cali-nat-outgoing'</span>
+  
+<span class="c"># (컨트롤플레인 노드) 파드 연결된 veth 를 변수를 확인</span>
+<span class="nv">$ VETH1</span><span class="o">=</span><span class="si">$(</span>calicoctl get workloadEndpoint | <span class="nb">grep </span>pod1 | <span class="nb">awk</span> <span class="s1">'{print $4}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$VETH1</span>
+<span class="c"># =&gt; calice0906292e2</span>
+  
+<span class="c"># (워커노드1) 위에서 확인한 파드 연결된 veth 를 변수에 지정</span>
+<span class="nv">$ VETH1</span><span class="o">=</span>calice0906292e2
+  
+<span class="c"># 패킷 덤프 실행</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> any <span class="nt">-nn</span> icmp
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> <span class="nv">$VETH1</span> <span class="nt">-nn</span> icmp
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> tunl0 <span class="nt">-nn</span> icmp
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> ens5 <span class="nt">-nn</span> icmp    <span class="c"># [실습환경 A Type]</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s8 <span class="nt">-nn</span> icmp  <span class="c"># [실습환경 B Type]</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s3 <span class="nt">-nn</span> icmp  <span class="c"># [실습환경 B Type]</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>외부 통신 실행 및 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 파드에서 외부 정상 통신 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec </span>pod1 <span class="nt">-it</span> <span class="nt">--</span> zsh
+<span class="nt">----------------------------</span>
+  
+<span class="c"># 혹은 통신 확인 </span>
+<span class="nv">$ </span>ping <span class="nt">-c</span> 10 8.8.8.8
+  
+<span class="c"># The right way to check the weather - 링크</span>
+<span class="nv">$ </span>curl wttr.in/seoul
+<span class="nv">$ </span>curl <span class="s1">'wttr.in/seoul?format=3'</span>
+<span class="nv">$ </span>curl <span class="s1">'wttr.in/busan?format=3'</span>
+<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s1">'wttr.in/{London,Busan}'</span>
+<span class="nv">$ </span>curl v3.wttr.in/Seoul.sxl
+<span class="nv">$ </span>curl wttr.in/Moon
+<span class="nv">$ </span>curl wttr.in/:help
+  
+<span class="c"># 패킷 덤프 내용 확인</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> calice0906292e2 <span class="nt">-nn</span> icmp
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
+<span class="c">#    listening on calice0906292e2, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
+<span class="c">#    12:23:43.792218 IP 172.16.158.10 &gt; 8.8.8.8: ICMP echo request, id 124, seq 1, length 64</span>
+<span class="c">#    12:23:43.831040 IP 8.8.8.8 &gt; 172.16.158.10: ICMP echo reply, id 124, seq 1, length 64</span>
+<span class="c">#    12:23:44.797713 IP 172.16.158.10 &gt; 8.8.8.8: ICMP echo request, id 124, seq 2, length 64</span>
+<span class="c">#    12:23:44.836854 IP 8.8.8.8 &gt; 172.16.158.10: ICMP echo reply, id 124, seq 2, length 64</span>
+<span class="c">#    ...</span>
+  
+<span class="c"># 아래 10.0.2.15는 VM의 1번 네트워크 인터페이스의 IP이며, 출발지 IP가 변경되어서 외부로 나감</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s3 <span class="nt">-nn</span> icmp
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
+<span class="c">#    listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
+<span class="c">#    12:23:43.792299 IP 10.0.2.15 &gt; 8.8.8.8: ICMP echo request, id 25687, seq 1, length 64</span>
+<span class="c">#    12:23:43.830978 IP 8.8.8.8 &gt; 10.0.2.15: ICMP echo reply, id 25687, seq 1, length 64</span>
+<span class="c">#    12:23:44.797877 IP 10.0.2.15 &gt; 8.8.8.8: ICMP echo request, id 25687, seq 2, length 64</span>
+<span class="c">#    12:23:44.836812 IP 8.8.8.8 &gt; 10.0.2.15: ICMP echo reply, id 25687, seq 2, length 64</span>
+  
+<span class="c"># nat MASQUERADE rule 카운트(pkts)가 증가!</span>
+<span class="c">## 출발지 매칭은 cali40masq-ipam-pools 을 사용</span>
+<span class="c"># watch -d 'iptables -n -v -t nat --list cali-nat-outgoing'</span>
+<span class="nv">$ </span>iptables <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-t</span> nat <span class="nt">--list</span> cali-nat-outgoing
+<span class="c"># =&gt; Chain cali-nat-outgoing (1 references)</span>
+<span class="c">#     pkts bytes target     prot opt in     out     source               destination</span>
+<span class="c">#        9   636 MASQUERADE  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* cali:flqWnvo8yq4ULQLa */ match-set cali40masq-ipam-pools src ! match-set cali40all-ipa</span>
+<span class="c">#    m-pools dst random-fully</span>
+  
+<span class="c"># IPSET 으로 의 cali40masq-ipam-pools IP 대역 정보 확인 : 172.16.0.0/16 대역임을 확인</span>
+<span class="nv">$ </span>ipset list cali40masq-ipam-pools
+<span class="c"># =&gt; Name: cali40masq-ipam-pools</span>
+<span class="c">#    Type: hash:net</span>
+<span class="c">#    Revision: 7</span>
+<span class="c">#    Header: family inet hashsize 1024 maxelem 1048576 bucketsize 12 initval 0x59a55159</span>
+<span class="c">#    Size in memory: 504</span>
+<span class="c">#    References: 1</span>
+<span class="c">#    Number of entries: 1</span>
+<span class="c">#    Members:</span>
+<span class="c">#    172.16.0.0/16</span>
+</code></pre></div>    </div>
+
+    <p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_12.png" alt="20240921_kans_w3_12.png" loading="lazy" width="1392" height="1270"></p>
+  </li>
+  <li>이렇게 외부와의 통신시 터널링(tunl0)은 통하지 않고 calice# 인터페이스와 enp0s3 인터페이스를 통해 외부로 통신하는 것을 확인할 수 있었습니다.</li>
+  <li>enp0s8 인터페이스는 virtualbox상의 host only 인터페이스여서 패킷이 전달되지 않습니다.</li>
+</ul>
+
+<h4 id="다른-노드의-파드--파드간-통신">다른 노드의 파드 &lt;=&gt; 파드간 통신</h4>
+
+<ul>
+  <li>이번에는 서로 다른 노드의 파드간의 통신을 알아보겠습니다.</li>
+  <li>다른 노드의 파드와의 통신은 <strong>IPIP</strong>(IP in IP) 터널링을 통해 통신합니다.</li>
+  <li>각 노드에서 파드 네트워크 대역은 Bird에 의해서 BGP로 전파되며, Felix에 의해 노드의 라우팅 테이블에 자동으로 추가/삭제 됩니다.</li>
+  <li>다른 노드간의 통신은 tunl0 인터페이스를 통해 IP 헤더에 IPIP 헤더를 추가하여, 상대방 노드로 도착 후 tunl0 인터페이스에서 IPIP 헤더를 제거하고, 최종적으로 상대방 파드로 전달됩니다.
+<img src="/assets/2024/kans-3th/w3/20240921_kans_w3_14.png" alt="img.png" class="w-80 image-center" loading="lazy" width="241" height="133">
+<em class="image-caption">IPIP 동작방식 <a href="https://en.wikipedia.org/wiki/IP_in_IP">출처</a></em>
+</li>
+  <li>그림으로 나타내면 아래와 같습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_13.png" alt="img.png" loading="lazy" width="1416" height="524"></p>
+
+<h5 id="파드-배포-전-기본-상태-확인-2">파드 배포 전 기본 상태 확인</h5>
+
+<ul>
+  <li>노드에서 Bird 라우팅 정보와 Felix 라우팅 테이블 정보를 확인합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 컨트롤플레인</span>
+<span class="nv">$ </span>route | <span class="nb">head</span> <span class="nt">-2</span> <span class="p">;</span> route <span class="nt">-n</span> | <span class="nb">grep </span>tunl0
+<span class="c"># =&gt; Kernel IP routing table</span>
+<span class="c">#    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span>
+<span class="c">#    172.16.34.0     192.168.20.100  255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.158.0    192.168.10.101  255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.184.0    192.168.10.102  255.255.255.0   UG    0      0        0 tunl0</span>
+
+<span class="c"># 노드1</span>
+<span class="nv">$ </span>route | <span class="nb">head</span> <span class="nt">-2</span> <span class="p">;</span> route <span class="nt">-n</span> | <span class="nb">grep </span>tunl0
+<span class="c"># =&gt; Kernel IP routing table</span>
+<span class="c">#    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span>
+<span class="c">#    172.16.34.0     192.168.20.100  255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.116.0    192.168.10.10   255.255.255.0   UG    0      0        0 tunl0</span>
+<span class="c">#    172.16.184.0    192.168.10.102  255.255.255.0   UG    0      0        0 tunl0</span>
+</code></pre></div></div>
+
+<ul>
+  <li>노드의 tunl0 정보 확인해 보겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 노드1</span>
+<span class="nv">$ </span>ifconfig enp0s3
+<span class="c"># =&gt; enp0s3: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  &lt;span style="color: red;"&gt;mtu 1500&lt;/span&gt;</span>
+<span class="c">#             inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255</span>
+
+<span class="nv">$ </span>ifconfig tunl0
+<span class="c"># =&gt; tunl0: flags=193&lt;UP,RUNNING,NOARP&gt;  &lt;span style="color: red;"&gt;mtu 1480&lt;/span&gt;</span>
+<span class="c">#            inet 172.16.158.0  netmask 255.255.255.255</span>
+<span class="c">#            tunnel   txqueuelen 1000  (IPIP Tunnel)</span>
+<span class="c">#            RX packets 11581  bytes 917302 (917.3 KB)</span>
+<span class="c">#            RX errors 0  dropped 0  overruns 0  frame 0</span>
+<span class="c">#            TX packets 12036  bytes 2774296 (2.7 MB)</span>
+<span class="c">#            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span>
+
+<span class="c"># 노드2</span>
+<span class="nv">$ </span>ifconfig tunl0
+<span class="c"># =&gt; tunl0: flags=193&lt;UP,RUNNING,NOARP&gt;  &lt;span style="color: red;"&gt;mtu 1480&lt;/span&gt;</span>
+<span class="c">#            inet 172.16.184.0  netmask 255.255.255.255</span>
+<span class="c">#            tunnel   txqueuelen 1000  (IPIP Tunnel)</span>
+<span class="c">#            RX packets 0  bytes 0 (0.0 B)</span>
+<span class="c">#            RX errors 0  dropped 0  overruns 0  frame 0</span>
+<span class="c">#            TX packets 0  bytes 0 (0.0 B)</span>
+<span class="c">#            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span>
+</code></pre></div></div>
+
+<ul>
+  <li>터널 인터페이스인 tunl0에 IP가 할당되어있고, MTU는 1480으로 설정되어 있습니다. enp0s3 인터페이스는 mtu가 1500인데 tunl0 인터페이스는 mtu가 1480으로 설정된 이유는, IPIP의 20바이트 헤더를 추가하기 위해서입니다.</li>
+</ul>
+
+<h5 id="파드-배포">파드 배포</h5>
+
+<ul>
+  <li>테스트를 위해 노드1과 노드2에 각각 파드 1개씩 생성하겠습니다.</li>
+  <li>node2-pod2.yaml 생성
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c1"># node2-pod2.yaml</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Pod</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">nodeName</span><span class="pi">:</span> <span class="s">k8s-w1</span>
+  <span class="na">containers</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">pod1</span>
+      <span class="na">image</span><span class="pi">:</span> <span class="s">nicolaka/netshoot</span>
+      <span class="na">command</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">tail"</span><span class="pi">]</span>
+      <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">/dev/null"</span><span class="pi">]</span>
+  <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Pod</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">pod2</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">nodeName</span><span class="pi">:</span> <span class="s">k8s-w2</span>
+  <span class="na">containers</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">pod2</span>
+      <span class="na">image</span><span class="pi">:</span> <span class="s">nicolaka/netshoot</span>
+      <span class="na">command</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">tail"</span><span class="pi">]</span>
+      <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">-f"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">/dev/null"</span><span class="pi">]</span>
+  <span class="na">terminationGracePeriodSeconds</span><span class="pi">:</span> <span class="m">0</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>파드 생성 후 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl apply <span class="nt">-f</span> node2-pod2.yaml
+<span class="c"># =&gt; pod/pod1 created</span>
+<span class="c">#    pod/pod2 created</span>
+  
+<span class="c"># calicoctl 이용한 endpoint 확인</span>
+<span class="nv">$ </span>calicoctl get workloadendpoints
+<span class="c"># =&gt; WORKLOAD   NODE     NETWORKS           INTERFACE</span>
+<span class="c">#    pod1       k8s-w1   172.16.158.11/32   calice0906292e2</span>
+<span class="c">#    pod2       k8s-w2   172.16.184.16/32   calibd2348b4f67</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>pod1이 node1에, pod2가 node2에 생성되었음을 확인할 수 있습니다. 파드 생성 후 상태는 아래와 같습니다.</p>
+
+    <p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_15.png" alt="img.png" loading="lazy" width="1667" height="565"></p>
+  </li>
+</ul>
+
+<h5 id="파드간-통신-실행-및-확인-1">파드간 통신 실행 및 확인</h5>
+
+<ul>
+  <li>Calico CNI는 다른 노드의 파드간 통신을 위해 IPIP 터널링을 사용합니다.</li>
+  <li>IPIP를 사용하려면 <strong>클라우드 서비스에서 IPIP 터널링을 허용해야</strong> 합니다. 현재 <strong>Azure는 IPIP 패킷을 허용하지 않고</strong> 있으며, 이러한 경우 <strong>Flannel을 사용하거나</strong>, <strong>Calico의 VXLAN을 사용</strong>할 수 있습니다.</li>
+  <li>다음 그림과 같이 tunl0와 eth0 인터페이스에 tcpdump를 사용하여 패킷을 캡쳐해보겠습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_16.png" alt="img.png" loading="lazy" width="1668" height="595"></p>
+
+<ul>
+  <li>노드1과 노드2에서 각각 아래와 같이 실행합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># tunl0 인터페이스 TX/RX 패킷 카운트 모니터링 실행</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'ifconfig tunl0 | head -2 ; ifconfig tunl0 | grep bytes'</span>
+
+<span class="c"># 패킷 덤프 tunl0</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> tunl0 <span class="nt">-nn</span>
+
+<span class="c"># 패킷 덤프 : IP 헤더의 상위 프로토콜을 IPIP(4)인 패킷만 필터링</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s8 <span class="nt">-nn</span> ip proto 4
+</code></pre></div></div>
+
+<ul>
+  <li>파드1에서 파드2로 ping 통신을 실행해보겠습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_17.png" alt="img.png" loading="lazy" width="1418" height="526"></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 마스터 노드에서 pod1 Shell 접속</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec </span>pod1 <span class="nt">-it</span> <span class="nt">--</span> zsh
+
+<span class="c"># pod1 에서 pod2 로 핑 통신 : 정상 통신!</span>
+<span class="c"># ping -c 10 &lt;pod2 IP&gt;</span>
+<span class="nv">$ </span>ping <span class="nt">-c</span> 10 172.16.184.16
+<span class="c"># =&gt; PING 172.16.184.16 (172.16.184.16) 56(84) bytes of data.</span>
+<span class="c">#    64 bytes from 172.16.184.16: icmp_seq=1 ttl=62 time=1.42 ms</span>
+<span class="c">#    64 bytes from 172.16.184.16: icmp_seq=2 ttl=62 time=2.32 ms</span>
+<span class="c">#    ...</span>
+
+<span class="c"># tunl0 인터페이스 TX/RX 패킷 카운트 모니터링 확인 : TX/RX 패킷 카운트가 각각 10개로 증가했다</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'ifconfig tunl0 | head -2 ; ifconfig tunl0 | grep bytes'</span>
+<span class="c"># =&gt; tunl0: flags=193&lt;UP,RUNNING,NOARP&gt;  mtu 1480</span>
+<span class="c">#            inet 172.16.184.0  netmask 255.255.255.255</span>
+<span class="c">#            RX packets 10  bytes 840 (840.0 B)</span>
+<span class="c">#            TX packets 10  bytes 840 (840.0 B)</span>
+
+<span class="c"># 패킷 덤프 : tunl0 - 터널 인터페이스에 파드간 IP 패킷 정보 확인!</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> tunl0 <span class="nt">-nn</span>
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v or -vv for full protocol decode</span>
+<span class="c">#    listening on tunl0, link-type RAW (Raw IP), capture size 262144 bytes</span>
+<span class="c">#    15:42:06.220413 IP 172.16.158.11 &gt; 172.16.184.16: ICMP echo request, id 259, seq 1, length 64</span>
+<span class="c">#    15:42:06.220720 IP 172.16.184.16 &gt; 172.16.158.11: ICMP echo reply, id 259, seq 1, length 64</span>
+<span class="c">#    15:42:07.250941 IP 172.16.158.11 &gt; 172.16.184.16: ICMP echo request, id 259, seq 2, length 64</span>
+<span class="c">#    15:42:07.252035 IP 172.16.184.16 &gt; 172.16.158.11: ICMP echo reply, id 259, seq 2, length 64</span>
+<span class="c">#    ...</span>
+...
+
+<span class="c"># 패킷 덤프 : eth0(enp#~) - IP Outer 헤더 안쪽에 IP 헤더 1개가 더 있음을 알 수 있습니다.</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> enp0s8 <span class="nt">-nn</span> proto 4 
+<span class="c"># =&gt; 15:42:06.220427 &lt;span style="color: red;"&gt;IP&lt;/span&gt; 192.168.10.101 &gt; 192.168.10.102: &lt;span style="color: red;"&gt;IP&lt;/span&gt; 172.16.158.11 &gt; 172.16.184.16: &lt;span style="color: red;"&gt;ICMP echo&lt;/span&gt; request, id 259, seq 1, length 64</span>
+<span class="c">#    15:42:06.220720 &lt;span style="color: red;"&gt;IP&lt;/span&gt; 192.168.10.102 &gt; 192.168.10.101: &lt;span style="color: red;"&gt;IP&lt;/span&gt; 172.16.184.16 &gt; 172.16.158.11: &lt;span style="color: red;"&gt;ICMP echo&lt;/span&gt; reply, id 259, seq 1, length 64</span>
+<span class="c">#    15:42:07.250959 &lt;span style="color: red;"&gt;IP&lt;/span&gt; 192.168.10.101 &gt; 192.168.10.102: &lt;span style="color: red;"&gt;IP&lt;/span&gt; 172.16.158.11 &gt; 172.16.184.16: &lt;span style="color: red;"&gt;ICMP echo&lt;/span&gt; request, id 259, seq 2, length 64</span>
+<span class="c">#    15:42:07.252035 &lt;span style="color: red;"&gt;IP&lt;/span&gt; 192.168.10.102 &gt; 192.168.10.101: &lt;span style="color: red;"&gt;IP&lt;/span&gt; 172.16.184.16 &gt; 172.16.158.11: &lt;span style="color: red;"&gt;ICMP echo&lt;/span&gt; reply, id 259, seq 2, length 64</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 결과 tunl0 인터페이스를 통한 패킷이 IP 헤더에 IPIP 헤더가 추가되어 노드의 enp0s8 인터페이스로 전달되는 것을 확인할 수 있었습니다.</li>
+  <li>enp0s8 인터페이스에는 파드의 IP인 172.16.x.x 대역의 IP 패킷이 노드의 IP 대역인 192.168.x.x 대역으로 감싸져서 전달되는 것을 확인할 수 있었습니다.</li>
+  <li>캡쳐된 패킷을 wireshark로 확인해보겠습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_18.png" alt="img.png" loading="lazy" width="880" height="882"></p>
+
+<ul>
+  <li>실제 ICMP 프로토콜의 상위에 파드의 IP 프로토콜이 있고, 그 위에 노드의 IP 프로토콜이 있는 것을 확인할 수 있습니다.</li>
+</ul>
+
+<hr>
+
+<h3 id="calico-네트워크-모드">Calico 네트워크 모드</h3>
+
+<ul>
+  <li>Calico는 다양한 네트워크 모드를 지원합니다. 네트워크 모드는 Calico의 CNI 설정을 통해 설정할 수 있습니다.</li>
+  <li>
+    <p>Calico의 네트워크 모드는 다음과 같습니다.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: center">네트워크 모드</th>
+          <th style="text-align: left">설명</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center">IPIP</td>
+          <td style="text-align: left">IPIP 터널링을 사용하여 노드 간 통신을 위한 네트워크 모드입니다.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center">Direct</td>
+          <td style="text-align: left">호스트의 물리 네트워크 인터페이스를 사용하여 노드 간 통신을 위한 네트워크 모드입니다.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center">VXLAN</td>
+          <td style="text-align: left">Flannel에서 사용했던 VXLAN을 사용하여 노드 간 통신을 위한 네트워크 모드입니다.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center">Pod 패킷 암호화</td>
+          <td style="text-align: left">WireGuard를 사용하여 노드 간 통신을 암호화 하기 위한 네트워크 모드입니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>성능은 Direct &gt; IPIP &gt; VXLAN 순으로 높지만, IPIP는 클라우드 서비스에서 IPIP 터널링을 허용해야 하고,
+Direct는 물리 네트워크를 통해 직접 통신하므로 파드의 라우팅이나 방화벽 정책을 적용하는것이 까다로운 단점이 있습니다.</li>
+  <li>Pod 패킷 암호화는 WireGuard를 사용하여 노드 간 통신을 암호화하는 방법으로, 가장 안전하지만 암호화에 따른 
+부하와 지연이 발생하게 됩니다.</li>
+  <li>이러한 특성들을 잘 이해하여 적절한 네트워크 모드를 선택하여 사용해야 합니다.</li>
+  <li>각각의 mode에 대해 알아보겠습니다.</li>
+</ul>
+
+<h4 id="ipip-모드">IPIP 모드</h4>
+
+<ul>
+  <li>IPIP 모드는 노드 간 통신을 위한 네트워크 모드로, IPIP 터널링을 사용하여 노드 간 통신을 합니다.</li>
+  <li>앞선 실습들이 모두 IPIP 모드로 진행되었습니다. Calico의 기본 네트워크 모드이며, 적절한 속도와 좋은 사용성을 제공합니다.</li>
+  <li>단점으로는 클라우드 서비스에서 IPIP 터널링을 허용해야 하며, IPIP 터널링으로 인한 오버헤드가 발생할 수 있습니다.</li>
+</ul>
+
+<h5 id="ipip-모드-설정">IPIP 모드 설정</h5>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">IPPool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default-ipv4-ippool</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">allowedUses</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">Workload</span>
+  <span class="pi">-</span> <span class="s">Tunnel</span>
+  <span class="na">blockSize</span><span class="pi">:</span> <span class="m">24</span>
+  <span class="na">cidr</span><span class="pi">:</span> <span class="s">172.16.0.0/16</span>
+  <span class="na">natOutgoing</span><span class="pi">:</span> <span class="kc">true</span>
+  <span class="na">ipipMode</span><span class="pi">:</span> <span class="s">Always</span>  <span class="c1"># IPIP 모드 설정</span>
+  <span class="na">vxlanMode</span><span class="pi">:</span> <span class="s">Never</span>
+</code></pre></div></div>
+
+<h5 id="통신-흐름">통신 흐름</h5>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_19.png" alt="img.png" class="w-80 image-center" loading="lazy" width="1182" height="656"></p>
+
+<ul>
+  <li>다른 노드와의 파드간의 통신은 tunl0 인터페이스를 통해 IP 헤더에 IP 헤더를 감싸서(IP-in-IP) 상대 노드에 도달후 IPIP 헤더를 제거하고 최종적으로 상대방 파드로 전달됩니다.</li>
+  <li>다른 노드의 파드 대역은 BGP로 전파되며, Felix에 의해 노드의 라우팅 테이블에 자동으로 추가/삭제 됩니다.</li>
+</ul>
+
+<h4 id="direct-모드">Direct 모드</h4>
+
+<ul>
+  <li>Direct 모드는 노드 간 통신을 위한 네트워크 모드로, 호스트의 물리 네트워크 인터페이스를 사용하여 노드 간 통신을 합니다.</li>
+  <li>클라우드 사업자 네트워크에서는 NIC에 매칭되지 않은 IP 패킷이 차단되기 때문에, NIC에서 Source/Destination Check 기능을 해제해야 합니다. <a href="https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/VPC_NAT_Instance.html#EIP_Disable_SrcDestCheck">링크</a>
+    <ul>
+      <li>AWS에서는 다음의 AWS CLI 명령으로 NIC의 Source/Destination Check 기능을 해제할 수 있습니다.
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>aws ec2 modify-instance-attribute <span class="nt">--instance-id</span> &lt;INSTANCE_ID&gt; <span class="nt">--source-dest-check</span> <span class="s2">"{</span><span class="se">\"</span><span class="s2">Value</span><span class="se">\"</span><span class="s2">: false}"</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>Virtual box에서는 NIC의 promiscuous mode를 사용해야 합니다.</li>
+</ul>
+
+<h5 id="direct-모드-설정">Direct 모드 설정</h5>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">IPPool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default-ipv4-ippool</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">allowedUses</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">Workload</span>
+  <span class="pi">-</span> <span class="s">Tunnel</span>
+  <span class="na">blockSize</span><span class="pi">:</span> <span class="m">24</span>
+  <span class="na">cidr</span><span class="pi">:</span> <span class="s">172.16.0.0/16</span>
+  <span class="na">natOutgoing</span><span class="pi">:</span> <span class="kc">true</span>
+  <span class="na">ipipMode</span><span class="pi">:</span> <span class="s">Never</span>   <span class="c1"># IPIP 모드 사용하지 않음</span>
+  <span class="na">vxlanMode</span><span class="pi">:</span> <span class="s">Never</span>
+</code></pre></div></div>
+
+<h5 id="통신-흐름-1">통신 흐름</h5>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_20.png" alt="img.png" class="w-80 image-center" loading="lazy" width="1184" height="620"></p>
+
+<h5 id="cross-subnet-모드">Cross Subnet 모드</h5>
+
+<ul>
+  <li>Direct 모드는 Cross Subnet 모드로 사용할 수 있습니다.</li>
+  <li>
+    <p>Cross Subnet 모드는 노드간의 네트워크 대역이 다를때 사용할 수 있으며, <strong>노드간 같은 네트워크 대역이면 Direct 모드</strong>로 동작하고,
+<strong>다른 네트워크 대역이면 IPIP/VXLAN 모드</strong>로 동작합니다.</p>
+  </li>
+  <li>
+    <p>IPIP를 이용한 Cross Subnet 모드 설정</p>
+
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">IPPool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default-ipv4-ippool</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">allowedUses</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">Workload</span>
+  <span class="pi">-</span> <span class="s">Tunnel</span>
+  <span class="na">blockSize</span><span class="pi">:</span> <span class="m">24</span>
+  <span class="na">cidr</span><span class="pi">:</span> <span class="s">172.16.0.0/16</span>
+  <span class="na">natOutgoing</span><span class="pi">:</span> <span class="kc">true</span>
+  <span class="na">ipipMode</span><span class="pi">:</span> <span class="s">CrossSubnet</span>   <span class="c1"># IPIP 모드를 Subnet이 다를때만 사용</span>
+  <span class="na">vxlanMode</span><span class="pi">:</span> <span class="s">Never</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>VXLAN를 이용한 Cross Subnet 모드 설정</p>
+
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">IPPool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default-ipv4-ippool</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">allowedUses</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">Workload</span>
+  <span class="pi">-</span> <span class="s">Tunnel</span>
+  <span class="na">blockSize</span><span class="pi">:</span> <span class="m">24</span>
+  <span class="na">cidr</span><span class="pi">:</span> <span class="s">172.16.0.0/16</span>
+  <span class="na">natOutgoing</span><span class="pi">:</span> <span class="kc">true</span>
+  <span class="na">ipipMode</span><span class="pi">:</span> <span class="s">Never</span>   
+  <span class="na">vxlanMode</span><span class="pi">:</span> <span class="s">CrossSubnet</span>      <span class="c1"># VXLAN 모드를 Subnet이 다를때만 사용</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="vxlan-모드">VXLAN 모드</h4>
+
+<ul>
+  <li>VXLAN 모드는 Flannel에서 사용했던 VXLAN을 사용하여 노드 간 통신을 위한 네트워크 모드입니다.</li>
+  <li>IPIP 모드와 비슷하지만, VXLAN은 IPIP보다 속도가 느리지만, 클라우드 서비스에서 IPIP 터널링을 허용하지 않을 때 사용할 수 있습니다.</li>
+</ul>
+
+<h5 id="vxlan-모드-설정">VXLAN 모드 설정</h5>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">IPPool</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default-ipv4-ippool</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">allowedUses</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">Workload</span>
+  <span class="pi">-</span> <span class="s">Tunnel</span>
+  <span class="na">blockSize</span><span class="pi">:</span> <span class="m">24</span>
+  <span class="na">cidr</span><span class="pi">:</span> <span class="s">172.16.0.0/16</span>
+  <span class="na">natOutgoing</span><span class="pi">:</span> <span class="kc">true</span>
+  <span class="na">ipipMode</span><span class="pi">:</span> <span class="s">Never</span>  
+  <span class="na">vxlanMode</span><span class="pi">:</span> <span class="s">Always</span> <span class="c1"># VXLAN 모드 설정</span>
+</code></pre></div></div>
+
+<h5 id="통신-흐름-2">통신 흐름</h5>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_21.png" alt="img.png" class="w-80 image-center" loading="lazy" width="1184" height="656"></p>
+
+<ul>
+  <li>VXLAN은 vxlan 인터페이스를 통해 L2 패킷을 UDP - VXLAN으로 감싸서 상대측 노드로 전달 후 vxlan 인터페이스에서 VXLAN에서 실제 L2 프레임을 추출하여 최종적으로 상대방 파드로 전달됩니다.</li>
+  <li>이때 BGP 는 미사용되며, VXLAN L3 라우팅을 통해서 동작합니다.</li>
+</ul>
+
+<h4 id="파드-패킷-암호화-네트워크-레벨">파드 패킷 암호화 (네트워크 레벨)</h4>
+
+<ul>
+  <li>WireGuard를 사용하여 노드 간 통신을 암호화하는 방법으로, 가장 안전하지만 암호화에 따른 부하와 지연이 발생하게 됩니다.</li>
+  <li>최근 대두되고 있는 제로 트러스트 네트워크 환경에서 사용할 수 있습니다.</li>
+  <li>사용되는 WireGuard는 IPSec이나 OpenVPN과 같은 VPN 프로토콜이며, 기존의 VPN들 보다 빠르고 간단하며, 적은 리소스를 사용합니다.</li>
+</ul>
+
+<h5 id="wireguard-모드-설정">WireGuard 모드 설정</h5>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">projectcalico.org/v3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">FelixConfiguration</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">default</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">bpfConnectTimeLoadBalancing</span><span class="pi">:</span> <span class="s">TCP</span>
+  <span class="na">bpfHostNetworkedNATWithoutCTLB</span><span class="pi">:</span> <span class="s">Enabled</span>
+  <span class="na">bpfLogLevel</span><span class="pi">:</span> <span class="s2">"</span><span class="s">"</span>
+  <span class="na">floatingIPs</span><span class="pi">:</span> <span class="s">Disabled</span>
+  <span class="na">logSeverityScreen</span><span class="pi">:</span> <span class="s">Info</span>
+  <span class="na">reportingInterval</span><span class="pi">:</span> <span class="s">0s</span>
+  <span class="na">wireguardEnabled</span><span class="pi">:</span> <span class="kc">true</span>    <span class="c1"># wireguard 사용 설정</span>
+</code></pre></div></div>
+
+<h5 id="통신-흐름-3">통신 흐름</h5>
+
+<p><img src="/assets/2024/kans-3th/w3/20240921_kans_w3_22.png" alt="img_1.png" class="w-80 image-center" loading="lazy" width="1184" height="654"></p>
+
+<ul>
+  <li>원본 패킷이 wireg 인터페이스를 통해 WireGuard로 암호화되어 상대방 노드로 전달되며, 상대방 노드에서는 wireg 인터페이스를 통해 복호화하여 최종적으로 상대방 파드로 전달됩니다.</li>
+</ul>
+
+<hr>
+
+<h2 id="마치며">마치며</h2>
+
+<p>지금까지 Calico의 기본적인 구성과 동작 방식에 대해 알아보았습니다.
+Flannel에 비해 많은 기능을 제공하고, 다양한 네트워크를 통해 좀 더 안전하고 빠른 네트워크 환경을 제공하는것 같습니다.
+IP-in-IP 개념은 처음 보는 내용이라 신선하였습니다. 하지만 IPIP의 경우 클라우드 환경에 따라 사용하기 어려울 수도 있고,
+Direct 모드는 promiscuous mode로 인해 불필요한 오버헤드와 보안 이슈가 발생할 수 있을 것 같습니다.
+VXLAN을 사용하자니 Flannel에 비해 우위가 크게 없어 보이고, 제로트러스트가 필요한 환경에서 파드 패킷 암호화를 
+사용하는 것은 좋아보입니다.</p>
+
+<p>기존에 많이들 쓴다고 해서 Calico를 사용했었는데 이렇게 심오한 세계가 있다는 것을 알게 되어서 기쁩니다.
+앞으로 배우게될 Cilium CNI가 더 기대가 됩니다.</p>
+
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#calico-cni">Calico CNI</a>
+<ul>
+<li class="toc-entry toc-h3">
+<a href="#calico-%EC%86%8C%EA%B0%9C">Calico 소개</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#calico%EB%9E%80">Calico란?</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#calico-%EC%84%A4%EC%B9%98">Calico 설치</a></li>
+<li class="toc-entry toc-h3">
+<a href="#calico-cni-%EA%B5%AC%EC%84%B1%EC%9A%94%EC%86%8C">Calico CNI 구성요소</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#calico-%EA%B5%AC%EC%84%B1%EC%9A%94%EC%86%8C-%ED%99%95%EC%9D%B8">Calico 구성요소 확인</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%85%B8%EB%93%9C%EA%B0%84%EC%9D%98-bgp-%EC%A0%84%EB%8B%AC%EA%B3%BC%EC%A0%95-%ED%99%95%EC%9D%B8">노드간의 BGP 전달과정 확인</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#calico-%ED%86%B5%EC%8B%A0-%ED%9D%90%EB%A6%84-%ED%99%95%EC%9D%B8">Calico 통신 흐름 확인</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EB%8F%99%EC%9D%BC-%EB%85%B8%EB%93%9C%EC%97%90%EC%84%9C-%ED%8C%8C%EB%93%9Cpod-%EA%B0%84-%ED%86%B5%EC%8B%A0">동일 노드에서 파드(Pod) 간 통신</a></li>
+<li class="toc-entry toc-h4"><a href="#%ED%8C%8C%EB%93%9C---%EC%99%B8%EB%B6%80%EC%9D%B8%ED%84%B0%EB%84%B7-%ED%86%B5%EC%8B%A0">파드 -&gt; 외부(인터넷) 통신</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%8B%A4%EB%A5%B8-%EB%85%B8%EB%93%9C%EC%9D%98-%ED%8C%8C%EB%93%9C--%ED%8C%8C%EB%93%9C%EA%B0%84-%ED%86%B5%EC%8B%A0">다른 노드의 파드 &lt;=&gt; 파드간 통신</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#calico-%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-%EB%AA%A8%EB%93%9C">Calico 네트워크 모드</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#ipip-%EB%AA%A8%EB%93%9C">IPIP 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#direct-%EB%AA%A8%EB%93%9C">Direct 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#vxlan-%EB%AA%A8%EB%93%9C">VXLAN 모드</a></li>
+<li class="toc-entry toc-h4"><a href="#%ED%8C%8C%EB%93%9C-%ED%8C%A8%ED%82%B7-%EC%95%94%ED%98%B8%ED%99%94-%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-%EB%A0%88%EB%B2%A8">파드 패킷 암호화 (네트워크 레벨)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+  </div>
+<a class="u-url" href="/posts/2024-09-22-KANS-Study-Week3/" hidden></a>
+</article>
+
+
+
+<div class="PageNavigation">
+  
+  <a class="prev" href="/posts/2024-09-07-KANS-Study-Week2/">« [KANS 3기] K8S Flannel CNI &amp; PAUSE</a>
+  
+  
+</div>
+
+<div id="disqus_thread"></div>
+<script>
+var disqus_config = function () {
+this.page.url = "https://sweetlittlebird.github.io/posts/2024-09-22-KANS-Study-Week3/";
+this.page.identifier = "/posts/KANS Study - Week3";
+};
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+</noscript>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Sweet Little Bird</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Sweet Little Bird</li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>공부 기록과 개발 이야기를 담은 블로그입니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+
+    
+    <script async src="/assets/dist/app.min.js"></script>
+    
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
+  </body>
+
+</html>
