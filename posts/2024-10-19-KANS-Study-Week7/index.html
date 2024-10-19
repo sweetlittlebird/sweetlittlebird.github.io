@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>[KANS 3기] Service Mesh : Istio - Mode (Sidecar, Ambient) | Sweet Little Bird</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="[KANS 3기] Service Mesh : Istio - Mode (Sidecar, Ambient)">
+<meta property="og:locale" content="ko">
+<meta name="description" content="이번주에는 Service Mesh와 대표적인 오픈소스 프로젝트인 Istio에 대해 알아 보겠습니다.">
+<meta property="og:description" content="이번주에는 Service Mesh와 대표적인 오픈소스 프로젝트인 Istio에 대해 알아 보겠습니다.">
+<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2024-10-19-KANS-Study-Week7/">
+<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2024-10-19-KANS-Study-Week7/">
+<meta property="og:site_name" content="Sweet Little Bird">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2024-10-19T01:00:18+09:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="[KANS 3기] Service Mesh : Istio - Mode (Sidecar, Ambient)">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-10-19T01:00:18+09:00","datePublished":"2024-10-19T01:00:18+09:00","description":"이번주에는 Service Mesh와 대표적인 오픈소스 프로젝트인 Istio에 대해 알아 보겠습니다.","headline":"[KANS 3기] Service Mesh : Istio - Mode (Sidecar, Ambient)","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2024-10-19-KANS-Study-Week7/"},"url":"https://sweetlittlebird.github.io/posts/2024-10-19-KANS-Study-Week7/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
+  <link rel="stylesheet" href="/assets/dist/main.min.css">
+  <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!--  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&display=swap" rel="stylesheet">-->
+  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&amp;family=Milonga&amp;display=swap" rel="stylesheet">
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+<link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird">
+</head>
+<body>
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a>
+</div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">[KANS 3기] Service Mesh : Istio - Mode (Sidecar, Ambient)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-10-19T01:00:18+09:00" itemprop="datePublished">2024년 10월 19일에 작성
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <div class="table-of-content">
+      <header>목차</header>
+      <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#istio-%EC%86%8C%EA%B0%9C">Istio 소개</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%84%9C%EB%B9%84%EC%8A%A4-%EB%A9%94%EC%8B%9C-service-mesh%EB%9E%80">서비스 메시 (Service Mesh)란?</a></li>
+<li class="toc-entry toc-h3">
+<a href="#envoy">Envoy</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#envoy-%EC%8B%A4%EC%8A%B5">Envoy 실습</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#istio-%EC%86%8C%EA%B0%9C-1">Istio 소개</a></li>
+<li class="toc-entry toc-h3"><a href="#istio-%EC%84%A4%EC%B9%98-sidecar-%EB%AA%A8%EB%93%9C">Istio 설치 (Sidecar 모드)</a></li>
+<li class="toc-entry toc-h3"><a href="#istio%EB%A5%BC-%ED%86%B5%ED%95%9C-%EC%99%B8%EB%B6%80-%EB%85%B8%EC%B6%9C">Istio를 통한 외부 노출</a></li>
+<li class="toc-entry toc-h3">
+<a href="#bookinfo-%EC%8B%A4%EC%8A%B5-%EB%B0%8F-istio-%EA%B8%B0%EB%8A%A5-%ED%99%95%EC%9D%B8">Bookinfo 실습 및 Istio 기능 확인</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#bookinfo">Bookinfo</a></li>
+<li class="toc-entry toc-h4"><a href="#istio%EB%A5%BC-%ED%86%B5%ED%95%9C-%EC%9D%B8%EC%9E%85-%EA%B8%B0%EB%B3%B8-%EC%84%A4%EC%A0%95">Istio를 통한 인입 기본 설정</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81">모니터링</a></li>
+<li class="toc-entry toc-h4"><a href="#traffic-management">Traffic Management</a></li>
+<li class="toc-entry toc-h4"><a href="#security-%EB%B3%B4%EC%95%88">Security (보안)</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#istio-%ED%86%B5%EC%8B%A0-%ED%9D%90%EB%A6%84">Istio 통신 흐름</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+    </div>
+    <h2 id="들어가며">들어가며</h2>
+
+<p>이번주에는 Service Mesh와 대표적인 오픈소스 프로젝트인 Istio에 대해 알아 보겠습니다.
+KANS 3기 7주차 스터디를 시작하겠습니다.</p>
+
+<hr>
+
+<h2 id="istio-소개">Istio 소개</h2>
+
+<p>Istio는 서비스 메시를 구축하고 관리하기 위한 오픈소스 플랫폼입니다. Istio를 알아보기에 앞서 서비스 메시에 대해 알아보겠습니다.</p>
+
+<h3 id="서비스-메시-service-mesh란">서비스 메시 (Service Mesh)란?</h3>
+
+<ul>
+  <li>
+<strong>서비스 메시</strong>는 서비스 간 <strong>통신을 제어</strong>하고 <strong>모니터링</strong>하는 레이어를 제공하는 인프라스트럭처 계층입니다.</li>
+  <li>
+<strong>등장배경</strong> : MSA 환경에서 서비스가 많아지다 보니 서비스 간 통신이 복잡해지고, 이로 인해 서비스 간 통신을 관리하고 모니터링하는 것이 어려워졌습니다.
+이로인해 장애가 발생하거나 병목 현상이 발생했을때 원인과 발생하는 구간을 찾기가 어려워졌습니다. 이것을 해결 하기 위해 등장한 것이 서비스 메시입니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_1.png" alt="img.png" class="image-center w-80" loading="lazy" width="1792" height="1024">
+</li>
+  <li>
+<strong>개념</strong> : 마이크로 서비스 간에 통신이나 경로를 제어 - 예) istio, linkerd, consul, envoy, …</li>
+  <li>
+<strong>기본 동작</strong> : 파드간 통신경로에 프록시를 두고 트래픽을 모니터링하거나 컨트롤 합니다. 따라서 기존 어플리케이션을 수정하지 않고도 적용할 수 있습니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_2.png" alt="img.png" class="image-center w-80" loading="lazy" width="1837" height="880">
+위의 그림 처럼 서비스 메시는 각 파드에 프록시를 두고 프록시를 통해 통신을 하도록한 다음 프록시를 통해 트래픽을 모니터링하거나 컨트롤 합니다.
+    <ul>
+      <li>이때 프록시는 <strong>Sidecar</strong> 모드로 동작하거나 <strong>Ambient</strong> 모드로 동작하며 대표적인 프록시로는 Envoys가 있습니다.</li>
+      <li>Envoy는 구글, IBM, Lyft가 중심이 되어 개발하고 있는 오픈소스 프록시입니다.</li>
+      <li>네트워크 투명성을 목표로 다양한 필터 체인 지원(L3, L4, L7), 동적 Configuration API를 제공하고, hot reload를 지원합니다.</li>
+    </ul>
+  </li>
+  <li>
+<strong>주요기능</strong>
+    <ul>
+      <li>
+<strong>트래픽 모니터링</strong> : 요청의 에러율, 지연시간, 컨넥션 개수, 요청개수 등의 메트릭을 수집하여 모니터링하고, 서비스간 혹은 특정 요청 경로를 필터링 할 수 있습니다.
+=&gt; 원인 파악 용이</li>
+      <li>
+<strong>트래픽 컨트롤</strong>
+        <ul>
+          <li>트래픽 시프팅(traffic shifting) : 트래픽을 서비스간에 분산시키는 기능으로, 특정 단말/사용자는 신규 어플리케이션에 연결하도록 하는 카나리 배포등에 활용할 수도 있습니다.</li>
+          <li>서킷 브레이커(circuit breaker) : 특정 서비스에 문제가 있을때 접속을 차단하고, 출발지 서비스에 에러를 반환하도록 하는 기능입니다. (연쇄장애, 시스템 전체 장애 방지)</li>
+          <li>플트 인젝션(fault injection) : 의도적으로 요청을 지연시키거나 실패하도록 할 수 있습니다. (비정상 상황 테스트)</li>
+          <li>속도 제한(rate limiting) : 특정 서비스에 대한 요청 개수를 제한하는 기능입니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="envoy">Envoy</h3>
+
+<ul>
+  <li>지난주에 살짝 언급되었던 내용인데 이번 주에 좀 더 자세히 알아보겠습니다.</li>
+  <li>Envoy는 구글, IBM, Lyft가 중심이 되어 개발하고 있는 오픈소스 프록시입니다.</li>
+  <li>Istio의 핵심 기능들은 Envoy를 감싼 istio proxy를 통해 이루어지므로 Envoy에 대한 이해가 필요합니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_4.svg" alt="20241019_kans_w7_4.svg" class="image-center w-80" loading="lazy" width="693" height="341"></p>
+
+<ul>
+  <li>Envoy에서 사용하는 용어 들을 정리해 보았습니다.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>용어</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Cluster</td>
+      <td>envoy가 트래픽을 포워딩할 수 있는 논리적 서비스 (엔드포인트 셋트)</td>
+    </tr>
+    <tr>
+      <td>Endpoint</td>
+      <td>IP 주소와 포트 번호로 구성된 서비스의 실제 인스턴스. 엔드포인트가 모여서 하나의 Cluster를 이룸</td>
+    </tr>
+    <tr>
+      <td>Listener</td>
+      <td>클라이언트가 접속하는 포트, 유닉스 도메인 소켓 등을 노출하고, 다운스트림으로 부터 받은 요청을 처리</td>
+    </tr>
+    <tr>
+      <td>Route</td>
+      <td>Listener로 들어온 요청을 어떤 클러스터로 보낼지 정의</td>
+    </tr>
+    <tr>
+      <td>Filter</td>
+      <td>Listener로 부터 서비스에 트래픽 전달하기 전에 트래픽을 가공하거나 차단하는 역할을 하는 컴포넌트</td>
+    </tr>
+    <tr>
+      <td>UpStream</td>
+      <td>envoy 요청을 포워딩해서 연결하는 백엔드 네트워크 노드 - 사이드카일때는 application app, 아닐때는 원격 백엔드</td>
+    </tr>
+    <tr>
+      <td>DownStream</td>
+      <td>envoy로 연결하여 요청을 보내는 개체. 사이드카가 아닐때는 원격지의 클라이언트</td>
+    </tr>
+    <tr>
+      <td>Host</td>
+      <td>네트워크 통신이 가능한 개체 (PC, 서버, 휴대폰, 네트워크 어플리케이션 등)</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>많은 Service Mesh 솔루션이나, Gateway API 구현체들이 내부적으로 Envoy를 사용하고 있으며, Envoy가 제공하는 동적 구성을 위한 API(xDS Sync API)를 
+이용하여 다양한 네트워크 정책을 구성하게 됩니다.</li>
+  <li>Envoy의 xDS Sync API는 아래와 같은 레이어에서 동작합니다.
+    <ul>
+      <li>LDS - Listener Discovery Service</li>
+      <li>RDS - Route Discovery Service</li>
+      <li>CDS - Cluster Discovery Service</li>
+      <li>EDS - Endpoint Discovery Service</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_5.png" alt="img.png" class="image-center w-80" loading="lazy" width="966" height="417"></p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_6.png" alt="img.png" class="image-center w-80" loading="lazy" width="765" height="499"></p>
+
+<h4 id="envoy-실습">Envoy 실습</h4>
+
+<ul>
+  <li>test pc에 Envoy 설치</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 설치</span>
+<span class="c"># echo "deb [signed-by=/etc/apt/keyrings/envoy-keyring.gpg] https://apt.envoyproxy.io focal main" | sudo tee /etc/apt/sources.list.d/envoy.list</span>
+<span class="nv">$ </span>wget <span class="nt">-O-</span> https://apt.envoyproxy.io/signing.key | <span class="nb">sudo </span>gpg <span class="nt">--dearmor</span> <span class="nt">-o</span> /etc/apt/keyrings/envoy-keyring.gpg
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"deb [signed-by=/etc/apt/keyrings/envoy-keyring.gpg] https://apt.envoyproxy.io jammy main"</span> | <span class="nb">sudo tee</span> /etc/apt/sources.list.d/envoy.list
+<span class="nv">$ </span><span class="nb">sudo </span>apt-get update <span class="o">&amp;&amp;</span> <span class="nb">sudo </span>apt-get <span class="nb">install </span>envoy <span class="nt">-y</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>envoy <span class="nt">--version</span>
+<span class="c"># =&gt; envoy  version: e3b4a6e9570da15ac1caffdded17a8bebdc7dfc9/1.32.0/Clean/RELEASE/BoringSSL</span>
+
+<span class="c"># 도움말</span>
+<span class="nv">$ </span>envoy <span class="nt">--help</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Envoy proxy 실습 - <a href="https://www.envoyproxy.io/docs/envoy/latest/start/quick-start/">Link</a>
+    <ul>
+      <li>envoy-demo.yml 작성
+        <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c1"># envoy-demo.yml</span>
+<span class="na">static_resources</span><span class="pi">:</span>
+    
+  <span class="na">listeners</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">listener_0</span>
+    <span class="na">address</span><span class="pi">:</span>
+      <span class="na">socket_address</span><span class="pi">:</span>
+        <span class="na">address</span><span class="pi">:</span> <span class="s">0.0.0.0</span>
+        <span class="na">port_value</span><span class="pi">:</span> <span class="m">10000</span>
+    <span class="na">filter_chains</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">filters</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">envoy.filters.network.http_connection_manager</span>
+        <span class="na">typed_config</span><span class="pi">:</span>
+          <span class="s2">"</span><span class="s">@type"</span><span class="err">:</span> <span class="s">type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager</span>
+          <span class="s">stat_prefix</span><span class="err">:</span> <span class="s">ingress_http</span>
+          <span class="s">access_log</span><span class="err">:</span>
+          <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">envoy.access_loggers.stdout</span>
+            <span class="na">typed_config</span><span class="pi">:</span>
+              <span class="s2">"</span><span class="s">@type"</span><span class="err">:</span> <span class="s">type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog</span>
+          <span class="na">http_filters</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">envoy.filters.http.router</span>
+          <span class="na">route_config</span><span class="pi">:</span>
+            <span class="na">name</span><span class="pi">:</span> <span class="s">local_route</span>
+            <span class="na">virtual_hosts</span><span class="pi">:</span>
+            <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">local_service</span>
+              <span class="na">domains</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">*"</span><span class="pi">]</span>
+              <span class="na">routes</span><span class="pi">:</span>
+              <span class="pi">-</span> <span class="na">match</span><span class="pi">:</span>
+                  <span class="na">prefix</span><span class="pi">:</span> <span class="s2">"</span><span class="s">/"</span>
+                <span class="na">route</span><span class="pi">:</span>
+                  <span class="na">host_rewrite_literal</span><span class="pi">:</span> <span class="s">www.envoyproxy.io</span>
+                  <span class="na">cluster</span><span class="pi">:</span> <span class="s">service_envoyproxy_io</span>
+    
+  <span class="na">clusters</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">service_envoyproxy_io</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">LOGICAL_DNS</span>
+    <span class="c1"># Comment out the following line to test on v6 networks</span>
+    <span class="na">dns_lookup_family</span><span class="pi">:</span> <span class="s">V4_ONLY</span>
+    <span class="na">connect_timeout</span><span class="pi">:</span> <span class="s">5s</span>
+    <span class="na">load_assignment</span><span class="pi">:</span>
+      <span class="na">cluster_name</span><span class="pi">:</span> <span class="s">service_envoyproxy_io</span>
+      <span class="na">endpoints</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">lb_endpoints</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">endpoint</span><span class="pi">:</span>
+            <span class="na">address</span><span class="pi">:</span>
+              <span class="na">socket_address</span><span class="pi">:</span>
+                <span class="na">address</span><span class="pi">:</span> <span class="s">www.envoyproxy.io</span>
+                <span class="na">port_value</span><span class="pi">:</span> <span class="m">443</span>
+    <span class="na">transport_socket</span><span class="pi">:</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">envoy.transport_sockets.tls</span>
+      <span class="na">typed_config</span><span class="pi">:</span>
+        <span class="s2">"</span><span class="s">@type"</span><span class="err">:</span> <span class="s">type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext</span>
+        <span class="s">sni</span><span class="err">:</span> <span class="s">www.envoyproxy.io</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>실행</p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  <span class="c"># (터미널1) 데모 config 적용하여 실행</span>
+  <span class="nv">$ </span>curl <span class="nt">-O</span> https://www.envoyproxy.io/docs/envoy/latest/_downloads/92dcb9714fb6bc288d042029b34c0de4/envoy-demo.yaml
+  <span class="nv">$ </span>envoy <span class="nt">-c</span> envoy-demo.yaml
+  <span class="c"># =&gt; [2024-10-01 16:41:51.547][4479][info][main] [source/server/server.cc:426] initializing epoch 0 (base id=0, hot restart version=11.104)</span>
+  <span class="c">#    ...</span>
+    
+  <span class="c"># (터미널2) 정보 확인</span>
+  <span class="nv">$ </span>ss <span class="nt">-tnlp</span>
+  <span class="c"># =&gt; State           Recv-Q           Send-Q                     Local Address:Port                      Peer Address:Port          Process</span>
+  <span class="c">#    LISTEN          0                4096                             0.0.0.0:10000                          0.0.0.0:*              users:((&amp;quot;envoy&amp;quot;,pid=4479,fd=35))</span>
+  <span class="c">#    LISTEN          0                4096                             0.0.0.0:10000                          0.0.0.0:*              users:((&amp;quot;envoy&amp;quot;,pid=4479,fd=34))</span>
+  <span class="c">#    LISTEN          0                4096                             0.0.0.0:10000                          0.0.0.0:*              users:((&amp;quot;envoy&amp;quot;,pid=4479,fd=33))</span>
+  <span class="c">#    LISTEN          0                4096                             0.0.0.0:10000                          0.0.0.0:*              users:((&amp;quot;envoy&amp;quot;,pid=4479,fd=32))</span>
+  <span class="c">#    ...</span>
+    
+  <span class="c"># 접속 테스트</span>
+  <span class="nv">$ </span>curl <span class="nt">-s</span> http://127.0.0.1:10000 | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span>
+  <span class="c"># =&gt; &amp;lt;title&amp;gt;Envoy proxy - home&amp;lt;/title&amp;gt;</span>
+    
+  <span class="c"># 외부 접속 정보 출력</span>
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"http://</span><span class="si">$(</span>curl <span class="nt">-s</span> ipinfo.io/ip<span class="si">)</span><span class="s2">:10000"</span>
+  <span class="c"># =&gt; http://54.123.42.212:10000</span>
+    
+  <span class="nt">--------------------</span>
+  <span class="c"># 자신의 PC 웹브라우저에서 외부 접속 정보 접속 확인!</span>
+    
+  <span class="c"># k3s-m 에서 접속 테스트</span>
+  <span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.56.104:10000 | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span>
+  <span class="c"># =&gt; &amp;lt;title&amp;gt;Envoy proxy - home&amp;lt;/title&amp;gt; </span>
+  <span class="nt">--------------------</span>
+    
+  <span class="c"># 연결 정보 확인</span>
+  <span class="nv">$ </span>ss <span class="nt">-tnp</span>
+    
+  <span class="c"># (터미널1) envoy 실행 취소(CTRL+C) 후 (관리자페이지) 설정 덮어쓰기 - 링크</span>
+  <span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOT</span><span class="sh">&gt; envoy-override.yaml
+  admin:
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 9902
+</span><span class="no">  EOT
+</span>  <span class="nv">$ </span>envoy <span class="nt">-c</span> envoy-demo.yaml <span class="nt">--config-yaml</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">cat </span>envoy-override.yaml<span class="si">)</span><span class="s2">"</span>
+    
+  <span class="c"># envoy 관리페이지 외부 접속 정보 출력</span>
+  <span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"http://</span><span class="si">$(</span>curl <span class="nt">-s</span> ipinfo.io/ip<span class="si">)</span><span class="s2">:9902"</span>
+  <span class="c"># =&gt; http://54.123.42.212:9902</span>
+    
+  <span class="nt">--------------------</span>
+  <span class="c"># 자신의 PC 웹브라우저에서 관리 페이지 외부 접속 정보 접속 확인!</span>
+</code></pre></div>        </div>
+
+        <p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_7.png" alt="img.png" class="image-center" loading="lazy" width="1249" height="688">
+  <em class="image-caption">PC에서 접속한 화면</em></p>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="istio-소개-1">Istio 소개</h3>
+
+<ul>
+  <li>
+<strong>Istio</strong>는 서비스 메시를 구축하고 관리하기 위한 오픈소스 플랫폼입니다.</li>
+  <li>
+<strong>Istio의 구성</strong>
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_3.svg" alt="20241019_kans_w7_3.svg" class="image-center w-80" loading="lazy" width="680" height="475">
+    <ul>
+      <li>파일럿(Pilot) : 모든 Envoy 사이드카에서 프록시 라우팅 규칙을 관리하며, 서비스 디스커버리, 로드밸런싱 설정을 제공합니다.</li>
+      <li>겔리(Galley) : Istio와 쿠버네티스를 연결하는 역할을 합니다. 서비스 메시 구성 데이터를 검증하고 변환합니다.</li>
+      <li>시타델(Citadel) : 서비스 간의 인증과 보안을 관리합니다. 서비스 간의 TLS 통신을 제공하고, 서비스 간의 인증을 관리합니다.</li>
+    </ul>
+  </li>
+  <li>Istio의 구성요소
+    <ul>
+      <li>istiod : Istio의 중앙 제어 플레인으로, Pilot, Citadel, Galley를 포함합니다.</li>
+      <li>istio proxy : Envoy 기반의 프록시로, istiod와 통신하며, 서비스 트래픽을 통제하고 옵저빌리티를 위한 메트릭을 제공합니다.</li>
+    </ul>
+  </li>
+  <li>특징
+    <ul>
+      <li>Istio는 각 파드안에서 사이드카로 동작하는 Envoy가 트래픽을 제어하고 모니터링합니다.</li>
+      <li>모든 마이크로 서비스간 통신은 Envoy를 통해 이루어지며, 이를 통해 메트릭을 수집하거나 컨트롤 할 수 있습니다.</li>
+      <li>트래픽을 컨트롤 하기 위해서 Envoy 프록시에 전송룰을 정의 합니다.</li>
+      <li>마이크로 서비스간의 통신을 mutual TLS 인증(mTLS)을 통해 보안합니다.</li>
+      <li>각 어플리케이션은 파드 내의 엔보이 프록시에 접속하기 위해 localhost에 TCP 접속을 합니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="istio-설치-sidecar-모드">Istio 설치 (Sidecar 모드)</h3>
+
+<ul>
+  <li>Istio 공식 문서 : <a href="https://istio.io/latest/docs/">Link</a>
+    <ul>
+      <li>Istio Sidecar mode 설치 : v1.23.2 - 
+<a href="https://istio.io/latest/docs/releases/supported-releases/#support-status-of-istio-releases">버전</a>
+<a href="https://istio.io/latest/docs/setup/getting-started/">설치</a>,</li>
+      <li>without GwApi - <a href="https://istio.io/latest/docs/setup/additional-setup/getting-started-istio-apis/">Docs</a>
+</li>
+      <li>Operator 방식 설치 : https://istio.io/latest/docs/setup/install/operator/ (Istio Operator는 <strong>Deprecated</strong> 되었습니다.)</li>
+    </ul>
+  </li>
+  <li>Istio 설치
+```bash</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># istioctl 설치</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">ISTIOV</span><span class="o">=</span>1.23.2
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"export ISTIOV=1.23.2"</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-L</span> https://istio.io/downloadIstio | <span class="nv">ISTIO_VERSION</span><span class="o">=</span><span class="nv">$ISTIOV</span> <span class="nv">TARGET_ARCH</span><span class="o">=</span>x86_64 sh -
+<span class="nv">$ </span>tree istio-<span class="nv">$ISTIOV</span> <span class="nt">-L</span> 2 <span class="c"># sample yaml 포함</span>
+<span class="c"># =&gt; istio-1.23.2</span>
+<span class="c">#    ├── LICENSE</span>
+<span class="c">#    ├── README.md</span>
+<span class="c">#    ├── bin</span>
+<span class="c">#    │   └── istioctl</span>
+<span class="c">#    ├── manifest.yaml</span>
+<span class="c">#    ├── manifests</span>
+<span class="c">#    │   ├── charts</span>
+<span class="c">#    │   └── profiles</span>
+<span class="c">#    ├── samples</span>
+<span class="c">#    │   ...</span>
+<span class="c">#    └── tools</span>
+<span class="c">#        ├── _istioctl</span>
+<span class="c">#        ├── certs</span>
+<span class="c">#        └── istioctl.bash</span>
+<span class="nv">$ </span><span class="nb">cp </span>istio-<span class="nv">$ISTIOV</span>/bin/istioctl /usr/local/bin/istioctl
+<span class="nv">$ </span>istioctl version <span class="nt">--remote</span><span class="o">=</span><span class="nb">false</span>
+<span class="c"># =&gt; client version: 1.23.2</span>
+
+<span class="c"># (demo 프로파일) 컨트롤 플레인 배포 - 링크 Customizing</span>
+<span class="c"># The istioctl command supports the full IstioOperator API via command-line options for individual settings or for passing a yaml file containing an IstioOperator custom resource (CR).</span>
+<span class="nv">$ </span>istioctl profile list
+<span class="c"># =&gt; Istio configuration profiles:</span>
+<span class="c">#        ambient</span>
+<span class="c">#        default</span>
+<span class="c">#        demo</span>
+<span class="c">#        empty</span>
+<span class="c">#        minimal</span>
+<span class="c">#        openshift</span>
+<span class="c">#        openshift-ambient</span>
+<span class="c">#        preview</span>
+<span class="c">#        remote</span>
+<span class="c">#        stable</span>
+<span class="nv">$ </span>istioctl profile dump default
+<span class="nv">$ </span>istioctl profile dump <span class="nt">--config-path</span> components.ingressGateways
+<span class="c"># =&gt; - enabled: true</span>
+<span class="c">#      name: istio-ingressgateway</span>
+<span class="nv">$ </span>istioctl profile dump <span class="nt">--config-path</span> values.gateways.istio-ingressgateway
+<span class="c"># =&gt; {}</span>
+<span class="nv">$ </span>istioctl profile dump demo
+<span class="c"># =&gt; apiVersion: install.istio.io/v1alpha1</span>
+<span class="c">#    kind: IstioOperator</span>
+<span class="c">#    spec:</span>
+<span class="c">#      components:</span>
+<span class="c">#        base:</span>
+<span class="c">#          enabled: true</span>
+<span class="c">#        egressGateways:</span>
+<span class="c">#        - enabled: true</span>
+<span class="c">#          name: istio-egressgateway</span>
+<span class="c">#        ingressGateways:</span>
+<span class="c">#        - enabled: true</span>
+<span class="c">#          name: istio-ingressgateway</span>
+<span class="c">#        pilot:</span>
+<span class="c">#          enabled: true</span>
+<span class="c">#      hub: docker.io/istio</span>
+<span class="c">#      profile: demo</span>
+<span class="c">#      tag: 1.23.2</span>
+<span class="c">#      values:</span>
+<span class="c">#        defaultRevision: &amp;quot;&amp;quot;</span>
+<span class="c">#        gateways:</span>
+<span class="c">#          istio-egressgateway: {}</span>
+<span class="c">#          istio-ingressgateway: {}</span>
+<span class="c">#        global:</span>
+<span class="c">#          configValidation: true</span>
+<span class="c">#          istioNamespace: istio-system</span>
+<span class="c">#        profile: demo</span>
+
+<span class="nv">$ </span>istioctl profile dump demo <span class="o">&gt;</span> demo-profile.yaml
+<span class="nv">$ </span>vi demo-profile.yaml <span class="c"># 복잡성을 줄이게 실습 시나리오 환경 맞춤</span>
+<span class="nt">--------------------</span>
+    egressGateways:
+    - enabled: <span class="nb">false</span>
+<span class="nt">--------------------</span>    
+
+<span class="nv">$ </span>istioctl <span class="nb">install</span> <span class="nt">-f</span> demo-profile.yaml <span class="nt">-y</span>
+<span class="c"># =&gt; ✔ Istio core installed ⛵️</span>
+<span class="c">#    ✔ Istiod installed 🧠</span>
+<span class="c">#    ✔ Ingress gateways installed 🛬</span>
+<span class="c">#    ✔ Installation complete</span>
+<span class="c">#    Made this installation the default for cluster-wide operations.</span>
+
+<span class="c"># 설치 확인 : istiod, istio-ingressgateway</span>
+<span class="nv">$ </span>kubectl get all,svc,ep,sa,cm,secret,pdb <span class="nt">-n</span> istio-system
+<span class="c"># =&gt; NAME                                        READY   STATUS    RESTARTS      AGE</span>
+<span class="c">#    pod/istio-ingressgateway-5f9f654d46-l7mqp   1/1     Running   0             14m</span>
+<span class="c">#    pod/istiod-7f8b586864-8mc4c                 1/1     Running   1 (82s ago)   14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                           TYPE           CLUSTER-IP      EXTERNAL-IP                                    PORT(S)                                                                      AGE</span>
+<span class="c">#    service/istio-ingressgateway   LoadBalancer   10.10.200.171   192.168.10.101,192.168.10.102,192.168.10.103   15021:30953/TCP,80:31677/TCP,443:30737/TCP,31400:30617/TCP,15443:31668/TCP   14m</span>
+<span class="c">#    service/istiod                 ClusterIP      10.10.200.215   &amp;lt;none&amp;gt;                                         15010/TCP,15012/TCP,443/TCP,15014/TCP                                        14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    deployment.apps/istio-ingressgateway   1/1     1            1           14m</span>
+<span class="c">#    deployment.apps/istiod                 1/1     1            1           14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                              DESIRED   CURRENT   READY   AGE</span>
+<span class="c">#    replicaset.apps/istio-ingressgateway-5f9f654d46   1         1         1       14m</span>
+<span class="c">#    replicaset.apps/istiod-7f8b586864                 1         1         1       14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                             ENDPOINTS                                                           AGE</span>
+<span class="c">#    endpoints/istio-ingressgateway   172.16.2.14:15443,172.16.2.14:15021,172.16.2.14:31400 + 2 more...   14m</span>
+<span class="c">#    endpoints/istiod                 172.16.3.16:15012,172.16.3.16:15010,172.16.3.16:15017 + 1 more...   14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                                  SECRETS   AGE</span>
+<span class="c">#    serviceaccount/istio-ingressgateway-service-account   0         14m</span>
+<span class="c">#    serviceaccount/istio-reader-service-account           0         14m</span>
+<span class="c">#    serviceaccount/istiod                                 0         14m</span>
+<span class="c">#    ...</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                            DATA   AGE</span>
+<span class="c">#    configmap/istio                                 2      14m</span>
+<span class="c">#    configmap/istio-sidecar-injector                2      14m</span>
+<span class="c">#    ...</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                     TYPE               DATA   AGE</span>
+<span class="c">#    secret/istio-ca-secret   istio.io/ca-root   5      14m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                              MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE</span>
+<span class="c">#    poddisruptionbudget.policy/istio-ingressgateway   1               N/A               0                     14m</span>
+<span class="c">#    poddisruptionbudget.policy/istiod                 1               N/A               0                     14m</span>
+<span class="nv">$ </span>kubectl get crd | <span class="nb">grep </span>istio.io | <span class="nb">sort</span>
+<span class="c"># =&gt; authorizationpolicies.security.istio.io      2024-10-01T05:26:47Z</span>
+<span class="c">#    destinationrules.networking.istio.io         2024-10-01T05:26:47Z</span>
+<span class="c">#    envoyfilters.networking.istio.io             2024-10-01T05:26:47Z</span>
+<span class="c">#    gateways.networking.istio.io                 2024-10-01T05:26:47Z</span>
+<span class="c">#    peerauthentications.security.istio.io        2024-10-01T05:26:47Z</span>
+<span class="c">#    proxyconfigs.networking.istio.io             2024-10-01T05:26:47Z</span>
+<span class="c">#    requestauthentications.security.istio.io     2024-10-01T05:26:47Z</span>
+<span class="c">#    serviceentries.networking.istio.io           2024-10-01T05:26:47Z</span>
+<span class="c">#    sidecars.networking.istio.io                 2024-10-01T05:26:47Z</span>
+<span class="c">#    telemetries.telemetry.istio.io               2024-10-01T05:26:48Z</span>
+<span class="c">#    virtualservices.networking.istio.io          2024-10-01T05:26:48Z</span>
+<span class="c">#    wasmplugins.extensions.istio.io              2024-10-01T05:26:48Z</span>
+<span class="c">#    workloadentries.networking.istio.io          2024-10-01T05:26:48Z</span>
+<span class="c">#    workloadgroups.networking.istio.io           2024-10-01T05:26:48Z</span>
+
+<span class="c"># istio-ingressgateway 의 envoy 버전 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">-c</span> istio-proxy <span class="nt">--</span> envoy <span class="nt">--version</span>
+<span class="c"># =&gt; envoy  version: 6c72b2179f5a58988b920a55b0be8346de3f7b35/1.31.2-dev/Clean/RELEASE/BoringSSL</span>
+
+<span class="c"># istio-ingressgateway 서비스 NodePort로 변경</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> istio-system istio-ingressgateway <span class="nt">-p</span> <span class="s1">'{"spec":{"type":"NodePort"}}'</span>
+<span class="c"># =&gt; service/istio-ingressgateway patched</span>
+
+<span class="c"># istio-ingressgateway 서비스 확인</span>
+<span class="nv">$ </span>kubectl get svc,ep <span class="nt">-n</span> istio-system istio-ingressgateway
+<span class="c"># =&gt; NAME                           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                      AGE</span>
+<span class="c">#    service/istio-ingressgateway   NodePort   10.10.200.171   &amp;lt;none&amp;gt;        15021:30953/TCP,80:31677/TCP,443:30737/TCP,31400:30617/TCP,15443:31668/TCP   16m</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                             ENDPOINTS                                                           AGE</span>
+<span class="c">#    endpoints/istio-ingressgateway   172.16.2.14:15443,172.16.2.14:15021,172.16.2.14:31400 + 2 more...   16m</span>
+
+<span class="c">## istio-ingressgateway 서비스 포트 정보 확인</span>
+<span class="nv">$ </span>kubectl get svc <span class="nt">-n</span> istio-system istio-ingressgateway <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.ports[<span class="k">*</span><span class="o">]}</span> | jq
+<span class="c"># =&gt; {</span>
+<span class="c">#      &amp;quot;name&amp;quot;: &amp;quot;https&amp;quot;,</span>
+<span class="c">#      &amp;quot;nodePort&amp;quot;: 30737,</span>
+<span class="c">#      &amp;quot;port&amp;quot;: 443,</span>
+<span class="c">#      &amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;,</span>
+<span class="c">#      &amp;quot;targetPort&amp;quot;: 8443</span>
+<span class="c">#    }</span>
+<span class="c">#    {</span>
+<span class="c">#      &amp;quot;name&amp;quot;: &amp;quot;tcp&amp;quot;,</span>
+<span class="c">#      &amp;quot;nodePort&amp;quot;: 30617,</span>
+<span class="c">#      &amp;quot;port&amp;quot;: 31400,</span>
+<span class="c">#      &amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;,</span>
+<span class="c">#      &amp;quot;targetPort&amp;quot;: 31400</span>
+<span class="c">#    }</span>
+<span class="c">#    ...</span>
+
+<span class="c">## istio-ingressgateway 디플로이먼트 파드의 포트 정보 확인 </span>
+<span class="nv">$ </span>kubectl get deploy/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.template.spec.containers[0].ports[<span class="k">*</span><span class="o">]}</span> | jq
+<span class="c"># =&gt; ...</span>
+<span class="c">#    {</span>
+<span class="c">#      &amp;quot;containerPort&amp;quot;: 8443,</span>
+<span class="c">#      &amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;</span>
+<span class="c">#    }</span>
+<span class="c">#    {</span>
+<span class="c">#      &amp;quot;containerPort&amp;quot;: 31400,</span>
+<span class="c">#      &amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;</span>
+<span class="c">#    }</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kubectl get deploy/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.template.spec.containers[0].readinessProbe<span class="o">}</span> | jq
+<span class="c"># =&gt; {</span>
+<span class="c">#      &amp;quot;failureThreshold&amp;quot;: 30,</span>
+<span class="c">#      &amp;quot;httpGet&amp;quot;: {</span>
+<span class="c">#        &amp;quot;path&amp;quot;: &amp;quot;/healthz/ready&amp;quot;,</span>
+<span class="c">#        &amp;quot;port&amp;quot;: 15021,</span>
+<span class="c">#        &amp;quot;scheme&amp;quot;: &amp;quot;HTTP&amp;quot;</span>
+<span class="c">#      },</span>
+<span class="c">#      &amp;quot;initialDelaySeconds&amp;quot;: 1,</span>
+<span class="c">#      &amp;quot;periodSeconds&amp;quot;: 2,</span>
+<span class="c">#      &amp;quot;successThreshold&amp;quot;: 1,</span>
+<span class="c">#      &amp;quot;timeoutSeconds&amp;quot;: 1</span>
+<span class="c">#    }</span>
+
+<span class="c"># istiod(컨트롤플레인) 디플로이먼트 정보 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-tnlp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-tnp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ps <span class="nt">-ef</span>
+<span class="c"># =&gt; UID          PID    PPID  C STIME TTY          TIME CMD</span>
+<span class="c">#    istio-p+       1       0  0 05:39 ?        00:00:01 /usr/local/bin/pilot-discovery discovery --monitoringAddr=:15014 --log_output_level=default:info --domain cluster.local --ke</span>
+
+<span class="c"># istio-ingressgateway 디플로이먼트 정보 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-tnlp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-tnp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> ps <span class="nt">-ef</span>
+<span class="c"># =&gt; UID          PID    PPID  C STIME TTY          TIME CMD</span>
+<span class="c">#    istio-p+       1       0  0 05:27 ?        00:00:08 /usr/local/bin/pilot-agent proxy router --domain istio-system.svc.cluster.local</span>
+<span class="c">#    istio-p+      16       1  0 05:27 ?        00:00:04 /usr/local/bin/envoy -c etc/istio/proxy/envoy-rev.json --drain-time-s 45 --drai</span>
+<span class="c"># # &lt;span style="color: green;"&gt;👉 pilot-agent와 envoy가 동작 중입니다.&lt;/span&gt;</span>
+
+<span class="c"># envoy 설정 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> <span class="nb">cat</span> /etc/istio/proxy/envoy-rev.json
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-xnlp</span>
+<span class="c"># =&gt; Netid      State       Recv-Q      Send-Q                                          Local Address:Port              Peer Address:Port      Process</span>
+<span class="c">#    u_str      LISTEN      0           4096               var/run/secrets/workload-spiffe-uds/socket 32430                        * 0          users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=9))</span>
+<span class="c">#    u_str      LISTEN      0           4096                                      etc/istio/proxy/XDS 32431                        * 0          users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=10))</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deployment.apps/istio-ingressgateway <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-xnp</span>
+<span class="c"># =&gt; Netid State Recv-Q Send-Q                              Local Address:Port  Peer Address:Port Process</span>
+<span class="c">#    u_str ESTAB 0      0                                               * 39978            * 37977 users:((&amp;quot;envoy&amp;quot;,pid=16,fd=19))</span>
+<span class="c">#    u_str ESTAB 0      0                                               * 37501            * 37981 users:((&amp;quot;envoy&amp;quot;,pid=16,fd=32))</span>
+<span class="c">#    u_str ESTAB 0      0                             etc/istio/proxy/XDS 37977            * 39978 users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=11))</span>
+<span class="c">#    u_str ESTAB 0      0      var/run/secrets/workload-spiffe-uds/socket 37981            * 37501 users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=15))</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Auto Injection with namespace label</li>
+  <li>
+    <p>해당 네임스페이스에 생성되는 모든 파드들은 istio 사이드카가 자동으로 injection 됩니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># mutating Webhook admisstion controller 사용</span>
+<span class="nv">$ </span>kubectl label namespace default istio-injection<span class="o">=</span>enabled
+<span class="c"># =&gt; namespace/default labeled</span>
+<span class="nv">$ </span>kubectl get ns <span class="nt">-L</span> istio-injection
+<span class="c"># =&gt; NAME              STATUS   AGE     ISTIO-INJECTION</span>
+<span class="c">#    default           Active   7d      enabled</span>
+<span class="c">#    ...</span>
+</code></pre></div>    </div>
+
+    <p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_8.png" alt="img.png" class="image-center" loading="lazy" width="751" height="474"></p>
+  </li>
+  <li>Istio 접속 테스트를 위한 변수 지정 및 k3s-m에서 접속 테스트</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># k3s-m)</span>
+<span class="c"># istio ingress gw NodePort(HTTP 접속용) 변수 지정 </span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">IGWHTTP</span><span class="o">=</span><span class="si">$(</span>kubectl get service <span class="nt">-n</span> istio-system istio-ingressgateway <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.spec.ports[1].nodePort}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; 31677</span>
+
+<span class="c"># /etc/hosts 파일 수정</span>
+<span class="c"># $ MYDOMAIN=&lt;각자 자신의 www 도메인&gt; # 단, 사용하고 있지 않는 공인 도메인을 사용 할 것</span>
+<span class="c"># $ echo "&lt;istio-ingressgateway 파드가 있는 워커 노드&gt; $MYDOMAIN" &gt;&gt; /etc/hosts</span>
+
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">MYDOMAIN</span><span class="o">=</span>sweetlittlebird.com
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"192.168.10.10 </span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"export MYDOMAIN=</span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/profile
+
+<span class="c"># istio ingress gw 접속 테스트 : 아직은 설정이 없어서 접속 실패가 됩니다.</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; *   Trying 192.168.10.10:31677...</span>
+<span class="c">#    * connect to 192.168.10.10 port 31677 failed: Connection refused</span>
+<span class="c">#    * Failed to connect to sweetlittlebird.com port 31677 after 3 ms: Connection refused</span>
+<span class="c">#    * Closing connection 0</span>
+</code></pre></div></div>
+
+<ul>
+  <li>testpc에서 접속 테스트</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 아래 변수는 각자 자신의 값을 직접 입력 할 것</span>
+<span class="c"># $ IGWHTTP=&lt;각자 출력된 NodePort&gt;</span>
+<span class="nv">$ IGWHTTP</span><span class="o">=</span>31677
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">MYDOMAIN</span><span class="o">=</span>sweetlittlebird.com
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"192.168.10.10 </span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"export MYDOMAIN=</span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/profile
+
+<span class="c"># istio ingress gw 접속 테스트 : 아직은 설정이 없어서 접속 실패가 된다</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; * Host sweetlittlebird.com:31677 was resolved.</span>
+<span class="c">#    * ...</span>
+<span class="c">#    * Failed to connect to sweetlittlebird.com port 31677 after 2 ms: Couldn't connect to server</span>
+<span class="c">#    * ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>자신의 pc에서 접속 테스트</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 아래 변수는 각자 자신의 값을 직접 입력 할 것</span>
+<span class="c"># $ IGWHTTP=&lt;각자 출력된 NodePort&gt;</span>
+<span class="nv">$ IGWHTTP</span><span class="o">=</span>31677
+<span class="c"># $ ISTIONODEIP=&lt;k3s-m 의 유동 공인 IP&gt;</span>
+<span class="nv">$ ISTIONODEIP</span><span class="o">=</span>54.123.42.212
+
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">MYDOMAIN</span><span class="o">=</span>sweetlittlebird.com
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"192.168.10.10 </span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"export MYDOMAIN=</span><span class="nv">$MYDOMAIN</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/profile
+
+<span class="c"># istio ingress gw 접속 테스트 : 아직은 설정이 없어서 접속 실패가 된다</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; * Host sweetlittlebird.com:31677 was resolved.</span>
+<span class="c">#    * ...</span>
+<span class="c">#    * Failed to connect to sweetlittlebird.com port 31677 after 2 ms: Couldn't connect to server</span>
+<span class="c">#    * ...</span>
+</code></pre></div></div>
+
+<h3 id="istio를-통한-외부-노출">Istio를 통한 외부 노출</h3>
+
+<ul>
+  <li>Nginx 디플로이먼트와 서비스 배포</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 로그 모니터링</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> istio-system <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>istiod
+<span class="c"># =&gt; NAME                      READY   STATUS    RESTARTS      AGE</span>
+<span class="c">#    istiod-7f8b586864-8mc4c   1/1     Running   1 (60m ago)   73m</span>
+<span class="nv">$ </span>kubetail <span class="nt">-n</span> istio-system <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>istiod <span class="nt">-f</span>
+
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> istio-system <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>istio-ingressgateway
+<span class="c"># =&gt; NAME                                    READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    istio-ingressgateway-5f9f654d46-l7mqp   1/1     Running   0          74m</span>
+<span class="nv">$ </span>kubetail <span class="nt">-n</span> istio-system <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>istio-ingressgateway <span class="nt">-f</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl create -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kans-nginx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-websrv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-websrv
+  template:
+    metadata:
+      labels:
+        app: deploy-websrv
+    spec:
+      serviceAccountName: kans-nginx
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: deploy-websrv
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-clusterip
+spec:
+  ports:
+    - name: svc-webport
+      port: 80
+      targetPort: 80
+  selector:
+    app: deploy-websrv
+  type: ClusterIP
+</span><span class="no">EOF
+</span><span class="c"># =&gt; serviceaccount/kans-nginx created</span>
+<span class="c">#    deployment.apps/deploy-websrv created</span>
+<span class="c">#    service/svc-clusterip created</span>
+
+<span class="c"># 사이드카 컨테이너 배포 확인</span>
+<span class="nv">$ </span>kubectl get pod,svc,ep,sa <span class="nt">-o</span> wide
+<span class="c"># =&gt; NAME                                 READY   STATUS    RESTARTS   AGE   IP            NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    pod/deploy-websrv-778ffd6947-cxf5k   2/2     Running   0          50s   172.16.1.13   k3s-w2   &amp;lt;none&amp;gt;           &amp;lt;none&amp;gt;</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE     SELECTOR</span>
+<span class="c">#    service/kubernetes      ClusterIP   10.10.200.1     &amp;lt;none&amp;gt;        443/TCP   6d16h   &amp;lt;none&amp;gt;</span>
+<span class="c">#    service/svc-clusterip   ClusterIP   10.10.200.243   &amp;lt;none&amp;gt;        80/TCP    50s     app=deploy-websrv</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                      ENDPOINTS            AGE</span>
+<span class="c">#    endpoints/kubernetes      192.168.10.10:6443   6d16h</span>
+<span class="c">#    endpoints/svc-clusterip   172.16.1.13:80       50s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                        SECRETS   AGE</span>
+<span class="c">#    serviceaccount/default      0         7d1h</span>
+<span class="c">#    serviceaccount/kans-nginx   0         50s</span>
+
+<span class="nv">$ </span>kubectl describe pod
+<span class="c"># =&gt; Name:             deploy-websrv-778ffd6947-cxf5k</span>
+<span class="c">#    Namespace:        default</span>
+<span class="c">#    Priority:         0</span>
+<span class="c">#    Service Account:  kans-nginx</span>
+<span class="c">#    Node:             k3s-w2/192.168.10.102</span>
+<span class="c">#    Labels:           app=deploy-websrv</span>
+<span class="c">#                      security.istio.io/tlsMode=istio</span>
+<span class="c">#                      ...</span>
+<span class="c">#    Annotations:      istio.io/rev: default</span>
+<span class="c">#                      sidecar.istio.io/status:</span>
+<span class="c">#                        {&amp;quot;initContainers&amp;quot;:[&amp;quot;istio-init&amp;quot;],&amp;quot;containers&amp;quot;:[&amp;quot;istio-proxy&amp;quot;],&amp;quot;volumes&amp;quot;:[&amp;quot;workload-socket&amp;quot;,&amp;quot;credential-socket&amp;quot;,&amp;quot;workload-certs&amp;quot;,&amp;quot;istio-env...</span>
+<span class="c">#    Status:           Running</span>
+<span class="c">#    ...</span>
+<span class="c">#    Controlled By:  ReplicaSet/deploy-websrv-778ffd6947</span>
+<span class="c">#    &lt;span style="color: red;"&gt;Init Containers:&lt;/span&gt;  # &lt;span style="color: green;"&gt;👉 init container가 파드내 iptables 셋팅&lt;/span&gt;</span>
+<span class="c">#      istio-init:</span>
+<span class="c">#        Container ID:  containerd://2a114fe0624581b35bda9ca257c6d3c831138e8a44900a6130e988bb51eb05da</span>
+<span class="c">#        Image:         docker.io/istio/proxyv2:1.23.2</span>
+<span class="c">#        Image ID:      docker.io/istio/proxyv2@sha256:2876cfc2fdf47e4b9665390ccc9ccf2bf913b71379325b8438135c9f35578e1a</span>
+<span class="c">#        Port:          &amp;lt;none&amp;gt;</span>
+<span class="c">#        Host Port:     &amp;lt;none&amp;gt;</span>
+<span class="c">#        Args:</span>
+<span class="c">#          &lt;span style="color: red;"&gt;istio-iptables&lt;/span&gt;</span>
+<span class="c">#          -p</span>
+<span class="c">#          15001</span>
+<span class="c">#          -z</span>
+<span class="c">#          15006</span>
+<span class="c">#          -u</span>
+<span class="c">#          1337</span>
+<span class="c">#          -m</span>
+<span class="c">#          REDIRECT</span>
+<span class="c">#          -i</span>
+<span class="c">#          *</span>
+<span class="c">#          -x</span>
+<span class="c">#    </span>
+<span class="c">#          -b</span>
+<span class="c">#          *</span>
+<span class="c">#          -d</span>
+<span class="c">#          15090,15021,15020</span>
+<span class="c">#          --log_output_level=default:info</span>
+<span class="c">#        State:          Terminated</span>
+<span class="c">#          Reason:       Completed</span>
+<span class="c">#        ...</span>
+<span class="c">#    Containers:</span>
+<span class="c">#      deploy-websrv:</span>
+<span class="c">#        Container ID:   containerd://8918e0bb760bce8d090e84818bc189ae3ababdf9e74eb7dd3fb9709b356891f9</span>
+<span class="c">#        Image:          nginx:alpine</span>
+<span class="c">#        ...</span>
+<span class="c">#      &lt;span style="color: red;"&gt;istio-proxy:&lt;/span&gt;  # &lt;span style="color: green;"&gt;👉 istio-proxy라는 컨테이너가 sidecar로 동작 중&lt;/span&gt;</span>
+<span class="c">#        Container ID:  containerd://71d9e07a530dfce2ec34810d60a28dc3f9445b8eab714c2a7e204c459c59bcd3</span>
+<span class="c">#        Image:         docker.io/istio/proxyv2:1.23.2</span>
+<span class="c">#        Image ID:      docker.io/istio/proxyv2@sha256:2876cfc2fdf47e4b9665390ccc9ccf2bf913b71379325b8438135c9f35578e1a</span>
+<span class="c">#        Port:          15090/TCP</span>
+<span class="c">#        Host Port:     0/TCP</span>
+<span class="c">#        Args:</span>
+<span class="c">#          proxy</span>
+<span class="c">#          sidecar</span>
+<span class="c">#          --domain</span>
+<span class="c">#          $(POD_NAMESPACE).svc.cluster.local</span>
+<span class="c">#          --proxyLogLevel=warning</span>
+<span class="c">#          --proxyComponentLogLevel=misc:error</span>
+<span class="c">#          --log_output_level=default:info</span>
+<span class="c">#        State:          Running</span>
+<span class="c">#        ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Istio Gateway/VirtualService 설정 - Host 기반 트래픽 라우팅 설정 <a href="https://istio.io/latest/docs/setup/additional-setup/gateway/">링크</a>
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_9.png" alt="img.png" class="image-center w-80" loading="lazy" width="714" height="353">
+    <ul>
+      <li>클라이언트 PC → (Service:NodePort) Istio ingressgateway 파드 → (Gateway, VirtualService, Service 는 Bypass) → Endpoint(파드 : 사이드카 - Application 컨테이너)</li>
+      <li>Gateway : 지정한 인그레스 게이트웨이로부터 트래픽이 인입, 프로토콜 및 포트, HOSTS, Proxy 등 설정 가능 <a href="https://istio.io/latest/docs/setup/additional-setup/gateway/">링크</a>
+</li>
+      <li>VirtualService : 인입 처리할 hosts 설정, L7 PATH 별 라우팅, 목적지에 대한 정책 설정 가능 (envoy route config)</li>
+      <li>(참고) Introducing Istio v1 APIs - <a href="https://istio.io/latest/blog/2024/v1-apis/">Blog</a>
+</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl create -f -
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: test-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: nginx-service
+spec:
+  hosts:
+  - "</span><span class="nv">$MYDOMAIN</span><span class="sh">"
+  gateways:
+  - test-gateway
+  http:
+  - route:
+    - destination:
+        host: svc-clusterip
+        port:
+          number: 80
+</span><span class="no">EOF
+</span><span class="c"># =&gt; gateway.networking.istio.io/test-gateway created</span>
+<span class="c">#    virtualservice.networking.istio.io/nginx-service created</span>
+
+<span class="c"># Istio Gateway(=gw)/VirtualService(=vs) 설정 정보를 확인</span>
+<span class="nv">$ </span>kubectl explain gateways.networking.istio.io
+<span class="nv">$ </span>kubectl explain virtualservices.networking.istio.io
+<span class="nv">$ </span>kubectl api-resources  | <span class="nb">grep </span>istio
+<span class="c"># =&gt; wasmplugins                                      extensions.istio.io/v1alpha1      true         WasmPlugin</span>
+<span class="c">#    destinationrules                    dr           networking.istio.io/v1            true         DestinationRule</span>
+<span class="c">#    envoyfilters                                     networking.istio.io/v1alpha3      true         EnvoyFilter</span>
+<span class="c">#    gateways                            gw           networking.istio.io/v1            true         Gateway</span>
+<span class="c">#    proxyconfigs                                     networking.istio.io/v1beta1       true         ProxyConfig</span>
+<span class="c">#    serviceentries                      se           networking.istio.io/v1            true         ServiceEntry</span>
+<span class="c">#    sidecars                                         networking.istio.io/v1            true         Sidecar</span>
+<span class="c">#    virtualservices                     vs           networking.istio.io/v1            true         VirtualService</span>
+<span class="c">#    workloadentries                     we           networking.istio.io/v1            true         WorkloadEntry</span>
+<span class="c">#    workloadgroups                      wg           networking.istio.io/v1            true         WorkloadGroup</span>
+<span class="c">#    authorizationpolicies               ap           security.istio.io/v1              true         AuthorizationPolicy</span>
+<span class="c">#    peerauthentications                 pa           security.istio.io/v1              true         PeerAuthentication</span>
+<span class="c">#    requestauthentications              ra           security.istio.io/v1              true         RequestAuthentication</span>
+<span class="c">#    telemetries                         telemetry    telemetry.istio.io/v1             true         Telemetry</span>
+
+<span class="c"># virtual service 는 다른 네임스페이스의 서비스(ex. svc-nn.&lt;ns&gt;)도 참조할 수 있다</span>
+<span class="nv">$ </span>kubectl get gw,vs
+<span class="c"># =&gt; NAME                                       AGE</span>
+<span class="c">#    gateway.networking.istio.io/test-gateway   105s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                               GATEWAYS           HOSTS                     AGE</span>
+<span class="c">#    virtualservice.networking.istio.io/nginx-service   [&amp;quot;test-gateway&amp;quot;]   [&amp;quot;sweetlittlebird.com&amp;quot;]   105s</span>
+
+<span class="c"># Retrieves last sent and last acknowledged xDS sync from Istiod to each Envoy in the mesh</span>
+<span class="c"># istioctl proxy-status command was improved to include the time since last change, and more relevant status values.</span>
+<span class="nv">$ </span>istioctl proxy-status <span class="c"># 단축어 ps</span>
+<span class="nv">$ </span>istioctl ps
+<span class="c"># =&gt; NAME                                                   CLUSTER        CDS                LDS                EDS              RDS                ECDS        ISTIOD                      VERSION</span>
+<span class="c">#    deploy-websrv-778ffd6947-cxf5k.default                 Kubernetes     SYNCED (22m)       SYNCED (22m)       SYNCED (22m)     SYNCED (22m)       IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    istio-ingressgateway-5f9f654d46-l7mqp.istio-system     Kubernetes     SYNCED (2m14s)     SYNCED (2m14s)     SYNCED (22m)     SYNCED (2m14s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Istio를 통한 Nginx 파드 접속 테스트
+    <ul>
+      <li>외부 (자신의 PC, test pc)에서 접속 테스트</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># istio ingress gw 를 통한 접속 테스트</span>
+<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span> | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span>
+<span class="c"># =&gt; &lt;title&gt;Welcome to nginx!&lt;/title&gt;</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; * Host sweetlittlebird.com:31677 was resolved.</span>
+<span class="c">#    * IPv6: (none)</span>
+<span class="c">#    * IPv4: 192.168.10.10, 192.168.10.10</span>
+<span class="c">#    *   Trying 192.168.10.10:31677...</span>
+<span class="c">#    * Connected to sweetlittlebird.com (192.168.10.10) port 31677</span>
+<span class="c">#    &amp;gt; GET / HTTP/1.1</span>
+<span class="c">#    &amp;gt; Host: sweetlittlebird.com:31677</span>
+<span class="c">#    &amp;gt; User-Agent: curl/8.5.0</span>
+<span class="c">#    &amp;gt; Accept: */*</span>
+<span class="c">#    &amp;gt;</span>
+<span class="c">#    &amp;lt; HTTP/1.1 200 OK</span>
+<span class="c">#    &amp;lt; server: istio-envoy</span>
+<span class="c">#    &amp;lt; date: Sat, 19 Oct 2024 07:14:25 GMT</span>
+<span class="c">#    &amp;lt; content-type: text/html</span>
+<span class="c">#    &amp;lt; content-length: 615</span>
+<span class="c">#    &amp;lt; last-modified: Wed, 02 Oct 2024 16:07:39 GMT</span>
+<span class="c">#    &amp;lt; etag: &amp;quot;66fd6fcb-267&amp;quot;</span>
+<span class="c">#    &amp;lt; accept-ranges: bytes</span>
+<span class="c">#    &amp;lt; x-envoy-upstream-service-time: 1</span>
+<span class="c">#    ...</span>
+<span class="c"># $ curl -v -s &lt;유동공인이IP&gt;:$IGWHTTP</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> 54.123.42.212:<span class="nv">$IGWHTTP</span>
+</code></pre></div></div>
+
+<ul>
+  <li>출력 로그 정보 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubetail <span class="nt">-n</span> istio-system <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>istio-ingressgateway <span class="nt">-f</span>
+<span class="c"># =&gt; [istio-ingressgateway-5f9f654d46-l7mqp] [2024-10-01T07:49:20.833Z] &amp;quot;GET / HTTP/1.1&amp;quot; 200 - via_upstream - &amp;quot;-&amp;quot; 0 615 6 5 &amp;quot;172.16.0.0&amp;quot; &amp;quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15&amp;quot; &amp;quot;6f246b4e-d675-971e-9a9d-dd809f560c6f&amp;quot; &amp;quot;sweetlittlebird.com:31677&amp;quot; &amp;quot;172.16.1.13:80&amp;quot; </span>
+<span class="c">#    &lt;span style="color: red;"&gt;outbound|80||svc-clusterip.default.svc.cluster.local&lt;/span&gt; 172.16.2.14:60786 172.16.2.14:8080 172.16.0.0:8773 - -</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>deploy-websrv
+<span class="c"># =&gt; [deploy-websrv-778ffd6947-cxf5k istio-proxy] [2024-10-01T07:49:20.866Z] &amp;quot;GET / HTTP/1.1&amp;quot; 200 - via_upstream - &amp;quot;-&amp;quot; 0 615 2 1 &amp;quot;172.16.0.0&amp;quot; &amp;quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15&amp;quot; &amp;quot;6f246b4e-d675-971e-9a9d-dd809f560c6f&amp;quot; &amp;quot;sweetlittlebird.com:31677&amp;quot; &amp;quot;172.16.1.13:80&amp;quot; </span>
+<span class="c">#    &lt;span style="color: red;"&gt;inbound|80||&lt;/span&gt; 127.0.0.6:40337 172.16.1.13:80 172.16.0.0:0 invalid:outbound_.80_._.svc-clusterip.default.svc.cluster.local default</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_10.png" alt="img.png" class="image-center" loading="lazy" width="669" height="163"></p>
+
+<ul>
+  <li>istioctl 정보 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>istioctl proxy-status
+<span class="c"># =&gt; NAME                                                   CLUSTER        CDS              LDS              EDS              RDS              ECDS        ISTIOD                      VERSION</span>
+<span class="c">#    deploy-websrv-778ffd6947-cxf5k.default                 Kubernetes     SYNCED (19m)     SYNCED (19m)     SYNCED (19m)     SYNCED (19m)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    istio-ingressgateway-5f9f654d46-l7mqp.istio-system     Kubernetes     SYNCED (24m)     SYNCED (24m)     SYNCED (24m)     SYNCED (24m)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+
+<span class="c"># Envoy config dump : all, cluster, endpoint, listener 등</span>
+<span class="nv">$ </span>istioctl proxy-config <span class="nt">--help</span> 
+<span class="nv">$ </span>istioctl proxy-config all deploy-websrv-778ffd6947-cxf5k
+<span class="nv">$ </span>istioctl proxy-config all deploy-websrv-778ffd6947-cxf5k <span class="nt">-o</span> json | jq
+<span class="nv">$ </span>istioctl proxy-config route deploy-websrv-778ffd6947-cxf5k <span class="nt">-o</span> json | jq
+</code></pre></div></div>
+
+<ul>
+  <li>pilot : istio-proxy내 uds로 envoy와 grpc통신, istiod에서 받아온 dynamic config를 envoy에 전달</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># istio-proxy 사용자 정보 확인 : uid(1337):gid(1337) 확인 -&gt; iptables rule 에서 사용됨</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> <span class="nb">tail</span> <span class="nt">-n</span> 3 /etc/passwd
+<span class="c"># =&gt; ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash</span>
+<span class="c">#    tcpdump:x:100:102::/nonexistent:/usr/sbin/nologin</span>
+<span class="c">#    istio-proxy:x:1337:1337::/home/istio-proxy:/bin/sh</span>
+
+<span class="c"># envoy 설정 정보 확인 : dynamic_resources , static_resources - listeners  </span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> <span class="nb">cat</span> /etc/istio/proxy/envoy-rev.json
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> ss <span class="nt">-nlp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> ss <span class="nt">-np</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> netstat <span class="nt">-np</span>
+<span class="c"># =&gt; Active Internet connections (w/o servers)</span>
+<span class="c">#    Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name</span>
+<span class="c">#    tcp        0      0 127.0.0.1:33168         127.0.0.1:15020         ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 127.0.0.1:33156         127.0.0.1:15020         ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 172.16.1.13:15006       172.16.2.14:33006       ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 172.16.1.13:59774       10.10.200.215:15012     ESTABLISHED 1/pilot-agent</span>
+<span class="c">#    tcp        0      0 172.16.1.13:15006       172.16.2.14:60786       ESTABLISHED 13/envoy</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 172.16.1.13 : deploy-websrv 파드 ip&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;    172.16.2.14 : istio-ingressgateway 파드 ip&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;    10.10.200.215 : istiod 서비스의 Cluster-IP&lt;/span&gt;</span>
+<span class="c">#    ...</span>
+<span class="c">#    Active UNIX domain sockets (w/o servers)</span>
+<span class="c">#    Proto RefCnt Flags       Type       State         I-Node   PID/Program name     Path</span>
+<span class="c">#    unix  3      [ ]         STREAM     CONNECTED     54162    13/envoy</span>
+<span class="c">#    unix  3      [ ]         STREAM     CONNECTED     54709    1/pilot-agent        var/run/secrets/workload-spiffe-uds/socket</span>
+<span class="c">#    unix  3      [ ]         STREAM     CONNECTED     71034    1/pilot-agent        etc/istio/proxy/XDS</span>
+<span class="c">#    unix  3      [ ]         STREAM     CONNECTED     72979    13/envoy</span>
+<span class="c">#    ...</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> ps <span class="nt">-ef</span>
+<span class="c"># =&gt; UID          PID    PPID  C STIME TTY          TIME CMD</span>
+<span class="c">#    istio-p+       1       0  0 06:43 ?        00:00:01 /usr/local/bin/pilot-agent proxy sidecar --domain default.svc.cluster.local --proxyLogLevel=warning --proxyComponentLogLevel=mi</span>
+<span class="c">#    istio-p+      13       1  0 06:43 ?        00:00:34 /usr/local/bin/envoy -c etc/istio/proxy/envoy-rev.json --drain-time-s 45 --drain-strategy immediate --local-address-ip-version</span>
+
+<span class="c"># </span>
+<span class="nv">$ </span>kubectl get pod,svc <span class="nt">-A</span> <span class="nt">-owide</span>
+<span class="c"># =&gt; NAMESPACE      NAME                                            READY   STATUS    RESTARTS        AGE     IP            NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    default        pod/deploy-websrv-778ffd6947-cxf5k              2/2     Running   0               91m     172.16.1.13   k3s-w2   &amp;lt;none&amp;gt;           &amp;lt;none&amp;gt;</span>
+<span class="c">#    istio-system   pod/istio-ingressgateway-5f9f654d46-l7mqp       1/1     Running   0               167m    172.16.2.14   k3s-w3   &amp;lt;none&amp;gt;           &amp;lt;none&amp;gt;</span>
+<span class="c">#    istio-system   pod/istiod-7f8b586864-8mc4c                     1/1     Running   1 (154m ago)    167m    172.16.3.16   k3s-w1   &amp;lt;none&amp;gt;           &amp;lt;none&amp;gt;</span>
+<span class="c">#    ...</span>
+<span class="c">#    </span>
+<span class="c">#    NAMESPACE      NAME                                         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                      AGE     SELECTOR</span>
+<span class="c">#    default        service/kubernetes                           ClusterIP   10.10.200.1     &amp;lt;none&amp;gt;        443/TCP                                                                      6d17h   &amp;lt;none&amp;gt;</span>
+<span class="c">#    default        service/svc-clusterip                        ClusterIP   10.10.200.243   &amp;lt;none&amp;gt;        80/TCP                                                                       91m     app=deploy-websrv</span>
+<span class="c">#    istio-system   service/istio-ingressgateway                 NodePort    10.10.200.171   &amp;lt;none&amp;gt;        15021:30953/TCP,80:31677/TCP,443:30737/TCP,31400:30617/TCP,15443:31668/TCP   167m    app=istio-ingressgateway,istio=ingressgateway</span>
+<span class="c">#    istio-system   service/istiod                               ClusterIP   10.10.200.215   &amp;lt;none&amp;gt;        15010/TCP,15012/TCP,443/TCP,15014/TCP                                        167m    app=istiod,istio=pilot</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> netstat <span class="nt">-antp</span>
+<span class="c"># =&gt; Active Internet connections (servers and established)</span>
+<span class="c">#    Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name</span>
+<span class="c">#    tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      -</span>
+<span class="c">#    ...</span>
+<span class="c">#    tcp        0      0 127.0.0.1:33168         127.0.0.1:15020         ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 127.0.0.1:33156         127.0.0.1:15020         ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 172.16.1.13:15006       172.16.2.14:33006       ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp        0      0 172.16.1.13:59774       10.10.200.215:15012     ESTABLISHED 1/pilot-agent</span>
+<span class="c">#    tcp        0      0 172.16.1.13:15006       172.16.2.14:60786       ESTABLISHED 13/envoy</span>
+<span class="c">#    tcp6       0      0 127.0.0.1:15020         127.0.0.1:33168         ESTABLISHED 1/pilot-agent</span>
+<span class="c">#    tcp6       0      0 127.0.0.1:15020         127.0.0.1:33156         ESTABLISHED 1/pilot-agent</span>
+
+<span class="c"># istiod 정보 같이 확인 : 출력되는 IP가 누구인지 확인 해보자</span>
+<span class="nv">$ </span>kubectl get pod,svc <span class="nt">-A</span> <span class="nt">-owide</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ps <span class="nt">-ef</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> netstat <span class="nt">-antp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-nlp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/istiod <span class="nt">-n</span> istio-system <span class="nt">--</span> ss <span class="nt">-np</span>
+<span class="c"># =&gt; Netid  State  Recv-Q  Send-Q         Local Address:Port           Peer Address:Port   Process</span>
+<span class="c">#    tcp    ESTAB  0       0                172.16.3.16:33552           10.10.200.1:443     users:((&amp;quot;pilot-discovery&amp;quot;,pid=1,fd=7))</span>
+<span class="c">#    tcp    ESTAB  0       0       [::ffff:172.16.3.16]:15012  [::ffff:172.16.2.14]:37102   users:((&amp;quot;pilot-discovery&amp;quot;,pid=1,fd=13))</span>
+<span class="c">#    tcp    ESTAB  0       0       [::ffff:172.16.3.16]:15012  [::ffff:172.16.1.13]:56560   users:((&amp;quot;pilot-discovery&amp;quot;,pid=1,fd=14))</span>
+</code></pre></div></div>
+
+<ul>
+  <li>istio-proxy, istiod가 각각 사용하는 포트 정보 <a href="https://istio.io/latest/docs/ops/deployment/application-requirements/">링크</a>
+    <ul>
+      <li>
+        <p>istio-proxy</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th>
+              <th>Protocol</th>
+              <th>Description</th>
+              <th>Pod-internal only</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>15000</td>
+              <td>TCP</td>
+              <td>Envoy admin port (commands/diagnostics)</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>15001</td>
+              <td>TCP</td>
+              <td>Envoy outbound</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15004</td>
+              <td>HTTP</td>
+              <td>Debug port</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>15006</td>
+              <td>TCP</td>
+              <td>Envoy inbound</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15008</td>
+              <td>HTTP2</td>
+              <td>HBONE mTLS tunnel port</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15020</td>
+              <td>HTTP</td>
+              <td>Merged Prometheus telemetry from Istio agent, Envoy, and application No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15021</td>
+              <td>HTTP</td>
+              <td>Health checks</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15053</td>
+              <td>DNS</td>
+              <td>DNS port, if capture is enabled</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>15090</td>
+              <td>HTTP</td>
+              <td>Envoy Prometheus telemetry</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+      <li>
+        <p>istiod (컨트롤플레인)</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th>
+              <th>Protocol</th>
+              <th>Description</th>
+              <th>Pod-internal only</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>443</td>
+              <td>HTTPS</td>
+              <td>Webhooks service port</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>8080</td>
+              <td>HTTP</td>
+              <td>Debug interface (deprecated, container port only)</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15010</td>
+              <td>GRPC</td>
+              <td>XDS and CA services (Plaintext, only for secure networks)</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15012</td>
+              <td>GRPC</td>
+              <td>XDS and CA services (TLS and mTLS, recommended for production use)</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15014</td>
+              <td>HTTP</td>
+              <td>Control plane monitoring</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>15017</td>
+              <td>HTTPS</td>
+              <td>Webhook container port, forwarded from 443</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+    </ul>
+  </li>
+  <li>Istio - Istio proxy와 Envoy 프로세스간 유닉스 도메인 소켓 통신 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 파드 확인</span>
+<span class="nv">$ </span>kubectl get pod
+<span class="c"># =&gt; NAME                             READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    deploy-websrv-778ffd6947-cxf5k   2/2     Running   0          106m</span>
+
+<span class="c"># istio 컨테이너 접속</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/deploy-websrv <span class="nt">-c</span> istio-proxy <span class="nt">--</span> bash
+<span class="nt">---------------------------------------------------------------</span>
+<span class="c"># SDS, XDS 는 소켓 타입</span>
+<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> /etc/istio/proxy
+<span class="c"># =&gt; total 24</span>
+<span class="c">#    drwxrwxrwt 2 root        root          100 Oct 19 06:43 .</span>
+<span class="c">#    drwxr-xr-x 4 root        root         4096 Oct 19 06:43 ..</span>
+<span class="c">#    srw-rw-rw- 1 istio-proxy istio-proxy     0 Oct 19 06:43 XDS</span>
+<span class="c">#    -rw-r--r-- 1 istio-proxy istio-proxy 13644 Oct 19 06:43 envoy-rev.json</span>
+<span class="c">#    -rw-r--r-- 1 istio-proxy istio-proxy  2747 Oct 19 06:43 grpc-bootstrap.json</span>
+
+<span class="c"># .json 파일 확인</span>
+<span class="nv">$ </span>more /etc/istio/proxy/envoy-rev.json
+<span class="c"># =&gt; {</span>
+<span class="c">#      &amp;quot;node&amp;quot;: {</span>
+<span class="c">#        &amp;quot;id&amp;quot;: &amp;quot;sidecar~172.16.1.13~deploy-websrv-778ffd6947-cxf5k.default~default.svc.cluster.local&amp;quot;,</span>
+<span class="c">#        &amp;quot;cluster&amp;quot;: &amp;quot;deploy-websrv.default&amp;quot;,</span>
+<span class="c">#    ...</span>
+<span class="c">#      &amp;quot;admin&amp;quot;: {</span>
+<span class="c">#        &amp;quot;access_log&amp;quot;: [</span>
+<span class="c">#          {</span>
+<span class="c">#            &amp;quot;name&amp;quot;: &amp;quot;envoy.access_loggers.file&amp;quot;,</span>
+<span class="c">#            &amp;quot;typed_config&amp;quot;: {</span>
+<span class="c">#              &amp;quot;@type&amp;quot;: &amp;quot;type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog&amp;quot;,</span>
+<span class="c">#              &amp;quot;path&amp;quot;: &amp;quot;/dev/null&amp;quot;</span>
+<span class="c">#            }</span>
+<span class="c">#          }</span>
+<span class="c">#        ],</span>
+<span class="c">#        &amp;quot;profile_path&amp;quot;: &amp;quot;/var/lib/istio/data/envoy.prof&amp;quot;,</span>
+<span class="c">#        &amp;quot;address&amp;quot;: {</span>
+<span class="c">#          &amp;quot;socket_address&amp;quot;: {</span>
+<span class="c">#            &amp;quot;address&amp;quot;: &amp;quot;127.0.0.1&amp;quot;,</span>
+<span class="c">#            &amp;quot;port_value&amp;quot;: 15000</span>
+<span class="c">#          }</span>
+<span class="c">#        }</span>
+<span class="c">#      },</span>
+<span class="c">#    ...</span>
+<span class="c">#    &amp;quot;dynamic_resources&amp;quot;: {</span>
+<span class="c">#        &amp;quot;lds_config&amp;quot;: {</span>
+<span class="c">#          &amp;quot;ads&amp;quot;: {},</span>
+<span class="c">#          &amp;quot;initial_fetch_timeout&amp;quot;: &amp;quot;0s&amp;quot;,</span>
+<span class="c">#          &amp;quot;resource_api_version&amp;quot;: &amp;quot;V3&amp;quot;</span>
+<span class="c">#        },</span>
+<span class="c">#        &amp;quot;cds_config&amp;quot;: {</span>
+<span class="c">#          &amp;quot;ads&amp;quot;: {},</span>
+<span class="c">#          &amp;quot;initial_fetch_timeout&amp;quot;: &amp;quot;0s&amp;quot;,</span>
+<span class="c">#          &amp;quot;resource_api_version&amp;quot;: &amp;quot;V3&amp;quot;</span>
+<span class="c">#        },</span>
+<span class="c">#        &amp;quot;ads_config&amp;quot;: {</span>
+<span class="c">#          &amp;quot;api_type&amp;quot;: &amp;quot;GRPC&amp;quot;,</span>
+<span class="c">#          &amp;quot;set_node_on_first_message_only&amp;quot;: true,</span>
+<span class="c">#          &amp;quot;transport_api_version&amp;quot;: &amp;quot;V3&amp;quot;,</span>
+<span class="c">#          &amp;quot;grpc_services&amp;quot;: [</span>
+<span class="c">#            {</span>
+<span class="c">#              &amp;quot;envoy_grpc&amp;quot;: {</span>
+<span class="c">#                &amp;quot;cluster_name&amp;quot;: &amp;quot;xds-grpc&amp;quot;</span>
+<span class="c">#    ...</span>
+<span class="c">#    &amp;quot;static_resources&amp;quot;: {</span>
+<span class="c">#        &amp;quot;clusters&amp;quot;: [</span>
+<span class="c">#          {</span>
+<span class="c">#            ...</span>
+<span class="c">#            &amp;quot;name&amp;quot;: &amp;quot;xds-grpc&amp;quot;,</span>
+<span class="c">#            &amp;quot;alt_stat_name&amp;quot;: &amp;quot;xds-grpc;&amp;quot;,</span>
+<span class="c">#            &amp;quot;type&amp;quot; : &amp;quot;STATIC&amp;quot;,</span>
+<span class="c">#            &amp;quot;connect_timeout&amp;quot;: &amp;quot;1s&amp;quot;,</span>
+<span class="c">#            &amp;quot;lb_policy&amp;quot;: &amp;quot;ROUND_ROBIN&amp;quot;,</span>
+<span class="c">#            &amp;quot;load_assignment&amp;quot;: {</span>
+<span class="c">#              &amp;quot;cluster_name&amp;quot;: &amp;quot;xds-grpc&amp;quot;,</span>
+<span class="c">#              &amp;quot;endpoints&amp;quot;: [{</span>
+<span class="c">#                &amp;quot;lb_endpoints&amp;quot;: [{</span>
+<span class="c">#                  &amp;quot;endpoint&amp;quot;: {</span>
+<span class="c">#                    &amp;quot;address&amp;quot;:{</span>
+<span class="c">#                      &amp;quot;pipe&amp;quot;: {</span>
+<span class="c">#                        &amp;quot;path&amp;quot;: &amp;quot;./etc/istio/proxy/XDS&amp;quot;</span>
+<span class="c">#                      }</span>
+<span class="c">#    ...</span>
+<span class="c">#    &amp;quot;listeners&amp;quot;:[</span>
+<span class="c">#      ...</span>
+<span class="c">#      &amp;quot;address&amp;quot;: {</span>
+<span class="c">#        &amp;quot;socket_address&amp;quot;: {</span>
+<span class="c">#          &amp;quot;protocol&amp;quot;: &amp;quot;TCP&amp;quot;,</span>
+<span class="c">#          &amp;quot;address&amp;quot;: &amp;quot;0.0.0.0&amp;quot;,</span>
+<span class="c">#          &amp;quot;port_value&amp;quot;: 15090</span>
+<span class="c">#        }</span>
+<span class="c">#      },</span>
+<span class="c">#     &amp;quot;filter_chains&amp;quot;: [</span>
+<span class="c">#                &amp;quot;filters&amp;quot;: [</span>
+<span class="c">#                  {</span>
+<span class="c">#                    &amp;quot;name&amp;quot;: &amp;quot;envoy.filters.network.http_connection_manager&amp;quot;,</span>
+<span class="c">#                    &amp;quot;typed_config&amp;quot;: {</span>
+<span class="c">#                      &amp;quot;@type&amp;quot;: &amp;quot;type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager&amp;quot;,</span>
+<span class="c">#                      &amp;quot;codec_type&amp;quot;: &amp;quot;AUTO&amp;quot;,</span>
+<span class="c">#                      &amp;quot;stat_prefix&amp;quot;: &amp;quot;agent&amp;quot;,</span>
+<span class="c">#                      &amp;quot;route_config&amp;quot;: {</span>
+<span class="c">#                        &amp;quot;virtual_hosts&amp;quot;: [</span>
+<span class="c">#                          {</span>
+<span class="c">#                            &amp;quot;name&amp;quot;: &amp;quot;backend&amp;quot;,</span>
+<span class="c">#                            &amp;quot;domains&amp;quot;: [</span>
+<span class="c">#                              &amp;quot;*&amp;quot;</span>
+<span class="c">#                            ],</span>
+<span class="c">#                            &amp;quot;routes&amp;quot;: [</span>
+<span class="c">#                              {</span>
+<span class="c">#                                &amp;quot;match&amp;quot;: {</span>
+<span class="c">#                                  &amp;quot;prefix&amp;quot;: &amp;quot;/healthz/ready&amp;quot;</span>
+<span class="c">#                                },</span>
+<span class="c">#                                &amp;quot;route&amp;quot;: {</span>
+<span class="c">#                                  &amp;quot;cluster&amp;quot;: &amp;quot;agent&amp;quot;</span>
+<span class="c">#    ...</span>
+
+<span class="nv">$ </span>more /etc/istio/proxy/grpc-bootstrap.json
+<span class="c"># =&gt; {</span>
+<span class="c">#      &amp;quot;xds_servers&amp;quot;: [</span>
+<span class="c">#        {</span>
+<span class="c">#          &amp;quot;server_uri&amp;quot;: &lt;span style="color: red;"&gt;&amp;quot;unix:///etc/istio/proxy/XDS&amp;quot;,&lt;/span&gt;</span>
+<span class="c">#          ...</span>
+<span class="c">#        }</span>
+<span class="c">#      ],</span>
+<span class="c">#      &amp;quot;node&amp;quot;: {</span>
+<span class="c">#        &amp;quot;id&amp;quot;: &amp;quot;sidecar~172.16.1.13~deploy-websrv-778ffd6947-cxf5k.default~default.svc.cluster.local&amp;quot;,</span>
+<span class="c">#        &amp;quot;metadata&amp;quot;: {</span>
+<span class="c">#          &amp;quot;ANNOTATIONS&amp;quot;: {</span>
+<span class="c">#            &amp;quot;istio.io/rev&amp;quot;: &amp;quot;default&amp;quot;,</span>
+<span class="c">#            &amp;quot;kubectl.kubernetes.io/default-container&amp;quot;: &amp;quot;deploy-websrv&amp;quot;,</span>
+<span class="c">#            &amp;quot;kubectl.kubernetes.io/default-logs-container&amp;quot;: &amp;quot;deploy-websrv&amp;quot;,</span>
+<span class="c">#            ...</span>
+<span class="c">#            &amp;quot;sidecar.istio.io/status&amp;quot;: &amp;quot;{\&amp;quot;initContainers\&amp;quot;:[\&amp;quot;istio-init\&amp;quot;],\&amp;quot;containers\&amp;quot;:[\&amp;quot;istio-proxy\&amp;quot;],\&amp;quot;volumes\&amp;quot;:[\&amp;quot;workload-socket\&amp;quot;,\&amp;quot;credential-socket\&amp;quot;,\&amp;quot;workload-certs\&amp;quot;</span>
+<span class="c">#    ,\&amp;quot;istio-envoy\&amp;quot;,\&amp;quot;istio-data\&amp;quot;,\&amp;quot;istio-podinfo\&amp;quot;,\&amp;quot;istio-token\&amp;quot;,\&amp;quot;istiod-ca-cert\&amp;quot;],\&amp;quot;imagePullSecrets\&amp;quot;:null,\&amp;quot;revision\&amp;quot;:\&amp;quot;default\&amp;quot;}&amp;quot;</span>
+<span class="c">#          },</span>
+<span class="c">#          ...</span>
+<span class="c">#          &amp;quot;SERVICE_ACCOUNT&amp;quot;: &amp;quot;kans-nginx&amp;quot;,</span>
+<span class="c">#          &amp;quot;WORKLOAD_NAME&amp;quot;: &amp;quot;deploy-websrv&amp;quot;</span>
+<span class="c">#        },</span>
+<span class="c">#        &amp;quot;locality&amp;quot;: {},</span>
+<span class="c">#        &amp;quot;UserAgentVersionType&amp;quot;: null</span>
+<span class="c">#      },</span>
+<span class="c">#      &amp;quot;server_listener_resource_name_template&amp;quot;: &amp;quot;xds.istio.io/grpc/lds/inbound/%s&amp;quot;</span>
+<span class="c">#    }</span>
+
+<span class="c"># display only Unix domain sockets : Listener 과 ESTAB 상태 정보 확인</span>
+<span class="nv">$ </span>ss <span class="nt">-xpl</span>
+<span class="c"># =&gt; Netid State  Recv-Q Send-Q                              Local Address:Port  Peer Address:PortProcess</span>
+<span class="c">#    u_str LISTEN 0      4096                          etc/istio/proxy/XDS 54694            * 0    users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=11))</span>
+<span class="c">#    u_str LISTEN 0      4096   var/run/secrets/workload-spiffe-uds/socket 54693            * 0    users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=9))</span>
+<span class="nv">$ </span>ss <span class="nt">-xp</span>
+<span class="c"># =&gt; Netid State Recv-Q Send-Q                              Local Address:Port  Peer Address:Port Process</span>
+<span class="c">#    u_str ESTAB 0      0                             etc/istio/proxy/XDS 79304            * 82228 users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=10))</span>
+<span class="c">#    u_str ESTAB 0      0      var/run/secrets/workload-spiffe-uds/socket 54709            * 54162 users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=16))</span>
+<span class="c">#    u_str ESTAB 0      0                                               * 82228            * 79304 users:((&amp;quot;envoy&amp;quot;,pid=13,fd=19))</span>
+<span class="c">#    u_str ESTAB 0      0                                               * 54162            * 54709 users:((&amp;quot;envoy&amp;quot;,pid=13,fd=32))</span>
+
+<span class="c"># display only TCP sockets and display only IP version 4 sockets : TCP 상태 정보 확인</span>
+<span class="nv">$ </span>ss <span class="nt">-4tpl</span>
+<span class="c"># =&gt; LISTEN 0      4096         0.0.0.0:15090      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=21))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15090      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=20))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15021      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=23))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15021      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=22))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15001      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=35))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15001      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=34))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15006      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=37))</span>
+<span class="c">#    LISTEN 0      4096         0.0.0.0:15006      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=36))</span>
+<span class="c">#    LISTEN 0      4096       127.0.0.1:15000      0.0.0.0:*    users:((&amp;quot;envoy&amp;quot;,pid=13,fd=18))</span>
+<span class="c">#    LISTEN 0      4096       127.0.0.1:15004      0.0.0.0:*    users:((&amp;quot;pilot-agent&amp;quot;,pid=1,fd=13))</span>
+<span class="c">#    LISTEN 0      511          0.0.0.0:http       0.0.0.0:*</span>
+</code></pre></div></div>
+
+<h3 id="bookinfo-실습-및-istio-기능-확인">Bookinfo 실습 및 Istio 기능 확인</h3>
+
+<h4 id="bookinfo">Bookinfo</h4>
+
+<ul>
+  <li>Bookinfo는 istio의 기능을 설명하기위한 MSA(Microservices Architecture)  기반의 예제 어플리케이션입니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_11.png" alt="img.png" class="image-center" loading="lazy" width="662" height="453">
+<em class="image-caption">Bookinfo 어플리케이션 구성</em>
+    <ul>
+      <li>productpage, details, reviews, ratings 서비스로 구성됩니다. <a href="https://istio.io/latest/docs/examples/bookinfo/">소개 링크</a>
+</li>
+      <li>
+<strong>ProductPage</strong> 페이지에서 요청을 받으면, 도서 리뷰를 보여주는 <strong>Reviews</strong> 서비스와 도서 상세 정보를 보여주는 <strong>Details</strong> 서비스에 접속하고,</li>
+      <li>ProductPage 는 <strong>Reviews</strong> 와 <strong>Details</strong> 결과를 사용자에게 응답합니다.</li>
+      <li>
+<strong>Reviews</strong> 서비스는 v1, v2, v3 세 개의 버전이 있고 v2, v3 버전의 경우 <strong>Ratings</strong> 서비스에 접소갛여 도서에 대한 5단계 평가를 가져옵니다.</li>
+      <li>Reviews 서비스의 차이는, v1은 Rating 이 <strong>없고</strong>, v2는 <strong>검은색</strong> 별로 Ratings 가 표시되며, v3는 <strong>색깔이</strong> 있는 별로 Ratings 가 표시됩니다.</li>
+    </ul>
+  </li>
+  <li>설치 및 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 모니터링</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'kubectl get pod -owide;echo;kubectl get svc'</span>
+
+<span class="c"># Bookinfo 애플리케이션 배포</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$ISTIOV</span>
+<span class="c"># =&gt; 1.23.2</span>
+<span class="nv">$ </span><span class="nb">cat</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/platform/kube/bookinfo.yaml
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/platform/kube/bookinfo.yaml
+<span class="c"># =&gt; service/details created</span>
+<span class="c">#    serviceaccount/bookinfo-details created</span>
+<span class="c">#    deployment.apps/details-v1 created</span>
+<span class="c">#    service/ratings created</span>
+<span class="c">#    serviceaccount/bookinfo-ratings created</span>
+<span class="c">#    deployment.apps/ratings-v1 created</span>
+<span class="c">#    service/reviews created</span>
+<span class="c">#    serviceaccount/bookinfo-reviews created</span>
+<span class="c">#    deployment.apps/reviews-v1 created</span>
+<span class="c">#    deployment.apps/reviews-v2 created</span>
+<span class="c">#    deployment.apps/reviews-v3 created</span>
+<span class="c">#    service/productpage created</span>
+<span class="c">#    serviceaccount/bookinfo-productpage created</span>
+<span class="c">#    deployment.apps/productpage-v1 created</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl get all,sa
+<span class="c"># =&gt; NAME                                 READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    pod/details-v1-65cfcf56f9-8465x      2/2     Running   0          87s</span>
+<span class="c">#    pod/productpage-v1-d5789fdfb-f8gdf   2/2     Running   0          86s</span>
+<span class="c">#    pod/ratings-v1-7c9bd4b87f-s9gxs      2/2     Running   0          87s</span>
+<span class="c">#    pod/reviews-v1-6584ddcf65-gnc9j      2/2     Running   0          87s</span>
+<span class="c">#    pod/reviews-v2-6f85cb9b7c-cfc68      2/2     Running   0          87s</span>
+<span class="c">#    pod/reviews-v3-6f5b775685-cw7tc      2/2     Running   0          87s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE</span>
+<span class="c">#    service/details         ClusterIP   10.10.200.54    &amp;lt;none&amp;gt;        9080/TCP   87s</span>
+<span class="c">#    service/productpage     ClusterIP   10.10.200.184   &amp;lt;none&amp;gt;        9080/TCP   87s</span>
+<span class="c">#    service/ratings         ClusterIP   10.10.200.163   &amp;lt;none&amp;gt;        9080/TCP   87s</span>
+<span class="c">#    service/reviews         ClusterIP   10.10.200.214   &amp;lt;none&amp;gt;        9080/TCP   87s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                             READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    deployment.apps/details-v1       1/1     1            1           87s</span>
+<span class="c">#    deployment.apps/productpage-v1   1/1     1            1           86s</span>
+<span class="c">#    deployment.apps/ratings-v1       1/1     1            1           87s</span>
+<span class="c">#    deployment.apps/reviews-v1       1/1     1            1           87s</span>
+<span class="c">#    deployment.apps/reviews-v2       1/1     1            1           87s</span>
+<span class="c">#    deployment.apps/reviews-v3       1/1     1            1           87s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                       DESIRED   CURRENT   READY   AGE</span>
+<span class="c">#    replicaset.apps/details-v1-65cfcf56f9      1         1         1       87s</span>
+<span class="c">#    replicaset.apps/productpage-v1-d5789fdfb   1         1         1       86s</span>
+<span class="c">#    replicaset.apps/ratings-v1-7c9bd4b87f      1         1         1       87s</span>
+<span class="c">#    replicaset.apps/reviews-v1-6584ddcf65      1         1         1       87s</span>
+<span class="c">#    replicaset.apps/reviews-v2-6f85cb9b7c      1         1         1       87s</span>
+<span class="c">#    replicaset.apps/reviews-v3-6f5b775685      1         1         1       87s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                  SECRETS   AGE</span>
+<span class="c">#    serviceaccount/bookinfo-details       0         87s</span>
+<span class="c">#    serviceaccount/bookinfo-productpage   0         86s</span>
+<span class="c">#    serviceaccount/bookinfo-ratings       0         87s</span>
+<span class="c">#    serviceaccount/bookinfo-reviews       0         87s</span>
+
+<span class="c"># product 웹 접속 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="s2">"</span><span class="si">$(</span>kubectl get pod <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>ratings <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[0].metadata.name}'</span><span class="si">)</span><span class="s2">"</span> <span class="nt">-c</span> ratings <span class="nt">--</span> curl <span class="nt">-sS</span> productpage:9080/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span>
+<span class="c"># =&gt; &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+
+<span class="c"># 로그</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>productpage <span class="nt">-f</span>
+</code></pre></div></div>
+
+<h4 id="istio를-통한-인입-기본-설정">Istio를 통한 인입 기본 설정</h4>
+
+<h5 id="istio-gatewayvirtualservice-설정">Istio Gateway/VirtualService 설정</h5>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Istio Gateway/VirtualService 설정</span>
+<span class="nv">$ </span><span class="nb">cat</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/networking/bookinfo-gateway.yaml
+<span class="c"># =&gt; apiVersion: networking.istio.io/v1alpha3</span>
+<span class="c">#    kind: Gateway</span>
+<span class="c">#    metadata:</span>
+<span class="c">#      name: bookinfo-gateway</span>
+<span class="c">#    spec:</span>
+<span class="c">#      # The selector matches the ingress gateway pod labels.</span>
+<span class="c">#      # If you installed Istio using Helm following the standard documentation, this would be &amp;quot;istio=ingress&amp;quot;</span>
+<span class="c">#      selector:</span>
+<span class="c">#        istio: ingressgateway # use istio default controller</span>
+<span class="c">#      servers:</span>
+<span class="c">#      - port:</span>
+<span class="c">#          number: 8080</span>
+<span class="c">#          name: http</span>
+<span class="c">#          protocol: HTTP</span>
+<span class="c">#        hosts:</span>
+<span class="c">#        - &amp;quot;*&amp;quot;</span>
+<span class="c">#    ---</span>
+<span class="c">#    apiVersion: networking.istio.io/v1alpha3</span>
+<span class="c">#    kind: VirtualService</span>
+<span class="c">#    metadata:</span>
+<span class="c">#      name: bookinfo</span>
+<span class="c">#    spec:</span>
+<span class="c">#      hosts:</span>
+<span class="c">#      - &amp;quot;*&amp;quot;</span>
+<span class="c">#      gateways:</span>
+<span class="c">#      - bookinfo-gateway</span>
+<span class="c">#      http:</span>
+<span class="c">#      - match:</span>
+<span class="c">#        - uri:</span>
+<span class="c">#            exact: /productpage</span>
+<span class="c">#        - uri:</span>
+<span class="c">#            prefix: /static</span>
+<span class="c">#        - uri:</span>
+<span class="c">#            exact: /login</span>
+<span class="c">#        - uri:</span>
+<span class="c">#            exact: /logout</span>
+<span class="c">#        - uri:</span>
+<span class="c">#            prefix: /api/v1/products</span>
+<span class="c">#        route:</span>
+<span class="c">#        - destination:</span>
+<span class="c">#            host: productpage</span>
+<span class="c">#            port:</span>
+<span class="c">#              number: 9080</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/networking/bookinfo-gateway.yaml
+<span class="c"># =&gt; gateway.networking.istio.io/bookinfo-gateway created</span>
+<span class="c">#    virtualservice.networking.istio.io/bookinfo created</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl get gw,vs
+<span class="nv">$ </span>istioctl proxy-status
+<span class="c"># =&gt; NAME                                                   CLUSTER        CDS                LDS                EDS                RDS                ECDS        ISTIOD                      VERSION</span>
+<span class="c">#    deploy-websrv-778ffd6947-cxf5k.default                 Kubernetes     SYNCED (5m9s)      SYNCED (5m9s)      SYNCED (4m24s)     SYNCED (5m9s)      IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    details-v1-65cfcf56f9-8465x.default                    Kubernetes     SYNCED (4m43s)     SYNCED (4m43s)     SYNCED (4m24s)     SYNCED (4m43s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    istio-ingressgateway-5f9f654d46-l7mqp.istio-system     Kubernetes     SYNCED (10s)       SYNCED (10s)       SYNCED (4m24s)     SYNCED (10s)       IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    productpage-v1-d5789fdfb-f8gdf.default                 Kubernetes     SYNCED (4m53s)     SYNCED (4m53s)     SYNCED (4m24s)     SYNCED (4m53s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    ratings-v1-7c9bd4b87f-s9gxs.default                    Kubernetes     SYNCED (4m24s)     SYNCED (4m24s)     SYNCED (4m24s)     SYNCED (4m24s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    reviews-v1-6584ddcf65-gnc9j.default                    Kubernetes     SYNCED (4m47s)     SYNCED (4m47s)     SYNCED (4m24s)     SYNCED (4m47s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    reviews-v2-6f85cb9b7c-cfc68.default                    Kubernetes     SYNCED (4m41s)     SYNCED (4m41s)     SYNCED (4m24s)     SYNCED (4m41s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+<span class="c">#    reviews-v3-6f5b775685-cw7tc.default                    Kubernetes     SYNCED (4m43s)     SYNCED (4m43s)     SYNCED (4m24s)     SYNCED (4m43s)     IGNORED     istiod-7f8b586864-8mc4c     1.23.2</span>
+
+<span class="c"># productpage 파드의 istio-proxy 로그 확인 Access log 가 출력 - Default access log format : 링크</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>productpage <span class="nt">-c</span> istio-proxy <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong>k3s-m</strong> NodePort 접속 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">IGWHTTP</span><span class="o">=</span><span class="si">$(</span>kubectl get service <span class="nt">-n</span> istio-system istio-ingressgateway <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.spec.ports[1].nodePort}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; 31677</span>
+
+<span class="c"># 접속 확인</span>
+<span class="nv">$ </span>kubectl get svc <span class="nt">-n</span> istio-system istio-ingressgateway
+<span class="c"># =&gt; NAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                      AGE</span>
+<span class="c">#    istio-ingressgateway   NodePort   10.10.200.171   &amp;lt;none&amp;gt;        15021:30953/TCP,80:31677/TCP,443:30737/TCP,31400:30617/TCP,15443:31668/TCP   3h31m</span>
+<span class="nv">$ </span>curl <span class="nt">-s</span> http://localhost:<span class="nv">$IGWHTTP</span>/productpage
+<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.10.101:<span class="nv">$IGWHTTP</span>/productpage
+<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.10.102:<span class="nv">$IGWHTTP</span>/productpage
+<span class="c"># =&gt; &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;</span>
+<span class="c">#    &amp;lt;meta http-equiv=&amp;quot;X-UA-Compatible&amp;quot; content=&amp;quot;IE=edge&amp;quot;&amp;gt;</span>
+<span class="c">#    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;</span>
+<span class="c">#    </span>
+<span class="c">#    &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    ...</span>
+
+<span class="c"># 정보 확인</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$MYDOMAIN</span>
+<span class="c"># =&gt; sweetlittlebird.com</span>
+<span class="nv">$ </span><span class="nb">cat</span> /etc/hosts
+<span class="c"># =&gt; ...</span>
+<span class="c">#    127.0.2.1 k3s-m k3s-m</span>
+<span class="c">#    192.168.10.10 k3s-m</span>
+<span class="c">#    192.168.10.101 k3s-w1</span>
+<span class="c">#    192.168.10.102 k3s-w2</span>
+<span class="c">#    192.168.10.103 k3s-w3</span>
+<span class="c">#    192.168.10.10 sweetlittlebird.com</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>curl <span class="nt">-s</span> http://<span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage
+<span class="c"># =&gt; &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;</span>
+<span class="c">#    &amp;lt;meta http-equiv=&amp;quot;X-UA-Compatible&amp;quot; content=&amp;quot;IE=edge&amp;quot;&amp;gt;</span>
+<span class="c">#    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;</span>
+<span class="c">#    </span>
+<span class="c">#    &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>자신의 PC에서 접속 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$MYDOMAIN</span> <span class="nv">$IGWHTTP</span>
+<span class="c"># =&gt; sweetlittlebird.com 31677</span>
+<span class="nv">$ </span><span class="nb">cat</span> /etc/hosts
+
+<span class="c">#</span>
+<span class="nv">$ </span>curl <span class="nt">-v</span> <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_12.png" alt="img.png" class="image-center" loading="lazy" width="1076" height="727">
+<em class="image-caption">Bookinfo 접속 결과 - 새로고침 할 때 마다 다른 파드에 접속되면서 리뷰가 달라짐</em></p>
+
+<ul>
+  <li><strong>testpc 에서 접속 실행</strong></li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># istio ingress gw 를 통한 접속 테스트</span>
+<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span>
+<span class="c"># =&gt; &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="nv">$ </span><span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="nb">echo</span> <span class="s2">"--------------"</span> <span class="p">;</span> <span class="nb">sleep </span>1<span class="p">;</span> <span class="k">done</span>
+<span class="c"># =&gt; &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    --------------</span>
+<span class="c">#    &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    --------------</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span><span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..100<span class="o">}</span><span class="p">;</span>  <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="k">done</span>
+<span class="c"># =&gt; &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    &amp;lt;title&amp;gt;Simple Bookstore App&amp;lt;/title&amp;gt;</span>
+<span class="c">#    ...</span>
+</code></pre></div></div>
+
+<h4 id="모니터링">모니터링</h4>
+
+<ul>
+  <li>옵저빌리티 연동 문서 : <a href="https://istio.io/latest/docs/ops/integrations/">링크</a>
+</li>
+</ul>
+
+<h5 id="kiali-키알리-소개">Kiali (키알리) 소개</h5>
+
+<ul>
+  <li>Kiali는 Istio 서비스 메시의 모니터링 및 시각화 도구입니다.</li>
+  <li>주 데이터 소스는 Prometheus와 Jaeger 등입니다.</li>
+  <li>특히 Jaeger와 연동하여 서비스 간의 호출 관계를 시각화하여 볼 수 있습니다.</li>
+  <li>Istiod의 health 상태를 확인하기 위해 istiod 파드를 직접 접속합니다. (기본 15014포트)</li>
+</ul>
+
+<h5 id="kiali-설치-및-확인">Kiali 설치 및 확인</h5>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install Kiali and the other addons and wait for them to be deployed. : Kiali dashboard, along with Prometheus, Grafana, and Jaeger.</span>
+<span class="nv">$ </span>tree ~/istio-<span class="nv">$ISTIOV</span>/samples/addons/
+<span class="c"># =&gt; /root/istio-1.23.2/samples/addons/</span>
+<span class="c">#    ├── README.md</span>
+<span class="c">#    ├── extras</span>
+<span class="c">#    │   ├── prometheus-operator.yaml</span>
+<span class="c">#    │   ├── skywalking.yaml</span>
+<span class="c">#    │   └── zipkin.yaml</span>
+<span class="c">#    ├── grafana.yaml</span>
+<span class="c">#    ├── jaeger.yaml</span>
+<span class="c">#    ├── kiali.yaml</span>
+<span class="c">#    ├── loki.yaml</span>
+<span class="c">#    └── prometheus.yaml</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/addons <span class="c"># 디렉터리에 있는 모든 yaml 자원을 생성</span>
+<span class="c"># =&gt; deployment.apps/grafana created</span>
+<span class="c">#    deployment.apps/jaeger created</span>
+<span class="c">#    deployment.apps/kiali created</span>
+<span class="c">#    deployment.apps/prometheus created</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kubectl rollout status deployment/kiali <span class="nt">-n</span> istio-system
+<span class="c"># =&gt; deployment &amp;quot;kiali&amp;quot; successfully rolled out</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl get all,sa,cm <span class="nt">-n</span> istio-system
+<span class="nv">$ </span>kubectl get svc,ep <span class="nt">-n</span> istio-system
+<span class="c"># =&gt; NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                      AGE</span>
+<span class="c">#    service/grafana                ClusterIP   10.10.200.178   &amp;lt;none&amp;gt;        3000/TCP                                                                     69s</span>
+<span class="c">#    service/istio-ingressgateway   NodePort    10.10.200.171   &amp;lt;none&amp;gt;        15021:30953/TCP,80:31677/TCP,443:30737/TCP,31400:30617/TCP,15443:31668/TCP   5h48m</span>
+<span class="c">#    service/istiod                 ClusterIP   10.10.200.215   &amp;lt;none&amp;gt;        15010/TCP,15012/TCP,443/TCP,15014/TCP                                        5h48m</span>
+<span class="c">#    service/jaeger-collector       ClusterIP   10.10.200.121   &amp;lt;none&amp;gt;        14268/TCP,14250/TCP,9411/TCP,4317/TCP,4318/TCP                               69s</span>
+<span class="c">#    service/kiali                  ClusterIP   10.10.200.19    &amp;lt;none&amp;gt;        20001/TCP,9090/TCP                                                           68s</span>
+<span class="c">#    service/loki                   ClusterIP   10.10.200.227   &amp;lt;none&amp;gt;        3100/TCP,9095/TCP                                                            68s</span>
+<span class="c">#    service/loki-headless          ClusterIP   None            &amp;lt;none&amp;gt;        3100/TCP                                                                     68s</span>
+<span class="c">#    service/loki-memberlist        ClusterIP   None            &amp;lt;none&amp;gt;        7946/TCP                                                                     68s</span>
+<span class="c">#    service/prometheus             ClusterIP   10.10.200.148   &amp;lt;none&amp;gt;        9090/TCP                                                                     68s</span>
+<span class="c">#    service/tracing                ClusterIP   10.10.200.133   &amp;lt;none&amp;gt;        80/TCP,16685/TCP                                                             69s</span>
+<span class="c">#    service/zipkin                 ClusterIP   10.10.200.29    &amp;lt;none&amp;gt;        9411/TCP                                                                     69s</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                             ENDPOINTS                                                           AGE</span>
+<span class="c">#    endpoints/grafana                172.16.2.17:3000                                                    69s</span>
+<span class="c">#    endpoints/istio-ingressgateway   172.16.2.14:15443,172.16.2.14:15021,172.16.2.14:31400 + 2 more...   5h48m</span>
+<span class="c">#    endpoints/istiod                 172.16.3.16:15012,172.16.3.16:15010,172.16.3.16:15017 + 1 more...   5h48m</span>
+<span class="c">#    endpoints/jaeger-collector       172.16.3.19:9411,172.16.3.19:14250,172.16.3.19:4317 + 2 more...     69s</span>
+<span class="c">#    endpoints/kiali                  172.16.1.16:9090,172.16.1.16:20001                                  68s</span>
+<span class="c">#    endpoints/loki                                                                                       68s</span>
+<span class="c">#    endpoints/loki-headless                                                                              68s</span>
+<span class="c">#    endpoints/loki-memberlist                                                                            68s</span>
+<span class="c">#    endpoints/prometheus             172.16.3.20:9090                                                    67s</span>
+<span class="c">#    endpoints/tracing                172.16.3.19:16685,172.16.3.19:16686                                 69s</span>
+<span class="c">#    endpoints/zipkin                 172.16.3.19:9411                                                    69s</span>
+
+<span class="c"># kiali 서비스 변경</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> istio-system kiali <span class="nt">-p</span> <span class="s1">'{"spec":{"type":"NodePort"}}'</span>
+<span class="c"># =&gt; service/kiali patched</span>
+
+<span class="c"># kiali 웹 접속 주소 확인</span>
+<span class="nv">$ KIALINodePort</span><span class="o">=</span><span class="si">$(</span>kubectl get svc <span class="nt">-n</span> istio-system kiali <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.ports[0].nodePort<span class="o">}</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"KIALI UI URL = http://</span><span class="si">$(</span>curl <span class="nt">-s</span> ipinfo.io/ip<span class="si">)</span><span class="s2">:</span><span class="nv">$KIALINodePort</span><span class="s2">"</span>
+<span class="c"># =&gt; KIALI UI URL = http://54.123.42.212:31274</span>
+
+<span class="c"># Grafana 서비스 변경</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> istio-system grafana <span class="nt">-p</span> <span class="s1">'{"spec":{"type":"NodePort"}}'</span>
+<span class="c"># =&gt; service/grafana patched</span>
+
+<span class="c"># Grafana 웹 접속 주소 확인 : 7개의 대시보드</span>
+<span class="nv">$ GRAFANANodePort</span><span class="o">=</span><span class="si">$(</span>kubectl get svc <span class="nt">-n</span> istio-system grafana <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.ports[0].nodePort<span class="o">}</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"Grafana URL = http://</span><span class="si">$(</span>curl <span class="nt">-s</span> ipinfo.io/ip<span class="si">)</span><span class="s2">:</span><span class="nv">$GRAFANANodePort</span><span class="s2">"</span>
+<span class="c"># =&gt; Grafana URL = http://54.123.42.212:30266</span>
+
+<span class="c"># Prometheus 서비스 변경</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> istio-system prometheus <span class="nt">-p</span> <span class="s1">'{"spec":{"type":"NodePort"}}'</span>
+<span class="c"># =&gt; service/prometheus patched</span>
+
+<span class="c"># Prometheus 웹 접속 주소 확인</span>
+<span class="nv">$ PROMENodePort</span><span class="o">=</span><span class="si">$(</span>kubectl get svc <span class="nt">-n</span> istio-system prometheus <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.ports[0].nodePort<span class="o">}</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"Prometheus URL = http://</span><span class="si">$(</span>curl <span class="nt">-s</span> ipinfo.io/ip<span class="si">)</span><span class="s2">:</span><span class="nv">$PROMENodePort</span><span class="s2">"</span>
+<span class="c"># =&gt; Prometheus URL = http://54.123.42.212:30506</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Prometheus : Targets - 파드별로 tcp/15020의 /stats/prometheus를 통해 수집</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_13.png" alt="img.png" class="image-center" loading="lazy" width="1580" height="784"></p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_14.png" alt="img.png" class="image-center" loading="lazy" width="1050" height="704"></p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_15.png" alt="img.png" class="image-center" loading="lazy" width="1050" height="704"></p>
+
+<ul>
+  <li>Grafana : 7개의 대시보드</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_17.png" alt="img.png" class="image-center" loading="lazy" width="1910" height="1210"></p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_16.png" alt="img.png" class="image-center" loading="lazy" width="1910" height="1210"></p>
+
+<ul>
+  <li>Kiali : 서비스간의 호출 관계를 시각화</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_18.png" alt="img.png" class="image-center" loading="lazy" width="1910" height="1210"></p>
+
+<h5 id="kiali-키알리-대시보드-둘러보기">Kiali (키알리) 대시보드 둘러보기</h5>
+
+<ul>
+  <li>Namespace 를 default 로 선택 후 Graph (Traffic, Versioned app graph) 에서 Display 옵션 중 ‘Traffic Distribution’과
+‘Traffic Animation’ 활성화, Security 체크 해서 확인해보겠습니다.</li>
+  <li>트래픽을 발생시켜서 Kiali 대시보드를 확인해보겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># testpc 에서 아래 실행</span>
+<span class="c"># 반복 접속 테스트</span>
+<span class="nv">$ </span><span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="nb">echo</span> <span class="s2">"--------------"</span> <span class="p">;</span> <span class="nb">sleep </span>1<span class="p">;</span> <span class="k">done</span>
+<span class="nv">$ </span><span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="nb">echo</span> <span class="s2">"--------------"</span> <span class="p">;</span> <span class="nb">sleep </span>0.1<span class="p">;</span> <span class="k">done</span>
+<span class="nv">$ </span><span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="nb">echo</span> <span class="s2">"--------------"</span> <span class="p">;</span> <span class="nb">sleep </span>0.5<span class="p">;</span> <span class="k">done</span>
+<span class="nv">$ </span><span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..100<span class="o">}</span><span class="p">;</span>  <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="k">done</span>
+<span class="nv">$ </span><span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..1000<span class="o">}</span><span class="p">;</span> <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"&lt;title&gt;.*&lt;/title&gt;"</span> <span class="p">;</span> <span class="k">done</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong>Traffic Graph</strong>에서는 트래픽 흐름을 확인할 수 있습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_19.png" alt="img.png" class="image-center" loading="lazy" width="1211" height="801"></p>
+
+<ul>
+  <li>
+<strong>Workloads</strong>에서는 Log 등을 확인할 수 있고, Envoy 관련 설정 정보(Listener, Cluster, Route, Endpoint 등)를 확인할 수 있습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_20.png" alt="img.png" class="image-center" loading="lazy" width="1572" height="558"></p>
+
+<ul>
+  <li>
+<strong>Istio Config</strong>에서 Istio 관련 설정을 볼 수 있고, <strong>Action</strong> 으로 Istio 관련 오브젝트를 설정/삭제 할 수 있습니다.</li>
+</ul>
+
+<h4 id="traffic-management">Traffic Management</h4>
+
+<ul>
+  <li>
+<strong>동작 소개</strong> : 클라이언트 PC → Istio <strong>ingressgateway</strong> 파드 → (Gateway, <strong>VirtualService</strong> + <strong>DestinationRule</strong>) → Cluster(<strong>Endpoint</strong> - 파드)
+    <ul>
+      <li>
+<strong>Gateway</strong> : 지정한 인그레스 게이트웨이로부터 트래픽이 인입, 프로토콜 및 포트, HOSTS, Proxy 등 설정이 가능합니다.</li>
+      <li>
+<strong>VirtualService</strong> : 인입 처리할 hosts 설정, L7 PATH 별 라우팅, 목적지에 대한 정책 설정 가능합니다. (envoy route config) - <a href="https://istio.io/latest/docs/concepts/traffic-management/#virtual-services">링크</a>
+        <ul>
+          <li>VirtualService 는 DestinationRule 에서 설정된 <strong>서브셋(subset)</strong>을 사용하여 <strong>트래픽 컨트롤</strong>을 할 수 있습니다.</li>
+          <li>
+<strong>hosts 필드</strong> : 목적지 주소 - IP address, a DNS name (FQDN), 혹은 k8s svc 이름, wildcard (”*”) prefixes</li>
+          <li>
+<strong>Routing rules</strong> : HTTP 경우 - Match 필드(예) 헤더), Destination(istio/envoy 에 등록된 대상, subnet 에 DestinationRule 활용)
+            <ul>
+              <li>
+<strong>HTTPRoute</strong> : redirect , rewrite , fault(장애 주입) , mirror(복제, 기본 100%) , corsPolicy(CORS 삽입) , headers(헤더 조작) 등 - <a href="https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute">링크</a>
+</li>
+            </ul>
+          </li>
+          <li>Routing rule precedence : Routing rules are evaluated in sequential order from top to bottom - 위에서 순차적 적용</li>
+        </ul>
+      </li>
+      <li>DestinationRule : 실제 도착지(서비스와 1:1 연결)의 정교한 정책(부하분산, 연결 옵션, 서킷 브레이크, TLS 등)을 설정 - <a href="https://istio.io/latest/docs/concepts/traffic-management/#destination-rules">링크</a>
+        <ul>
+          <li>
+<strong>Load balancing options</strong> : Round robin(기본값) , Random , Weighted , Least requests - <a href="https://www.envoyproxy.io/docs/envoy/v1.5.0/intro/arch_overview/load_balancing">링크</a>
+            <ul>
+              <li>
+<strong>Destination Rule</strong> : TrafficPolicy , Subset , ConnectionPoolSettings 등 - <a href="https://istio.io/latest/docs/reference/config/networking/destination-rule/">링크</a>
+</li>
+              <li>서브셋(subsets)을 정의할 수 있어 마이크로서비스 <strong>버전별로 라우팅</strong>할 때 사용한다</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="request-routing-실습">Request Routing 실습</h5>
+
+<ul>
+  <li>실습전 기본 DestinationRule 적용</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 샘플 파일들 확인</span>
+<span class="nv">$ </span>tree ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/networking
+<span class="c"># =&gt; /root/istio-1.23.2/samples/bookinfo/networking</span>
+<span class="c">#    ├── bookinfo-gateway.yaml</span>
+<span class="c">#    ├── certmanager-gateway.yaml</span>
+<span class="c">#    ├── destination-rule-all-mtls.yaml</span>
+<span class="c">#    ├── destination-rule-all.yaml</span>
+<span class="c">#    ├── destination-rule-reviews.yaml</span>
+<span class="c">#    ├── egress-rule-google-apis.yaml</span>
+<span class="c">#    ├── fault-injection-details-v1.yaml</span>
+<span class="c">#    ├── virtual-service-all-v1.yaml</span>
+<span class="c">#    ├── virtual-service-details-v2.yaml</span>
+<span class="c">#    ├── virtual-service-ratings-db.yaml</span>
+<span class="c">#    ├── virtual-service-ratings-mysql-vm.yaml</span>
+<span class="c">#    ├── virtual-service-ratings-mysql.yaml</span>
+<span class="c">#    ├── virtual-service-ratings-test-abort.yaml</span>
+<span class="c">#    ├── virtual-service-ratings-test-delay.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-50-v3.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-80-20.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-90-10.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-jason-v2-v3.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-test-v2.yaml</span>
+<span class="c">#    ├── virtual-service-reviews-v2-v3.yaml</span>
+<span class="c">#    └── virtual-service-reviews-v3.yaml</span>
+
+<span class="c"># 기본 DestinationRule 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> ~/istio-<span class="nv">$ISTIOV</span>/samples/bookinfo/networking/destination-rule-all.yaml
+<span class="c"># =&gt; destinationrule.networking.istio.io/productpage created</span>
+<span class="c">#    destinationrule.networking.istio.io/reviews created</span>
+<span class="c">#    destinationrule.networking.istio.io/ratings created</span>
+<span class="c">#    destinationrule.networking.istio.io/details created</span>
+
+<span class="c"># DestinationRule 확인 dr(=destinationrules) : KIALI Services 확인 시 GW, VS, DR 확인</span>
+<span class="nv">$ </span>kubectl get dr
+<span class="c"># =&gt; NAME          HOST          AGE</span>
+<span class="c">#    details       details       31s</span>
+<span class="c">#    productpage   productpage   31s</span>
+<span class="c">#    ratings       ratings       31s</span>
+<span class="c">#    reviews       reviews       31s</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_21.png" alt="img.png" loading="lazy" width="1609" height="337"></p>
+
+<ul>
+  <li>
+<strong>virtual-service-all-v1.yaml</strong> : 4개 서비스 모두 v1 의 서브셋(subset) 에 전송하는 정책 테스트</li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># virtual-service-all-v1.yaml</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">productpage</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">productpage</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">productpage</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">reviews</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">reviews</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">ratings</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">ratings</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">ratings</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">details</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">details</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">details</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="nn">---</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># istio vs(virtualservices) 확인</span>
+<span class="nv">$ </span>kubectl get vs
+<span class="c"># =&gt; NAME       GATEWAYS               HOSTS   AGE</span>
+<span class="c">#    bookinfo   [&amp;quot;bookinfo-gateway&amp;quot;]   [&amp;quot;*&amp;quot;]   3h30m</span>
+
+<span class="c"># 모든 마이크로서비스에 대해 v1 의 서브셋(subset) 에 전송되게 virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-all-v1.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/productpage created</span>
+<span class="c">#    virtualservice.networking.istio.io/reviews created</span>
+<span class="c">#    virtualservice.networking.istio.io/ratings created</span>
+<span class="c">#    virtualservice.networking.istio.io/details created</span>
+
+<span class="c"># istio vs(virtualservices) 확인 &gt;&gt; KIALI 에서 reviews v2,v3 향하는 트래픽 경로가 사라진다!</span>
+<span class="nv">$ </span>kubectl get virtualservices
+<span class="c"># =&gt; NAME          GATEWAYS               HOSTS             AGE</span>
+<span class="c">#    bookinfo      [&amp;quot;bookinfo-gateway&amp;quot;]   [&amp;quot;*&amp;quot;]             3h30m</span>
+<span class="c">#    details                              [&amp;quot;details&amp;quot;]       10s</span>
+<span class="c">#    productpage                          [&amp;quot;productpage&amp;quot;]   10s</span>
+<span class="c">#    ratings                              [&amp;quot;ratings&amp;quot;]       10s</span>
+<span class="c">#    reviews                              [&amp;quot;reviews&amp;quot;]       10s</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_22.png" alt="img.png" loading="lazy" width="1371" height="687"></p>
+
+<ul>
+  <li>
+    <p>모든 트래픽이 v1으로 향하게 되어서 브라우저를 새로고침해도 v1만 나오게 됩니다.</p>
+  </li>
+  <li>
+    <p><strong>virtual-service-reviews-test-v2.yaml</strong> : User Identity 기반 라우팅, end-user 커스텀 헤더에 <strong>jason</strong> 매칭 시 <strong>reviews v2</strong> 로 전달</p>
+    <ul>
+      <li>Match 조건에는 완전 일치(exact) , 전방 일치(prefix) , 정규 표현(regex) - 3가지 패턴을 선택할 수 있다</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># virtual-service-reviews-test-v2.yaml</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">reviews</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">reviews</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">match</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">headers</span><span class="pi">:</span>
+        <span class="na">end-user</span><span class="pi">:</span>
+          <span class="na">exact</span><span class="pi">:</span> <span class="s">jason</span>
+    <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v2</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 모든 마이크로서비스에 대해 v1 의 서브셋(subset) 에 전송되게 virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-reviews-test-v2.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/reviews configured</span>
+
+<span class="c"># jason 로그인 시 로그 확인</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>productpage <span class="nt">-f</span>
+<span class="c"># =&gt; [productpage-v1-d5789fdfb-f8gdf productpage] DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): details:9080</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] send: b'GET /details/0 HTTP/1.1\r\nHost: details:9080\r\nuser-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nx-request-id: 3aa3c711-d014-930f-8c2a-563c3dbbd8b5\r\n\r\n'</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] reply: 'HTTP/1.1 200 OK\r\n'</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: content-type: application/json</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: server: envoy</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: date: Sat, 19 Oct 2024 14:32:09 GMT</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: content-length: 178</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: x-envoy-upstream-service-time: 6</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] DEBUG:urllib3.connectionpool:http://details:9080 &amp;quot;GET /details/0 HTTP/1.1&amp;quot; 200 178</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): reviews:9080</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] send: b'GET /reviews/0 HTTP/1.1</span>
+<span class="c">#    Host: reviews:9080</span>
+<span class="c">#    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15</span>
+<span class="c">#    Accept-Encoding: gzip, deflate</span>
+<span class="c">#    Accept: */*</span>
+<span class="c">#    Connection: keep-alive</span>
+<span class="c">#    x-request-id: 3aa3c711-d014-930f-8c2a-563c3dbbd8b5\r\n\r\n'</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] reply: 'HTTP/1.1 200 OK\r\n'</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: x-powered-by: Servlet/3.1</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: content-type: application/json</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: date: Sat, 19 Oct 2024 14:32:09 GMT</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: content-language: en-US</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: content-length: 358</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: x-envoy-upstream-service-time: 1</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] header: server: envoy</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] DEBUG:urllib3.connectionpool:http://reviews:9080 &amp;quot;GET /reviews/0 HTTP/1.1&amp;quot; 200 358</span>
+<span class="c">#    [productpage-v1-d5789fdfb-f8gdf productpage] INFO:werkzeug:::ffff:127.0.0.6 - - [19/Oct/2024 14:32:09] &amp;quot;GET /productpage HTTP/1.1&amp;quot; 200 -</span>
+<span class="c">#    ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>웹브라우저에서 productpage로 접속 후 새로고침을 해보겠습니다.
+    <ul>
+      <li>로그인 전에는 v1으로 접속 됩니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_23.png" alt="img.png" loading="lazy" width="1418" height="571">
+</li>
+    </ul>
+  </li>
+  <li>오른쪽 상단의 Sign in 클릭 후 jason으로 로그인 후 새로고침을 해보겠습니다.
+    <ul>
+      <li>로그인 후에는 v2로 접속 됩니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_24.png" alt="img_1.png" loading="lazy" width="1462" height="615">
+</li>
+      <li>
+        <p>헤더에는 end-user:jason 이 추가되어 있습니다.</p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 로그인 후 헤더헤더</span>
+<span class="c"># =&gt; [productpage-v1-d5789fdfb-f8gdf productpage] send: b'GET /reviews/0 HTTP/1.1</span>
+<span class="c">#    Host: reviews:9080</span>
+<span class="c">#    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15</span>
+<span class="c">#    Accept-Encoding: gzip, deflate</span>
+<span class="c">#    Accept: */*</span>
+<span class="c">#    Connection: keep-alive</span>
+<span class="c">#    &lt;span style="color: red;"&gt;end-user: jason&lt;/span&gt;</span>
+<span class="c">#    x-request-id: 03366677-7032-9291-a4b9-7009a6257394</span>
+<span class="c">#    cookie: session=eyJ1c2VyIjoiamFzb24ifQ.ZxPUxA.3MJkXTFH8zJtg_YlXlvzq8xArpc'</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="fault-injection-실습">Fault Injection 실습</h5>
+
+<ul>
+  <li>
+<strong>virtual-service-ratings-test-delay.yaml</strong> : end-user 가 jason 는 ratings v1 에 7초 지연 발생, 그외 사용자는 ratings v1 정상 연결</li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># virtual-service-ratings-test-delay.yaml</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">ratings</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ratings</span>
+  <span class="na">http</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">match</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">headers</span><span class="pi">:</span>
+            <span class="na">end-user</span><span class="pi">:</span>
+              <span class="na">exact</span><span class="pi">:</span> <span class="s">jason</span>
+      <span class="na">fault</span><span class="pi">:</span>
+        <span class="na">delay</span><span class="pi">:</span>
+          <span class="na">percentage</span><span class="pi">:</span>
+            <span class="na">value</span><span class="pi">:</span> <span class="m">100.0</span>
+          <span class="na">fixedDelay</span><span class="pi">:</span> <span class="s">7s</span>
+      <span class="na">route</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+            <span class="na">host</span><span class="pi">:</span> <span class="s">ratings</span>
+            <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+    <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+            <span class="na">host</span><span class="pi">:</span> <span class="s">ratings</span>
+            <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-ratings-test-delay.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/ratings configured</span>
+
+<span class="c"># 로그 확인 : product 입장에서 접속 사용자(clinet) 연결을 끊어버림 0 DC downstream_remote_disconnect</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>productpage <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>웹브라우저에서 jason으로 로그인된 상태에서 접속시 6~7초 지연이 발생하는것을 확인할 수 있습니다.</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_25.png" alt="img.png" loading="lazy" width="1462" height="615"></p>
+
+<ul>
+  <li>
+<strong>virtual-service-ratings-test-abort.yaml</strong> : end-user 가 jason 는 ratings v1 에 500 에러 리턴, 그외 사용자는 ratings v1 정상 연결</li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># virtual-service-ratings-test-abort.yaml</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">ratings</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ratings</span>
+  <span class="na">http</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">match</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">headers</span><span class="pi">:</span>
+            <span class="na">end-user</span><span class="pi">:</span>
+              <span class="na">exact</span><span class="pi">:</span> <span class="s">jason</span>
+      <span class="na">fault</span><span class="pi">:</span>
+        <span class="na">abort</span><span class="pi">:</span>
+          <span class="na">percentage</span><span class="pi">:</span>
+            <span class="na">value</span><span class="pi">:</span> <span class="m">100.0</span>
+          <span class="na">httpStatus</span><span class="pi">:</span> <span class="m">500</span>
+      <span class="na">route</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+            <span class="na">host</span><span class="pi">:</span> <span class="s">ratings</span>
+            <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+    <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+            <span class="na">host</span><span class="pi">:</span> <span class="s">ratings</span>
+            <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-ratings-test-abort.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/ratings configured</span>
+
+<span class="c"># 로그 확인</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">version</span><span class="o">=</span>v2 <span class="nt">-f</span>
+</code></pre></div></div>
+
+<p>jason으로 로그인 했을때 Rating 서비스에 500 에러가 발생하는것을 확인할 수 있습니다.</p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_26.png" alt="img.png" loading="lazy" width="1462" height="615"></p>
+
+<p>또한 kiali에서도 어느 구간에서 오류가 발생했는지 확인할 수 있으며, Flags도 확인할 수 있습니다. <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-response-flags">링크</a><br>
+(이경우 FI는 Fault Injection을 의미으로 일부러 오류를 일으킨 것을 확인 할 수 있습니다.)</p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_27.png" alt="img.png" loading="lazy" width="1519" height="835"></p>
+
+<h5 id="traffic-shifting-실습">Traffic Shifting 실습</h5>
+
+<ul>
+  <li>
+    <p>카나라 배포 전략 등 활용 - <a href="https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/">링크</a></p>
+  </li>
+  <li>
+    <p><strong>virtual-service-reviews-50-v3.yaml</strong> : 가중치 (weight-based routing), reviews 에 v1(50%), v3(50%)</p>
+  </li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">reviews</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">reviews</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+      <span class="na">weight</span><span class="pi">:</span> <span class="m">50</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v3</span>
+      <span class="na">weight</span><span class="pi">:</span> <span class="m">50</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-reviews-50-v3.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/reviews configured</span>
+
+<span class="nv">$ </span><span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..100<span class="o">}</span><span class="p">;</span>  <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-m</span> 1 <span class="s2">"reviews-v</span><span class="se">\?</span><span class="s2">"</span> <span class="p">;</span> <span class="k">done</span> | <span class="nb">sort</span> | <span class="nb">uniq</span> <span class="nt">-c</span>
+<span class="c"># =&gt;      53                   reviews-v1-6584ddcf65-gnc9j</span>
+<span class="c">#         47                   reviews-v3-6f5b775685-cw7tc</span>
+</code></pre></div></div>
+
+<p>대략 50%의 확률로 v1과 v3로 접속되는것을 확인할 수 있습니다.</p>
+
+<ul>
+  <li>
+<strong>virtual-service-reviews-80-20.yaml</strong> : 가중치 (weight-based routing), reviews 에 v1(80%), v2(20%)</li>
+</ul>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">networking.istio.io/v1alpha3</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">VirtualService</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">reviews</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">hosts</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">reviews</span>
+  <span class="na">http</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">route</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v1</span>
+      <span class="na">weight</span><span class="pi">:</span> <span class="m">80</span>
+    <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span>
+        <span class="na">host</span><span class="pi">:</span> <span class="s">reviews</span>
+        <span class="na">subset</span><span class="pi">:</span> <span class="s">v2</span>
+      <span class="na">weight</span><span class="pi">:</span> <span class="m">20</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># virtualservices 적용</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> virtual-service-reviews-80-20.yaml
+<span class="c"># =&gt; virtualservice.networking.istio.io/reviews configured</span>
+
+<span class="nv">$ </span><span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..100<span class="o">}</span><span class="p">;</span>  <span class="k">do </span>curl <span class="nt">-s</span> <span class="nv">$MYDOMAIN</span>:<span class="nv">$IGWHTTP</span>/productpage | <span class="nb">grep</span> <span class="nt">-m</span> 1 <span class="s2">"reviews-v</span><span class="se">\?</span><span class="s2">"</span> <span class="p">;</span> <span class="k">done</span> | <span class="nb">sort</span> | <span class="nb">uniq</span> <span class="nt">-c</span>
+<span class="c"># =&gt;      79                   reviews-v1-6584ddcf65-gnc9j</span>
+<span class="c">#         21                   reviews-v2-6f85cb9b7c-cfc68</span>
+</code></pre></div></div>
+
+<p>대략 80%의 확률로 v1과 20%의 확률로 v2로 접속되는것을 확인할 수 있습니다.</p>
+
+<p>kiali에서도 어느 구간에서 어떠한 비중으로 트래픽이 흘러가는지 확인할 수 있습니다.
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_28.png" alt="img.png" loading="lazy" width="1134" height="526"></p>
+
+<h4 id="security-보안">Security (보안)</h4>
+
+<ul>
+  <li>요구사항
+    <ul>
+      <li>MITM (Man-In-The-Middle) 공격 방지를 위해 모든 트래픽은 mTLS로 암호화 되어야 합니다.</li>
+      <li>또한 접근 제어 정책이 필요하며, 감사 로깅을 통해 보안 이슈를 식별이 가능 해야 합니다.</li>
+    </ul>
+  </li>
+  <li>목표
+    <ul>
+      <li>기본 셋팅을 안전하게 하기 : 별도의 셋팅이 없어도 보안을 유지할 수 있도록 설정</li>
+      <li>깊은 방어 : 기존에 존재하는 보안 시스템과 통합되어, 다층 방어를 구성</li>
+      <li>
+<strong>Zero-trust network</strong> : 네트워크를 신뢰하지 않음으로써 보안 강화 <a href="https://genians.co.kr/genians-nac/zt/">https://genians.co.kr/genians-nac/zt/</a>
+</li>
+    </ul>
+  </li>
+  <li>구성요소
+    <ul>
+      <li>Certification Authority (CA) : 인증서 발급, 관리, 갱신</li>
+      <li>보안 정책 (인증정책, 인가정책 등) 관련 설정을 각 프록시에 전달하는 API 서버</li>
+      <li>사이드카와 프록시를 정책 강제 지점(Policy Enforcement Point-PEPs)으로 사용하여 클라이언트와 서버간의 통신을 보호</li>
+      <li>Envoy Proxy 확장 기능을 통해 telemetry와 감사 로깅 수집</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_29.svg" alt="20241019_kans_w7_29.svg" class="image-center" loading="lazy" width="1127" height="536">
+<em class="image-caption">istio 보안 아키텍쳐</em></p>
+
+<ul>
+  <li>TLS와 mTLS
+    <ul>
+      <li>
+<strong>TLS (Transport Layer Security)</strong> : 통신 보안을 위한 프로토콜로, 인터넷 상에서 데이터를 암호화하는 표준화된 방법입니다.
+기본적으로 서버의 인증서만 확인하는 방식을 사용합니다.</li>
+      <li>
+<strong>mTLS (mutual TLS)</strong> : 서버와 클라이언트가 서로 인증을 하고 서로 신뢰할 수 있는지 확인하는 방식입니다.</li>
+    </ul>
+  </li>
+  <li>Authentication (인증), Authorization (인가) (Auto mTLS)
+    <ul>
+      <li>Istio는 모든 워크로드에 X.509 인증서를 부여하고, 서로 인증을 통해 통신을 보호합니다.</li>
+      <li>Envoy proxy와 함께 실행되는 Istio agent는 istiod와 함께 동작하면서 자동으로 인증서를 갱신합니다. 
+ <img src="/assets/2024/kans-3th/w7/20241019_kans_w7_30.svg" alt="20241019_kans_w7_30.svg" class="image-center" loading="lazy" width="481" height="441">
+        <ol>
+          <li>istiod는 CSR(인증서 서명 요청)을 수행하기 위해 gRPC 서비스를 제공합니다.</li>
+          <li>Envoy는 SDS(Secret Discovery Serice) API를 통해 인증서와 키 요청을 보냅니다.</li>
+          <li>istio-agent는 SDs 요청을 받으면 Private Key와 CSR을 생성한 후 자격증명
+   (credential)과 함께 CSR istiod에 전송하여 서명을 요청합니다.</li>
+          <li>CA는 CSR에 포함된 자격증명(credential) 의 유효성을 검사하고 CSR에 서명하여 인증서를 생성합니다.</li>
+          <li>istio-agent는 istiod로부터 받은 인증서(certiftcate)와 개인키 private Key)를 Envoy SDS
+   API를 통해 Envoy에게 보냅니다.</li>
+          <li>위의 CSR 프로세스는 인증서 및 키 순환을 위해 주기적으로 반복됩니다</li>
+        </ol>
+      </li>
+    </ul>
+  </li>
+  <li>Authentication (인증) : 2가지 타입 제공
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_31.svg" alt="20241019_kans_w7_31.svg" loading="lazy" width="820" height="570">
+    <ol>
+      <li>Peer Authentication :
+        <ul>
+          <li>서비스간 인증에 사용되며 Client가 연결을 확인하는데 사용. 서비스 코드 변경없이 mTLS 제공</li>
+        </ul>
+      </li>
+      <li>Request Authentication :
+        <ul>
+          <li>Request에 첨부된 자격증명(Credential)을 통해 최종 사용자 인증에 사용</li>
+          <li>istio는 JWT (JSON Web Token)을 지원하여 최종 사용자 인증을 제공</li>
+          <li>커스텀 인증 제공자를 비롯하여 OpenID Connect, Keycloak, Auth0 등 다양한 인증 방식을 지원</li>
+        </ul>
+      </li>
+    </ol>
+  </li>
+  <li>Authorization (인가)
+<img src="/assets/2024/kans-3th/w7/20241019_kans_w7_32.svg" alt="20241019_kans_w7_32.svg" loading="lazy" width="682" height="343">
+    <ul>
+      <li>istio는 mesh 단위, 네임스페이스 단위, 워크로드 단위로 접근을 제어 할 수 있는 인가 기능을 제공합니다. 다음과 같은 이점이 있습니다.
+        <ul>
+          <li>워크로드와 워크로드간, 또는 사용자와 워크로드간 인가 제공</li>
+          <li>단일한 AuthorizationPolicy CRD를 사용한 단순한 API 제공</li>
+          <li>유연한 정책 제공 : 커스텀 조건을 등록할 수 있고, CUSTOM, DENY, ALLOW 액션 지원</li>
+          <li>고성능 : Envoy Proxy를 통해 인가 정책을 적용하므로 성능 저하가 없음</li>
+          <li>높은 호환성 : gRPC, HTTP, HTTPS 등을 지원하며, 일반적인 TCP 프로토콜도 지원</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="authentication-auto-mtls-실습">Authentication (Auto mTLS) 실습</h5>
+
+<ul>
+  <li>
+    <p>기존 파드에 로그에서 인증서 등 보안 관련 내용 확인</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  <span class="c"># CA Endpoint, CA(/var/run/secret/istio/root-cert,pem), citadelclient, SDS server 등등</span>
+  <span class="nv">$ </span>kubectl logs ratings-v1-7c9bd4b87f-s9gxs <span class="nt">-c</span> istio-proxy <span class="nt">-f</span>
+  <span class="nv">$ </span>kubetail
+  
+  <span class="c"># 인증정책 확인</span>
+  <span class="nv">$ </span>kubectl get peerauthentications.security.istio.io
+  <span class="c"># =&gt; No resources found </span>
+    
+  <span class="c"># envoy 에 cert 정보 확인 : istio-proxy 에 admin페이지 접속 or kaila 에서 envoy 에서 확인    </span>
+</code></pre></div>    </div>
+  </li>
+  <li>bookinfo → kiali → product 계속 접속</li>
+  <li>kiali 에서 Display(Security 체크) 후 자물쇠 클릭하면 오른쪽 창에서 보안설정을 확이할 수 있습니다. : mTLS Enabled, spiffe(Secure name)</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_33.png" alt="img.png" loading="lazy" width="705" height="293"></p>
+
+<ul>
+  <li>test 네임스페이스 생성 후 파드 생성(sidecar 미적용) 후 ratings 접속</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 네임스페이스 생성</span>
+<span class="nv">$ </span>kubectl create ns <span class="nb">test</span>
+<span class="c"># =&gt; namespace/test created</span>
+
+<span class="c"># 파드 생성</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl create -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netpod
+  namespace: test
+spec:
+  containers:
+  - name: netshoot-pod
+    image: nicolaka/netshoot
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+  terminationGracePeriodSeconds: 0
+</span><span class="no">EOF
+
+</span><span class="c"># 확인 : sidecar 미적용</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> <span class="nb">test</span>
+<span class="c"># =&gt; NAME     READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    netpod   1/1     Running   0          19s</span>
+
+<span class="c"># ratings 서비스 확인</span>
+<span class="nv">$ </span>kubectl get svc ratings
+<span class="c"># =&gt; NAME      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE</span>
+<span class="c">#    ratings   ClusterIP   10.10.200.163   &amp;lt;none&amp;gt;        9080/TCP   8h</span>
+
+<span class="c"># ratings 접속 시도 : 성공</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> <span class="nb">test </span>netpod <span class="nt">--</span> curl ratings.default:9080/health <span class="p">;</span><span class="nb">echo</span>
+<span class="nv">$ </span><span class="o">{</span><span class="s2">"status"</span>:<span class="s2">"Ratings is healthy"</span><span class="o">}</span>
+
+<span class="c"># 로그 확인</span>
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>ratings <span class="nt">-f</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_34.png" alt="img.png" class="image-center w-80" loading="lazy" width="982" height="406">
+<em class="image-caption">NS(default, test 체크) netpod 에서 접속 시 unknown 으로 표기되며, 접근 성공(녹색) 확인</em></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Peer authentication 설정 변경 : PERMISSIVE(mTLS 사용/미사용 모두 허용) → STRICT(반드시 mTLS 사용, 미사용 시 거부)</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl create -f -
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-strict
+spec:
+  mtls:
+    mode: STRICT
+</span><span class="no">EOF
+
+</span><span class="c"># ratings 접속 시도 : 실패!</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> <span class="nb">test </span>netpod <span class="nt">--</span> curl ratings.default:9080/health <span class="p">;</span><span class="nb">echo</span>
+<span class="c"># =&gt; curl: (56) Recv failure: Connection reset by peer</span>
+<span class="c">#    command terminated with exit code 56</span>
+
+<span class="nv">$ </span>kubetail <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>ratings <span class="nt">-f</span>
+<span class="c"># =&gt; [ratings-v1-7c9bd4b87f-s9gxs istio-proxy] [2024-10-01T17:21:12.708Z] &amp;quot;- - -&amp;quot; 0 NR filter_chain_not_found - &amp;quot;-&amp;quot; 0 0 0 - &amp;quot;-&amp;quot; &amp;quot;-&amp;quot; &amp;quot;-&amp;quot; &amp;quot;-&amp;quot; &amp;quot;-&amp;quot; - - 172.16.3.17:9080 172.16.1.17:34938 - -</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 자원 삭제</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl delete PeerAuthentication default-strict
+<span class="c"># =&gt; peerauthentication.security.istio.io &amp;quot;default-strict&amp;quot; deleted</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> <span class="nb">test </span>netpod <span class="nt">--</span> curl ratings.default:9080/health <span class="p">;</span><span class="nb">echo</span>
+<span class="c"># =&gt; {&amp;quot;status&amp;quot;:&amp;quot;Ratings is healthy&amp;quot;}</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 인증정책 강제 정책 삭제시 다시 통신이 됩니다.&lt;/span&gt;</span>
+
+<span class="nv">$ </span>kubectl delete pod <span class="nt">-n</span> <span class="nb">test </span>netpod
+<span class="nv">$ </span>kubectl delete ns <span class="nb">test</span>
+</code></pre></div></div>
+
+<h3 id="istio-통신-흐름">Istio 통신 흐름</h3>
+
+<p>istio 사용시 트래픽은 호스트의 tcp/ip 스택과 iptables, 파드내의 iptables와 envoy를 경유하게 됩니다.
+istio는 강력하고 다양한 기능들을 제공하지만 비용(지연추가, 프로세서 사용량 추가, 복잡한 구조)이 필요합니다.</p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_35.png" alt="img.png" class="image-center w-80" loading="lazy" width="539" height="399"></p>
+
+<p>외부 클라이언트(PC 등)에서 파드로 접속되는 과정은 다음과 같습니다.</p>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_36.png" alt="img_1.png" loading="lazy" width="1882" height="771"></p>
+
+<p>위의 그림에서 처럼 iptables를 여러번 거치고, DNAT등을 통해 포트번호등이 80 (http) =&gt; 15006 (istio-proxy) 로 변경되는 등의 작업을 여러번 거칩니다.
+또한 파드와 호스트간 통신 envoy를 요청을 받을때와 응답할때 모두 거쳐가는 것을 확인할 수 있습니다.</p>
+
+<ul>
+  <li>파드 내 Iptables 적용 흐름</li>
+</ul>
+
+<p><img src="/assets/2024/kans-3th/w7/20241019_kans_w7_37.png" alt="img.png" class="image-center" loading="lazy" width="1493" height="935">
+<em class="image-caption">출처 : <a href="https://jimmysong.io/en/blog/sidecar-injection-iptables-and-traffic-routing/#understand-outbound-handler">Jimmy song</a> 블로그</em></p>
+
+<p>다음 블로그에서 자세한 내용을 확인할 수 있습니다.
+<a href="https://jimmysong.io/en/blog/sidecar-injection-iptables-and-traffic-routing/#understand-outbound-handler">Understanding the Sidecar Injection, Traffic Intercepting &amp; Routing Process in Istio</a></p>
+
+<hr>
+
+<h2 id="마치며">마치며</h2>
+
+<p>1주차 컨테이너 격리 이후에 또 다시 뇌정지가 찾아온 주차였습니다.
+이번주에 학습한것도 많은데, 이것이 일부만 살펴본것이라니 놀랍습니다.
+정말 만든 분들도, 쓰는 분들도, 스터디를 진행해주시는 분들도 대단합니다. <img class="emoji" title=":thumbsup:" alt=":thumbsup:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f44d.png" height="20" width="20" loading="lazy"></p>
+
+<p>인증이나 인가 등 gateway api에서 아쉬웠던 부분들이 나와서 좋았습니다.
+찾던 기능인데 마침 이번주에 다루게 되어서 좋았습니다. 
+Kiali를 통한 트래픽 시각화도 정말 유용하게 쓰일 것 같습니다.
+복잡하긴 하지만 좋은 기능들이 많았습니다.</p>
+
+<p>시간이 모자라서 미처 실습하지 못한 부분들과 Ambient Mesh도 바쁜일이 지나가면 다시 살펴봐야겠습니다.
+스터디를 준비해주신 가시다님과 참여하신 분들 감사합니다. <img class="emoji" title=":pray:" alt=":pray:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f64f.png" height="20" width="20" loading="lazy"></p>
+
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#istio-%EC%86%8C%EA%B0%9C">Istio 소개</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%84%9C%EB%B9%84%EC%8A%A4-%EB%A9%94%EC%8B%9C-service-mesh%EB%9E%80">서비스 메시 (Service Mesh)란?</a></li>
+<li class="toc-entry toc-h3">
+<a href="#envoy">Envoy</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#envoy-%EC%8B%A4%EC%8A%B5">Envoy 실습</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#istio-%EC%86%8C%EA%B0%9C-1">Istio 소개</a></li>
+<li class="toc-entry toc-h3"><a href="#istio-%EC%84%A4%EC%B9%98-sidecar-%EB%AA%A8%EB%93%9C">Istio 설치 (Sidecar 모드)</a></li>
+<li class="toc-entry toc-h3"><a href="#istio%EB%A5%BC-%ED%86%B5%ED%95%9C-%EC%99%B8%EB%B6%80-%EB%85%B8%EC%B6%9C">Istio를 통한 외부 노출</a></li>
+<li class="toc-entry toc-h3">
+<a href="#bookinfo-%EC%8B%A4%EC%8A%B5-%EB%B0%8F-istio-%EA%B8%B0%EB%8A%A5-%ED%99%95%EC%9D%B8">Bookinfo 실습 및 Istio 기능 확인</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#bookinfo">Bookinfo</a></li>
+<li class="toc-entry toc-h4"><a href="#istio%EB%A5%BC-%ED%86%B5%ED%95%9C-%EC%9D%B8%EC%9E%85-%EA%B8%B0%EB%B3%B8-%EC%84%A4%EC%A0%95">Istio를 통한 인입 기본 설정</a></li>
+<li class="toc-entry toc-h4"><a href="#%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81">모니터링</a></li>
+<li class="toc-entry toc-h4"><a href="#traffic-management">Traffic Management</a></li>
+<li class="toc-entry toc-h4"><a href="#security-%EB%B3%B4%EC%95%88">Security (보안)</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#istio-%ED%86%B5%EC%8B%A0-%ED%9D%90%EB%A6%84">Istio 통신 흐름</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+  </div>
+<a class="u-url" href="/posts/2024-10-19-KANS-Study-Week7/" hidden></a>
+</article>
+
+
+
+<div class="PageNavigation">
+  
+  <a class="prev" href="/posts/2024-10-13-KANS-Study-Week6/">« [KANS 3기] Ingress &amp; Gateway API</a>
+  
+  
+</div>
+
+<div id="disqus_thread"></div>
+<script>
+var disqus_config = function () {
+this.page.url = "https://sweetlittlebird.github.io/posts/2024-10-19-KANS-Study-Week7/";
+this.page.identifier = "/posts/KANS Study - Week7";
+};
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+</noscript>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Sweet Little Bird</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Sweet Little Bird</li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>공부 기록과 개발 이야기를 담은 블로그입니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+
+    
+    <script async src="/assets/dist/app.min.js"></script>
+    
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
+  </body>
+
+</html>
