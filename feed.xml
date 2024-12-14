@@ -1,4 +1,919 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetlittlebird.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://sweetlittlebird.github.io/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-12-08T01:12:51+09:00</updated><id>https://sweetlittlebird.github.io/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[CI/CD] Jenkins CI/CD + Docker</title><link href="https://sweetlittlebird.github.io/posts/2024-12-08-CICD-Lite-Week1/" rel="alternate" type="text/html" title="[CI/CD] Jenkins CI/CD + Docker" /><published>2024-12-08T00:50:18+09:00</published><updated>2024-12-08T00:50:18+09:00</updated><id>https://sweetlittlebird.github.io/posts/CICD%20Lite%20-%20Week1</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-12-08-CICD-Lite-Week1/"><![CDATA[<h2 id="들어가며">들어가며</h2>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetlittlebird.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://sweetlittlebird.github.io/" rel="alternate" type="text/html" hreflang="ko" /><updated>2024-12-15T02:50:19+09:00</updated><id>https://sweetlittlebird.github.io/feed.xml</id><title type="html">Sweet Little Bird</title><subtitle>공부 기록과 개발 이야기를 담은 블로그입니다.</subtitle><entry><title type="html">[CI/CD] GitHub Actions CI/CD</title><link href="https://sweetlittlebird.github.io/posts/2024-12-14-CICD-Lite-Week2/" rel="alternate" type="text/html" title="[CI/CD] GitHub Actions CI/CD" /><published>2024-12-14T23:01:18+09:00</published><updated>2024-12-14T23:01:18+09:00</updated><id>https://sweetlittlebird.github.io/posts/CICD%20Lite%20-%20Week2</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-12-14-CICD-Lite-Week2/"><![CDATA[<h2 id="들어가며">들어가며</h2>
+
+<p>이번 주에는 GitHub Actions를 이용한 CI/CD에 대해 알아보겠습니다.</p>
+
+<h2 id="github-actions-cicd">GitHub Actions CI/CD</h2>
+
+<h3 id="github-actions란">GitHub Actions란?</h3>
+
+<ul>
+  <li><a href="https://docs.github.com/ko/actions">공식문서</a> -
+<a href="https://docs.github.com/ko/actions/about-github-actions/understanding-github-actions">개요</a> -
+<a href="https://docs.github.com/ko/billing/managing-billing-for-your-products/managing-billing-for-github-actions">요금</a> -
+<a href="https://blog.outsider.ne.kr/1744">GitHub Actions의 다양한 기능 활용하기</a></li>
+  <li>GitHub Actions는 GitHub에서 호스팅되는 <strong>지속적 통합(CI) 및 지속적 배포(CD)</strong> 서비스입니다.</li>
+  <li>푸시나 풀 리퀘스트와 같은 이벤트에 반응하여 <strong>사용자 지정된 워크플로</strong>를 실행할 수 있습니다. 이를 통해 CI/CD를 GitHub Actions로 구현할 수 있습니다.</li>
+  <li>GitHub Actions는 <strong>GitHub Marketplace</strong>에서 기존에 작성된 워크플로를 가져와 사용할 수 있습니다. Slack 알림, AWS 배포 등 다양한 워크플로가 있습니다.</li>
+  <li>GitHub Actions는 <strong>YAML</strong> 파일을 사용하여 워크플로를 정의합니다. 워크플로는 <strong>job</strong>으로 구성되며, 각 job은 <strong>step</strong>으로 구성됩니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_1.png" alt="img.png" /></li>
+  <li>
+    <p>GitHub Actions의 요금은 아래와 같으며 500MB 스토리지와 매월 2000분을 무료로 사용할 수 있습니다.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>계획</th>
+          <th>스토리지</th>
+          <th>분(월)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GitHub Free</td>
+          <td>500 MB</td>
+          <td>2,000</td>
+        </tr>
+        <tr>
+          <td>GitHub Pro</td>
+          <td>1GB</td>
+          <td>3,000</td>
+        </tr>
+        <tr>
+          <td>조직용 GitHub Free</td>
+          <td>500 MB</td>
+          <td>2,000</td>
+        </tr>
+        <tr>
+          <td>GitHub Team</td>
+          <td>2GB</td>
+          <td>3,000</td>
+        </tr>
+        <tr>
+          <td>GitHub Enterprise Cloud</td>
+          <td>50GB</td>
+          <td>50,000</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<h3 id="첫-github-actions-워크플로-만들기">첫 GitHub Actions 워크플로 만들기</h3>
+
+<ul>
+  <li>GitHub Actions는 repository 내의 <code class="language-plaintext highlighter-rouge">.github/workflows</code> 디렉터리에 저장된 워크플로우 정의 파일을 읽어서 실행합니다.</li>
+  <li>간단한 GitHub Repository를 만들고 그 안에 워크플로우를 만들어서 테스트 해보겠습니다.
+    <ol>
+      <li>새로운 Repository 만들기 <a href="https://www.github.com/new">링크</a>
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_2.png" alt="img.png" /></li>
+      <li>git clone으로 repository를 로컬로 가져옵니다.
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/sweetlittlebird/2024-cicd-w2-1.git
+<span class="nv">$ </span><span class="nb">cd </span>2024-cicd-w2-1
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">.github/workflows</code> 디렉터리를 만들고 그 안에 <code class="language-plaintext highlighter-rouge">main.yml</code> 파일을 만듭니다. (파일명은 자유롭게 지정 가능합니다.)
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> .github/workflows
+<span class="nv">$ </span><span class="nb">touch</span> .github/workflows/main.yml
+</code></pre></div>        </div>
+      </li>
+      <li><code class="language-plaintext highlighter-rouge">main.yml</code> 파일에 워크플로우 작성합니다.
+        <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/main.yml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">Hello World</span>                 <span class="c1"># Github 웹 사이드바 이름</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>              <span class="c1"># 수동으로 실행할 수 있는 워크플로우</span>
+  <span class="na">push</span><span class="pi">:</span>                           <span class="c1"># push 이벤트 발생 시 실행</span>
+     
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">build</span><span class="pi">:</span>                          <span class="c1"># Jobs 이름</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>        <span class="c1"># 실행 환경</span>
+    <span class="na">steps</span><span class="pi">:</span>                        <span class="c1"># Job 내부의 Step 들 </span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v3</span> <span class="c1"># actions/checkout 레포지토리의 v3 버전의 워크플로우 사용</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Hello World</span>         <span class="c1"># Step 이름</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">echo "Hello World"</span>     
+</code></pre></div>        </div>
+      </li>
+      <li>GitHub에 push하여 워크플로우를 실행합니다.
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span>
+<span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"GitHub Actions 추가"</span>
+<span class="nv">$ </span>git push origin main
+</code></pre></div>        </div>
+      </li>
+      <li>GitHub Repository에서 Actions 탭을 클릭하여 워크플로우를 확인합니다. <a href="https://github.com/sweetlittlebird/2024-cicd-w2-1/actions">링크</a>
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_3.png" alt="img.png" />
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_4.png" alt="img.png" /></li>
+    </ol>
+  </li>
+  <li>워크플로우가 잘 실행되어서 <code class="language-plaintext highlighter-rouge">Hello World</code>가 잘 출력되었습니다.</li>
+</ul>
+
+<h4 id="워크플로우를-수동으로-트리거-하기">워크플로우를 수동으로 트리거 하기</h4>
+
+<ul>
+  <li>앞서 작성한 워크플로우 처럼 on: workflow_dispatch를 사용하면 워크플로우를 수동으로 실행할 수 있습니다.</li>
+  <li>GitHub Repository에서 Actions 탭을 클릭하고 <code class="language-plaintext highlighter-rouge">Run workflow</code> 버튼을 클릭하여 워크플로우를 수동으로 실행할 수 있습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_5.png" alt="img.png" /></li>
+</ul>
+
+<h3 id="직접-개발-후-실행">직접 개발 후 실행</h3>
+
+<ul>
+  <li>이번에는 가상머신을 만들고 그 안에서 간단한 웹 서버를 만들어서 GitHub Actions로 배포해보겠습니다.</li>
+  <li>가상머신은 Vagrant를 사용하여 만들어 보겠습니다.
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Vagrantfile</span>
+<span class="no">Vagrant</span><span class="p">.</span><span class="nf">configure</span><span class="p">(</span><span class="s2">"2"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box</span> <span class="o">=</span> <span class="s2">"ubuntu/jammy64"</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"forwarded_port"</span><span class="p">,</span> <span class="ss">guest: </span><span class="mi">22</span><span class="p">,</span> <span class="ss">host: </span><span class="mi">20022</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"forwarded_port"</span><span class="p">,</span> <span class="ss">guest: </span><span class="mi">80</span><span class="p">,</span> <span class="ss">host: </span><span class="mi">20080</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">inline: </span><span class="o">&lt;&lt;-</span><span class="no">SHELL</span><span class="sh">
+    sudo apt-get update
+    sudo apt install -y tree 
+</span><span class="no">  SHELL</span>
+<span class="k">end</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>위와 같이 Vagrantfile을 작성하고 <code class="language-plaintext highlighter-rouge">vagrant up</code>으로 가상머신을 만들어 줍니다.</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>vagrant up
+  
+<span class="nv">$ </span>vargrant ssh 
+<span class="c"># --------</span>
+  
+<span class="nv">$ </span>python3 <span class="nt">-V</span>
+<span class="c"># =&gt; Python 3.10.12</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&gt;</span> server.py <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from datetime import datetime
+  
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        now = datetime.now()
+        response_string = now.strftime("The time is %-I:%M:%S %p, CloudNeta Study.</span><span class="se">\n</span><span class="sh">")
+        self.wfile.write(bytes(response_string, "utf-8")) 
+  
+def startServer():
+    try:
+        server = ThreadingHTTPServer(('', 80), RequestHandler)
+        print("Listening on " + ":".join(map(str, server.server_address)))
+        server.serve_forever()
+    except KeyboardInterrupt:
+        server.shutdown()
+  
+if __name__== "__main__":
+    startServer()
+</span><span class="no">EOF
+  
+</span><span class="nv">$ </span><span class="nb">sudo </span>python3 server.py
+  
+<span class="c"># 아래 확인 후</span>
+<span class="c"># CTRL+C 로 실행 취소</span>
+  
+<span class="c"># (신규터미널) 서버1 SSH 접속</span>
+<span class="nv">$ </span>curl localhost
+<span class="c"># =&gt; The time is 2:50:56 PM, CloudNeta Study.</span>
+<span class="nv">$ </span><span class="nb">sudo </span>ss <span class="nt">-tnlp</span>
+<span class="c"># =&gt; State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess</span>
+<span class="c">#    LISTEN 0      5            0.0.0.0:80        0.0.0.0:*    users:((&amp;quot;python3&amp;quot;,pid=2299,fd=3))</span>
+<span class="c">#    LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:((&amp;quot;sshd&amp;quot;,pid=1030,fd=3))</span>
+  
+<span class="c"># --------</span>
+</code></pre></div>    </div>
+  </li>
+  <li>Git 작업
+    <ul>
+      <li>토큰 발급해두기 : scope (repo, workflow) 필요합니다. 
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_6.png" alt="img.png" /></li>
+      <li>Private Repo 신규 생성
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_7.png" alt="img.png" /></li>
+      <li>가상머신에서 Git 작업
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ GITUSER</span><span class="o">=</span><span class="s2">"sweetlittlebird"</span>
+<span class="nv">$ </span>git config <span class="nt">--global</span> user.name <span class="nv">$GITUSER</span>
+<span class="nv">$ </span>git config <span class="nt">--global</span> user.email <span class="s2">"sweetlittlebird@sweetlittlebird.com"</span>
+<span class="nv">$ </span>git clone https://github.com/<span class="nv">$GITUSER</span>/2024-cicd-w2-2.git
+<span class="c"># =&gt; Cloning into '2024-cicd-w2-2'...</span>
+<span class="c">#    Username for 'https://github.com': git</span>
+<span class="c">#    Password for 'https://git@github.com':</span>
+<span class="c">#    remote: Enumerating objects: 3, done.</span>
+<span class="c">#    remote: Counting objects: 100% (3/3), done.</span>
+<span class="c">#    remote: Compressing objects: 100% (2/2), done.</span>
+<span class="c">#    remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)</span>
+<span class="c">#    Receiving objects: 100% (3/3), done.</span>
+<span class="nv">$ </span><span class="nb">cp </span>server.py 2024-cicd-w2-2/
+<span class="nv">$ </span><span class="nb">cd </span>2024-cicd-w2-2
+    
+<span class="nv">$ </span>git status
+<span class="c"># =&gt; On branch main</span>
+<span class="c">#    Your branch is up to date with 'origin/main'.</span>
+<span class="c">#    </span>
+<span class="c">#    Untracked files:</span>
+<span class="c">#      (use &amp;quot;git add &amp;lt;file&amp;gt;...&amp;quot; to include in what will be committed)</span>
+<span class="c">#            server.py</span>
+<span class="c">#    </span>
+<span class="c">#    nothing added to commit but untracked files present (use &amp;quot;git add&amp;quot; to track)</span>
+<span class="nv">$ </span>git add <span class="nb">.</span>
+<span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"Initial commit"</span>
+<span class="c"># =&gt; [main 30500ca] Initial commit</span>
+<span class="c">#     1 file changed, 22 insertions(+)</span>
+<span class="c">#     create mode 100644 server.py</span>
+<span class="nv">$ </span>git push origin main 
+<span class="c"># =&gt; Username for 'https://github.com': git</span>
+<span class="c">#    Password for 'https://git@github.com': *** # &lt;span style="color: green;"&gt;👉 ghp로 시작하는 발급해둔 토큰을 사용합니다.&lt;/span&gt; </span>
+<span class="c">#    Enumerating objects: 4, done.</span>
+<span class="c">#    Counting objects: 100% (4/4), done.</span>
+<span class="c">#    Delta compression using up to 2 threads</span>
+<span class="c">#    Compressing objects: 100% (3/3), done.</span>
+<span class="c">#    Writing objects: 100% (3/3), 665 bytes | 332.00 KiB/s, done.</span>
+<span class="c">#    Total 3 (delta 0), reused 0 (delta 0), pack-reused 0</span>
+<span class="c">#    To https://github.com/sweetlittlebird/2024-cicd-w2-2.git</span>
+<span class="c">#       ceaed76..30500ca  main -&amp;gt; main</span>
+</code></pre></div>        </div>
+        <p><img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_8.png" alt="img.png" /></p>
+      </li>
+    </ul>
+  </li>
+  <li>서버 실행
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">nohup sudo </span>python3 server.py <span class="o">&gt;</span> server.log 2&gt;&amp;1 &amp;
+<span class="nv">$ </span><span class="nb">cat </span>server.log
+<span class="c"># =&gt; nohup: ignoring input</span>
+<span class="nv">$ </span>curl localhost
+<span class="c"># =&gt; The time is 3:13:00 PM, CloudNeta Study.</span>
+<span class="nv">$ </span><span class="nb">cat </span>server.log
+<span class="c"># =&gt; nohup: ignoring input</span>
+<span class="c">#    127.0.0.1 - - [14/Dec/2024 15:13:00] &amp;quot;GET / HTTP/1.1&amp;quot; 200 -</span>
+  
+<span class="c">#</span>
+<span class="nv">$ </span><span class="nb">grep </span>log .gitignore
+<span class="c"># =&gt; # Installer logs</span>
+<span class="c">#    pip-log.txt</span>
+<span class="c">#    *.log          # &lt;span style="color: green;"&gt;👉 로그 파일은 git에서 무시하도록 되어있습니다.&lt;/span&gt;</span>
+  
+<span class="c">#</span>
+<span class="nv">$ </span>git add <span class="nb">.</span>
+<span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"add log file"</span>
+<span class="c"># =&gt; nothing to commit, working tree clean  &lt;span style="color: green;"&gt;👉 로그 파일은 git에서 무시하도록 되어있어서 git add . 의 영향을 받지 않습니다.&lt;/span&gt;</span>
+<span class="nv">$ </span>git status
+<span class="c"># =&gt; nothing to commit, working tree clean</span>
+</code></pre></div>    </div>
+  </li>
+  <li>코드 수정 후 재실행
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/CloudNeta/CICD/g"</span> server.py
+  
+<span class="c"># 프로세스 종료</span>
+<span class="nv">$ </span><span class="nb">sudo </span>ss <span class="nt">-tnlp</span>
+<span class="c"># =&gt; State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess</span>
+<span class="c">#    LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=883,fd=3))</span>
+<span class="c">#    LISTEN 0      5            0.0.0.0:80        0.0.0.0:*    users:((&amp;quot;python3&amp;quot;,pid=2287,fd=3))</span>
+<span class="nv">$ </span><span class="nb">sudo </span>fuser <span class="nt">-k</span> <span class="nt">-n</span> tcp 80                 <span class="c"># &lt;span style="color: green;"&gt;👉 80번 포트를 사용하는 프로세스를 종료합니다.&lt;/span&gt;</span>
+<span class="c"># =&gt; 80/tcp:               2287</span>
+<span class="c">#    [1]+  Killed                  nohup sudo python3 server.py &amp;gt; server.log 2&amp;gt;&amp;amp;1  (wd: ~)</span>
+<span class="c">#    (wd now: ~/2024-cicd-w2-2)</span>
+<span class="nv">$ </span><span class="nb">sudo </span>ss <span class="nt">-tnlp</span>
+<span class="c"># =&gt; State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess</span>
+<span class="c">#    LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=883,fd=3))</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 80 포트를 사용하던 python3가 종료되어서 없어졌습니다.&lt;/span&gt;</span>
+  
+<span class="c"># 재실행</span>
+<span class="nv">$ </span><span class="nb">nohup sudo </span>python3 server.py <span class="o">&gt;</span> server.log 2&gt;&amp;1 &amp;
+<span class="nv">$ </span>curl localhost
+<span class="c"># =&gt; The time is 3:24:23 PM, CICD Study.  # &lt;span style="color: green;"&gt;👉 수정사항이 반영되었습니다.&lt;/span&gt;</span>
+</code></pre></div>    </div>
+  </li>
+  <li>코드 push
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 매번 사용자 인증을 요구하지 않도록 인증 정보를 저장하도록 설정하겠습니다.</span>
+<span class="nv">$ </span>git config <span class="nt">--global</span> credential.helper store
+  
+<span class="c">#</span>
+<span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"version update"</span> <span class="o">&amp;&amp;</span> git push origin main
+<span class="c"># =&gt; [main 11f7a3d] version update</span>
+<span class="c">#     1 file changed, 1 insertion(+), 1 deletion(-)</span>
+<span class="c">#    Username for 'https://github.com': git</span>
+<span class="c">#    Password for 'https://git@github.com':</span>
+<span class="c">#    Enumerating objects: 5, done.</span>
+<span class="c">#    Counting objects: 100% (5/5), done.</span>
+<span class="c">#    Delta compression using up to 2 threads</span>
+<span class="c">#    Compressing objects: 100% (3/3), done.</span>
+<span class="c">#    Writing objects: 100% (3/3), 312 bytes | 156.00 KiB/s, done.</span>
+<span class="c">#    Total 3 (delta 1), reused 0 (delta 0), pack-reused 0</span>
+<span class="c">#    remote: Resolving deltas: 100% (1/1), completed with 1 local object.</span>
+<span class="c">#    To https://github.com/sweetlittlebird/2024-cicd-w2-2.git</span>
+<span class="c">#       30500ca..11f7a3d  main -&amp;gt; main</span>
+  
+<span class="nv">$ </span>git push origin main
+<span class="c"># =&gt; Everything up-to-date</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 인증정보가 저장되어서 별도의 인증과정 없이 사용할 수 있습니다.&lt;/span&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="github-actions로-배포하기">GitHub Actions로 배포하기</h3>
+
+<ul>
+  <li>개인 PC에서 작업 후 Github에 push하면 GitHub Actions를 통해 VM에 배포가 되도록 CI/CD를 구성해보겠습니다.</li>
+</ul>
+
+<h5 id="ssh-키-생성">SSH 키 생성</h5>
+
+<ul>
+  <li>먼저 가상머신에 ssh 접속을 위해 ssh key를 생성하고 GitHub에 등록합니다.
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cd</span> ~/.ssh
+<span class="nv">$ </span>ssh-keygen <span class="nt">-t</span> ed25519
+<span class="c"># =&gt; Enter file in which to save the key (/home/vagrant/.ssh/id_ed25519):</span>
+<span class="c">#    Enter passphrase (empty for no passphrase): # &lt;span style="color: green;"&gt;👉 비밀번호 없이 엔터만 입력합니다.&lt;/span&gt;</span>
+<span class="c">#    Enter same passphrase again:                # &lt;span style="color: green;"&gt;👉 엔터만 입력합니다.&lt;/span&gt;</span>
+  
+<span class="c"># 생성된 공개키를 로그인 허용 키 목록에 추가합니다</span>
+<span class="nv">$ </span><span class="nb">cat </span>id_ed25519.pub  <span class="o">&gt;&gt;</span> authorized_keys     
+<span class="nv">$ </span><span class="nb">cat </span>id_ed25519   <span class="c"># &lt;span style="color: green;"&gt;👉 개인키를 복사합니다. 복사한 키는 github secret에 추가할 것입니다.&lt;/span&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h5 id="github에-ssh-키와-가상머신-외부-ip-등록">GitHub에 SSH 키와 가상머신 외부 IP 등록</h5>
+
+<ul>
+  <li>GitHub의 Repository에서 <code class="language-plaintext highlighter-rouge">Settings</code> -&gt; <code class="language-plaintext highlighter-rouge">Secrets and variables</code> -&gt; <code class="language-plaintext highlighter-rouge">Actions</code> -&gt; <code class="language-plaintext highlighter-rouge">New repository secret</code>를 클릭하여 아래와 같이 추가합니다.
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">SSH_PRIVATE_KEY</code> : 앞에서 복사한 개인키를 추가합니다. 
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_9.png" alt="img.png" /></li>
+      <li><code class="language-plaintext highlighter-rouge">EC2_PIP</code> : 가상머신의 외부 IP를 추가합니다. (인터넷에서 접속가능한 IP여야 합니다.)
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_10.png" alt="img.png" /></li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="내-pc에서-코드-작업">내 PC에서 코드 작업</h5>
+
+<ul>
+  <li>
+    <p>내 PC에서 작업을 합니다.</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/sweetlittlebird/2024-cicd-w2-2.git
+<span class="c"># =&gt; Cloning into '2024-cicd-w2-2'...</span>
+<span class="c">#    remote: Enumerating objects: 9, done.</span>
+<span class="c">#    remote: Counting objects: 100% (9/9), done.</span>
+<span class="c">#    remote: Compressing objects: 100% (7/7), done.</span>
+<span class="c">#    remote: Total 9 (delta 1), reused 6 (delta 1), pack-reused 0 (from 0)</span>
+<span class="c">#    Receiving objects: 100% (9/9), done.</span>
+<span class="c">#    Resolving deltas: 100% (1/1), done.</span>
+<span class="nv">$ </span><span class="nb">cd </span>2024-cicd-w2-2
+  
+<span class="c"># 워크플로우 파일 생성</span>
+<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> .github/workflows/
+<span class="nv">$ </span><span class="nb">touch</span> .github/workflows/deploy.yaml
+  
+<span class="c"># 소스 수정</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s2">"s/CICD/CICD 2w/g"</span> server.py
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">.github/workflows/deploy.yaml</code> 파일을 작성합니다.</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/deploy.yaml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">CICD1</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+  
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">deploy</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Configure the SSH Private Key Secret</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">mkdir -p ~/.ssh/</span>
+          <span class="s">echo "${{ secrets.SSH_PRIVATE_KEY }}" &gt; ~/.ssh/id_rsa</span>
+          <span class="s">chmod 600 ~/.ssh/id_rsa</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Set Strict Host Key Checking</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">echo "StrictHostKeyChecking=no" &gt; ~/.ssh/config</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Git Pull</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">export MY_HOST="${{ secrets.EC2_PIP }}"</span>
+          <span class="s">ssh vagrant@$MY_HOST &lt;&lt; EOF</span>
+            <span class="s">cd /home/vagrant/2024-cicd-w2-2 || exit 1</span>
+            <span class="s">git pull origin main || exit 1</span>
+          <span class="s">EOF</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run service</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">export MY_HOST="${{ secrets.EC2_PIP }}"</span>
+          <span class="s">ssh vagrant@$MY_HOST sudo fuser -k -n tcp 80 || true</span>
+          <span class="s">ssh vagrant@$MY_HOST "nohup sudo -E python3 /home/vagrant/2024-cicd-w2-2/server.py &gt; /home/vagrant/2024-cicd-w2-2/server.log 2&gt;&amp;1 &amp;"</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>코드를 push합니다.</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"add workflow"</span> <span class="o">&amp;&amp;</span> git push origin main
+</code></pre></div>    </div>
+  </li>
+  <li>GitHub Actions를 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_11.png" alt="img.png" /></li>
+  <li>가상머신에서 확인해보겠습니다.
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>vagrant ssh
+  
+<span class="c">#-------</span>
+<span class="nv">$ </span><span class="nb">cd </span>2024-cicd-w2-2/
+<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-i</span> cicd server.py
+<span class="c"># =&gt;         response_string = now.strftime(&amp;quot;The time is %-I:%M:%S %p, CICD 2w Study.\n&amp;quot;)</span>
+<span class="nv">$ </span><span class="nb">sudo </span>ps <span class="nt">-ef</span> |grep server.py
+<span class="c"># =&gt; root        2620       1  0 15:57 ?        00:00:00 sudo -E python3 /home/vagrant/2024-cicd-w2-2/server.py</span>
+<span class="c">#    root        2621    2620  0 15:57 ?        00:00:00 python3 /home/vagrant/2024-cicd-w2-2/server.py</span>
+<span class="nv">$ </span><span class="nb">tail</span> /home/vagrant/2024-cicd-w2-2/server.log
+<span class="c"># =&gt; nohup: ignoring input</span>
+<span class="c">#------- </span>
+</code></pre></div>    </div>
+  </li>
+  <li>변경사항을 브라우저로 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_12.png" alt="img.png" />
+    <ul>
+      <li>변경사항이 잘 반영되어서 CICD <code class="language-plaintext highlighter-rouge">2w</code>로 변경되었습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="코드-수정-후-동작-확인">코드 수정 후 동작 확인</h5>
+
+<ul>
+  <li>개인 PC에서 코드와 워크플로우를 수정하고 GitHub에 push하여 배포가 잘 되는지 확인해보겠습니다.
+    <ul>
+      <li>코드 수정
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s2">"s/CICD 2w/CICD1 End/g"</span> server.py
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>워크플로우 수정</p>
+
+        <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/deploy.yaml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">CICD1 End</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+    
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">deployfinal</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Configure the SSH Private Key Secret</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">mkdir -p ~/.ssh/</span>
+          <span class="s">echo "${{ secrets.SSH_PRIVATE_KEY }}" &gt; ~/.ssh/id_rsa</span>
+          <span class="s">chmod 600 ~/.ssh/id_rsa</span>
+    
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Set Strict Host Key Checking</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">echo "StrictHostKeyChecking=no" &gt; ~/.ssh/config</span>
+    
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Git Pull</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">export MY_HOST="${{ secrets.EC2_PIP }}"</span>
+          <span class="s">ssh vagrant@$MY_HOST &lt;&lt; EOF</span>
+            <span class="s">cd /home/vagrant/2024-cicd-w2-2 || exit 1</span>
+            <span class="s">git pull origin main || exit 1</span>
+          <span class="s">EOF</span>
+    
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run service</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">export MY_HOST="${{ secrets.EC2_PIP }}"</span>
+          <span class="s">ssh vagrant@$MY_HOST sudo fuser -k -n tcp 80 || true</span>
+          <span class="s">ssh vagrant@$MY_HOST "nohup sudo -E python3 /home/vagrant/2024-cicd-w2-2/server.py &gt; /home/vagrant/2024-cicd-w2-2/server.log 2&gt;&amp;1 &amp;"</span>
+</code></pre></div>        </div>
+      </li>
+      <li>코드 push
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"edit workflow"</span> <span class="o">&amp;&amp;</span> git push origin main
+    
+<span class="c"># [가상머신]</span>
+<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-i</span> cicd server.py
+<span class="c"># =&gt;         response_string = now.strftime(&amp;quot;The time is %-I:%M:%S %p, CICD1 End Study.</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 변경된 소스가 서버에 반영되었습니다.&lt;/span&gt;</span>
+    
+<span class="nv">$ </span><span class="nb">sudo </span>ps <span class="nt">-ef</span> |grep server.py
+<span class="c"># =&gt; root        3011       1  0 16:17 ?        00:00:00 sudo -E python3 /home/vagrant/2024-cicd-w2-2/server.py</span>
+<span class="c">#    root        3012    3011  0 16:17 ?        00:00:00 python3 /home/vagrant/2024-cicd-w2-2/server.py</span>
+<span class="c">#    vagrant     3035    2255  0 16:18 pts/0    00:00:00 grep --color=auto server.py</span>
+<span class="nv">$ </span><span class="nb">tail</span> /home/vagrant/2024-cicd-w2-2/server.log
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>변경사항을 브라우저로 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_13.png" alt="img.png" />
+    <ul>
+      <li>변경사항이 잘 반영되어서 CICD1 End로 변경되었습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="github-actions의-marketplace-활용하기">GitHub Actions의 Marketplace 활용하기</h3>
+
+<ul>
+  <li>이번에는 GitHub Actions의 Marketplace에서 다른 액션을 가져와서 사용해보겠습니다.</li>
+  <li>Marketplace는 <a href="https://github.com/marketplace">https://github.com/marketplace</a>로 접속할 수 있습니다.</li>
+  <li>이번 실습에서 사용할 액션은 ssh와 scp 입니다.</li>
+</ul>
+
+<h4 id="ssh-for-github-actions">SSH for GitHub Actions</h4>
+<ul>
+  <li>관련 주소 : <a href="https://github.com/appleboy/ssh-action">Github</a>, <a href="https://github.com/marketplace/actions/ssh-remote-commands">marketplace</a></li>
+  <li>SSH for GitHub Actions는 원격 서버에 SSH로 접속하여 명령을 실행할 수 있습니다.</li>
+  <li>앞의 실습처럼 쉘 명령으로 ssh 접속이 가능하지만 이 액션을 사용하면 더 간편하게 사용할 수 있습니다.</li>
+  <li>사용 예
+    <ol>
+      <li>
+        <p>아이디/비밀번호로 원격 서버에 접속하여 <code class="language-plaintext highlighter-rouge">whoami</code> 명령을 실행합니다.</p>
+
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>name: remote ssh <span class="nb">command
+</span>on: <span class="o">[</span>push]
+<span class="nb">jobs</span>:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: <span class="k">${</span><span class="p">{ secrets.HOST </span><span class="k">}</span><span class="o">}</span>
+          username: linuxserver.io
+          password: <span class="k">${</span><span class="p">{ secrets.PASSWORD </span><span class="k">}</span><span class="o">}</span>
+          port: <span class="k">${</span><span class="p">{ secrets.PORT </span><span class="k">}</span><span class="o">}</span>
+          script: <span class="nb">whoami</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>비밀번호 대신 private key를 사용하여 로그인 합니다.</p>
+
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Using private key</span>
+- name: executing remote ssh commands using ssh key
+  uses: appleboy/ssh-action@v1.2.0
+  with:
+    host: <span class="k">${</span><span class="p">{ secrets.HOST </span><span class="k">}</span><span class="o">}</span>
+    username: <span class="k">${</span><span class="p">{ secrets.USERNAME </span><span class="k">}</span><span class="o">}</span>
+    key: <span class="k">${</span><span class="p">{ secrets.KEY </span><span class="k">}</span><span class="o">}</span>
+    port: <span class="k">${</span><span class="p">{ secrets.PORT </span><span class="k">}</span><span class="o">}</span>
+    script: <span class="nb">whoami</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>여러 명령을 실행할 수 있습니다.</p>
+
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Multiple Commands</span>
+- name: multiple <span class="nb">command
+  </span>uses: appleboy/ssh-action@v1.2.0
+  with:
+    host: <span class="k">${</span><span class="p">{ secrets.HOST </span><span class="k">}</span><span class="o">}</span>
+    username: <span class="k">${</span><span class="p">{ secrets.USERNAME </span><span class="k">}</span><span class="o">}</span>
+    key: <span class="k">${</span><span class="p">{ secrets.KEY </span><span class="k">}</span><span class="o">}</span>
+    port: <span class="k">${</span><span class="p">{ secrets.PORT </span><span class="k">}</span><span class="o">}</span>
+    script: |
+      <span class="nb">whoami
+      ls</span> <span class="nt">-al</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>환경 변수를 쉘에 전달할 수 있습니다.</p>
+
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Pass environment variable to shell script</span>
+- name: pass environment
+  uses: appleboy/ssh-action@v1.2.0
+  <span class="nb">env</span>:
+    FOO: <span class="s2">"BAR"</span>
+    BAR: <span class="s2">"FOO"</span>
+    SHA: <span class="k">${</span><span class="p">{ github.sha </span><span class="k">}</span><span class="o">}</span>
+  with:
+    host: <span class="k">${</span><span class="p">{ secrets.HOST </span><span class="k">}</span><span class="o">}</span>
+    username: <span class="k">${</span><span class="p">{ secrets.USERNAME </span><span class="k">}</span><span class="o">}</span>
+    key: <span class="k">${</span><span class="p">{ secrets.KEY </span><span class="k">}</span><span class="o">}</span>
+    port: <span class="k">${</span><span class="p">{ secrets.PORT </span><span class="k">}</span><span class="o">}</span>
+    envs: FOO,BAR,SHA
+    script: |
+      <span class="nb">echo</span> <span class="s2">"I am </span><span class="nv">$FOO</span><span class="s2">"</span>
+      <span class="nb">echo</span> <span class="s2">"I am </span><span class="nv">$BAR</span><span class="s2">"</span>
+      <span class="nb">echo</span> <span class="s2">"sha: </span><span class="nv">$SHA</span><span class="s2">"</span>
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>워크플로우 설정 후 테스트</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/ssh-deploy.yaml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">CICD2</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+  
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">ssh-deploy</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Github Repository Checkout</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v4</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">executing remote ssh commands</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">appleboy/ssh-action@v1.2.0</span>
+        <span class="na">env</span><span class="pi">:</span>
+          <span class="na">AWS_KEYS</span><span class="pi">:</span> <span class="pi">|</span>
+            <span class="s">ACCESSKEY : asdf1234end</span>
+            <span class="s">SECRETKEY : qwer1234end</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">host</span><span class="pi">:</span> <span class="s">${{ secrets.EC2_PIP }}</span>
+          <span class="na">port</span><span class="pi">:</span> <span class="m">22</span>
+          <span class="na">username</span><span class="pi">:</span> <span class="s">vagrant</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">${{ secrets.SSH_PRIVATE_KEY }}</span>
+          <span class="na">envs</span><span class="pi">:</span> <span class="s">AWS_KEYS</span>
+          <span class="na">script_stop</span><span class="pi">:</span> <span class="kc">true</span>
+          <span class="na">script</span><span class="pi">:</span> <span class="pi">|</span>
+            <span class="s">cd /home/vagrant/2024-cicd-w2-2</span>
+            <span class="s">echo "$AWS_KEYS" &gt; .env</span>
+</code></pre></div>    </div>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"add ssh action test"</span> <span class="o">&amp;&amp;</span> git push origin main
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>가상머신에서 확인</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> ~/2024-cicd-w2-2/
+<span class="c"># =&gt; total 32</span>
+<span class="c">#    drwxrwxr-x 4 vagrant vagrant 4096 Oct 01 16:46 .</span>
+<span class="c">#    drwxr-x--- 5 vagrant vagrant 4096 Oct 01 16:46 ..</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant   49 Oct 01 16:46 .env  # &lt;span style="color: green;"&gt;👉 .env파일이 생성되었습니다.&lt;/span&gt;  </span>
+<span class="c">#    drwxrwxr-x 8 vagrant vagrant 4096 Oct 01 16:46 .git</span>
+<span class="c">#    drwxrwxr-x 3 vagrant vagrant 4096 Oct 01 15:57 .github</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant 3139 Oct 01 15:11 .gitignore</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant    0 Oct 01 16:46 server.log</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant  761 Oct 01 16:17 server.py</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant  759 Oct 01 16:17 server.py-e</span>
+<span class="nv">$ </span><span class="nb">cat</span> ~/2024-cicd-w2-2/.env
+<span class="c"># =&gt; ACCESSKEY : asdf1234end</span>
+<span class="c">#    SECRETKEY : qwer1234end</span>
+</code></pre></div>    </div>
+  </li>
+  <li>GitHub에서 .env가 있는지 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_14.png" alt="img.png" />
+.env 파일이 Git에는 없습니다! 하지만 가상머신 서버에 .env 파일이 있었던 것은 SSH for GitHub Actions를 통해 전달된 것입니다.</li>
+</ul>
+
+<h4 id="scp-for-github-actions">SCP for GitHub Actions</h4>
+
+<ul>
+  <li>관련 주소 : <a href="https://github.com/appleboy/scp-action">Github</a>, <a href="https://github.com/marketplace/actions/scp-files">marketplace</a></li>
+  <li>SCP for GitHub Actions는 원격 서버로 파일을 전송해주는 액션입니다.</li>
+  <li>실습을 통해 기능을 알아보겠습니다.</li>
+  <li>server.py 수정하기
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s2">"s/CICD1 End Study/SCP Test/g"</span> server.py
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>워크플로우 파일 수정하기</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/scp-ssh-deploy.yaml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">CICD2</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+  
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">scp-ssh-deploy</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Github Repository Checkout</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v4</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">executing remote ssh commands</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">appleboy/ssh-action@v1.2.0</span>
+        <span class="na">env</span><span class="pi">:</span>
+          <span class="na">AWS_KEYS</span><span class="pi">:</span> <span class="s">${{ secrets.MYKEYS }}</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">host</span><span class="pi">:</span> <span class="s">${{ secrets.EC2_PIP }}</span>
+          <span class="na">username</span><span class="pi">:</span> <span class="s">vagrant</span>
+          <span class="na">port</span><span class="pi">:</span> <span class="m">22</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">${{ secrets.SSH_PRIVATE_KEY }}</span>
+          <span class="na">envs</span><span class="pi">:</span> <span class="s">AWS_KEYS</span>
+          <span class="na">script_stop</span><span class="pi">:</span> <span class="kc">true</span>
+          <span class="na">script</span><span class="pi">:</span> <span class="pi">|</span>
+             <span class="s">cd /home/vagrant/2024-cicd-w2-2</span>
+             <span class="s">echo "$AWS_KEYS" &gt; .env</span>
+             <span class="s">sudo fuser -k -n tcp 80 || true</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">copy file via scp</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">appleboy/scp-action@v0.1.7</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">host</span><span class="pi">:</span> <span class="s">${{ secrets.EC2_PIP }}</span>
+          <span class="na">username</span><span class="pi">:</span> <span class="s">vagrant</span>
+          <span class="na">port</span><span class="pi">:</span> <span class="m">22</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">${{ secrets.SSH_PRIVATE_KEY }}</span>
+          <span class="na">source</span><span class="pi">:</span> <span class="s">server.py</span>
+          <span class="na">target</span><span class="pi">:</span> <span class="s">/home/vagrant/2024-cicd-w2-2</span>
+</code></pre></div>    </div>
+  </li>
+  <li>코드 push하기
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"using scp ssh action"</span> <span class="o">&amp;&amp;</span> git push origin main
+</code></pre></div>    </div>
+  </li>
+  <li>가상서버에서 확인
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 서버 1</span>
+<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> ~/2024-cicd-w2-2/
+<span class="c"># =&gt; total 28</span>
+<span class="c">#    drwxrwxr-x 4 vagrant vagrant 4096 Dec 14 17:04 .</span>
+<span class="c">#    drwxr-x--- 5 vagrant vagrant 4096 Dec 14 17:04 ..</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant    1 Dec 14 17:03 .env</span>
+<span class="c">#    drwxrwxr-x 8 vagrant vagrant 4096 Dec 14 17:02 .git</span>
+<span class="c">#    drwxrwxr-x 3 vagrant vagrant 4096 Dec 14 15:57 .github</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant 3139 Dec 14 15:11 .gitignore</span>
+<span class="c">#    -rw-rw-r-- 1 vagrant vagrant    0 Dec 14 17:02 server.log</span>
+<span class="c">#    -rw-r--r-- 1 vagrant vagrant  754 Dec 14 17:03 server.py</span>
+<span class="nv">$ </span><span class="nb">cat</span> ~/2024-cicd-w2-2/server.py | <span class="nb">grep </span>SCP
+<span class="c"># =&gt;         response_string = now.strftime(&amp;quot;The time is %-I:%M:%S %p, SCP Test.\n&amp;quot;)  </span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 변경사항이 잘 반영되었습니다.&lt;/span&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="최종-실습">최종 실습</h4>
+
+<ul>
+  <li>앞서 쉘 명령으로 진행했던 작업을 GitHub Actions의 Marketplace에서 가져온 ssh, scp 액션을 사용하여 진행해보겠습니다.</li>
+  <li>내 PC에서 소스 수정하기
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s2">"s/SCP Test/CICD2 End 🥳/g"</span> server.py
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>워크플로우 수정하기</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># .github/workflows/deploy.yaml</span>
+name: CICD2
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  
+<span class="nb">jobs</span>:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Github Repository Checkout
+        uses: actions/checkout@v4
+  
+      - name: copy file via ssh
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: <span class="k">${</span><span class="p">{ secrets.EC2_PIP </span><span class="k">}</span><span class="o">}</span>
+          username: vagrant
+          port: 22  
+          key: <span class="k">${</span><span class="p">{ secrets.SSH_PRIVATE_KEY </span><span class="k">}</span><span class="o">}</span>
+          <span class="nb">source</span>: server.py
+          target: /home/vagrant
+  
+      - name: executing remote ssh commands 
+        uses: appleboy/ssh-action@v1.2.0
+        <span class="nb">env</span>:
+          AWS_KEYS: <span class="k">${</span><span class="p">{ secrets.MYKEYS </span><span class="k">}</span><span class="o">}</span>
+        with:
+          host: <span class="k">${</span><span class="p">{ secrets.EC2_PIP </span><span class="k">}</span><span class="o">}</span>
+          username: vagrant
+          port: 22
+          key: <span class="k">${</span><span class="p">{ secrets.SSH_PRIVATE_KEY </span><span class="k">}</span><span class="o">}</span>
+          envs: AWS_KEYS
+          script_stop: <span class="nb">true
+          </span>script: |
+             <span class="nb">cd</span> /home/vagrant/2024-cicd-w2-2
+             <span class="nb">echo</span> <span class="s2">"</span><span class="nv">$AWS_KEYS</span><span class="s2">"</span> <span class="o">&gt;</span> .env
+             <span class="nb">sudo </span>fuser <span class="nt">-k</span> <span class="nt">-n</span> tcp 80 <span class="o">||</span> <span class="nb">true
+             rm </span>server.py
+             <span class="nb">cp</span> /home/vagrant/server.py ./
+             <span class="nb">nohup sudo</span> <span class="nt">-E</span> python3 /home/vagrant/2024-cicd-w2-2/server.py <span class="o">&gt;</span> /home/vagrant/2024-cicd-w2-2/server.log 2&gt;&amp;1 &amp;
+             <span class="nb">echo</span> <span class="s2">"test"</span> <span class="o">&gt;&gt;</span> /home/vagrant/text.txt
+</code></pre></div>    </div>
+  </li>
+  <li>코드 push하기
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"Deploy CICD2 Final"</span> <span class="o">&amp;&amp;</span> git push origin main
+</code></pre></div>    </div>
+  </li>
+  <li>웹으로 접속해서 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_15.png" alt="img.png" />
+    <ul>
+      <li>변경사항이 잘 반영되어서 CICD2 End 🥳로 변경되었습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="github-actions-with-ansible">GitHub Actions with Ansible</h3>
+
+<ul>
+  <li>이번에는 GitHub Actions를 사용하여 Ansible을 실행해보겠습니다.</li>
+  <li>상세한 Ansible 사용법은 <a href="https://docs.ansible.com/ansible/latest/index.html">Ansible 공식문서</a>를 참고하시고, 이번 실습에서는
+간단하게 Ansible을 이용해서 Ping 테스트를 해보겠습니다. (여기에서의 ping은 ansible이 해당 호스트와 통신이 가능한지 확인하는 것이고 일반적인 ping과는 다릅니다.)</li>
+  <li>
+    <p>워크플로우 작성</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># .github/workflows/ansible-deploy.yaml</span>
+<span class="na">name</span><span class="pi">:</span> <span class="s">Run Ansible</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">workflow_dispatch</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+  
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">run-playbooks</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Github Repository Checkout</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v4</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Setup Python </span><span class="m">3</span>
+        <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/setup-python@v5</span>
+        <span class="na">with</span><span class="pi">:</span>
+          <span class="na">python-version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">3.8"</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Upgrade Pip &amp; Install Ansible</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">python -m pip install --upgrade pip</span>
+          <span class="s">python -m pip install ansible</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Implement the Private SSH Key</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">mkdir -p ~/.ssh/</span>
+          <span class="s">echo "$" &gt; ~/.ssh/id_rsa</span>
+          <span class="s">chmod 600 ~/.ssh/id_rsa</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Ansible Inventory File for Remote host</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">mkdir -p ./devops/ansible/</span>
+          <span class="s">export INVENTORY_FILE=./devops/ansible/inventory.ini</span>
+          <span class="s">echo "[my_host_group]" &gt; $INVENTORY_FILE</span>
+          <span class="s">echo "$" &gt;&gt; $INVENTORY_FILE</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Ansible Default Configuration File</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">mkdir -p ./devops/ansible/</span>
+          <span class="s">cat &lt;&lt;EOF &gt; ./devops/ansible/ansible.cfg</span>
+          <span class="s">[defaults]</span>
+          <span class="s">ansible_python_interpreter = '/usr/bin/python3'</span>
+          <span class="s">ansible_ssh_private_key_file = ~/.ssh/id_rsa</span>
+          <span class="s">remote_user = vagrant</span>
+          <span class="s">inventory = ./inventory.ini</span>
+          <span class="s">host_key_checking = False</span>
+          <span class="s">EOF</span>
+  
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Ping Ansible Hosts</span>
+        <span class="na">working-directory</span><span class="pi">:</span> <span class="s">./devops/ansible/</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">ansible all -m ping</span>
+  
+      <span class="c1"># - name: Run Ansible Playbooks</span>
+      <span class="c1">#   working-directory: ./devops/ansible/</span>
+      <span class="c1">#   run: |</span>
+      <span class="c1">#     ansible-playbook install-nginx.yaml</span>
+  
+      <span class="c1"># - name: Deploy Python via Ansible</span>
+      <span class="c1">#   working-directory: ./devops/ansible/</span>
+      <span class="c1">#   run: |</span>
+      <span class="c1">#     ansible-playbook deploy-python.yaml</span>
+</code></pre></div>    </div>
+  </li>
+  <li>워크플로우 push 하기
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git add <span class="nb">.</span> <span class="o">&amp;&amp;</span> git commit <span class="nt">-m</span> <span class="s2">"Deploy Ansible Test"</span> <span class="o">&amp;&amp;</span> git push origin main
+</code></pre></div>    </div>
+  </li>
+  <li>GitHub Actions에서 ping 결과를 확인해보겠습니다.
+<img src="/assets/2024/cicd-lite/w2/20241214_cicd_lite_w2_16.png" alt="img.png" />
+    <ul>
+      <li>정상적으로 ping이 가서 “pong”이라는 응답이 돌아왔습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="마치며">마치며</h2>
+
+<p>지금까지 GitHub Actions의 기본적인 사용하고, Marketplace에서 제공하는 액션 사용해보고, Ansible까지 맛보기로 사용해보았습니다.</p>
+
+<p>GitHub Actions는 일부 제약이 있지만 무료로 편리하게 사용할 수 있고
+Marketplace를 통해 다양한 추가기능을 손쉽게 사용할 수 있어서 매력적입니다.</p>
+
+<p>하지만 매번 가상환경을 프로비저닝하고, 필요한 패키지를 설치하는 등의 작업이
+시간이 의외로 많이 들어서, 실제 동작 시간이 예상보다 오래 걸릴 수 있다는 점이 있습니다.
+또한 Jenkins나 다른 CI/CD 도구들은 실패한 상태의 쉘에 직접 로그인해서 트러블 슈팅을 할 수 있지만,
+Github Actions는 그렇게 할 수 없는 점도 아쉽습니다.</p>
+
+<p>그래도 GitHub를 사용하면서 저렴한 가격으로 간단하게 CI/CD를 구성할 수 있다는 점은 매력적인것 같습니다.</p>
+
+<p>추운 날씨에도 애써주신 모든 분들 고생 많으셨습니다. 감사합니다! :bow:</p>]]></content><author><name></name></author><category term="kans" /><category term="cicd," /><category term="jenkins," /><category term="git," /><category term="linux" /><summary type="html"><![CDATA[이번 주에는 GitHub Actions를 이용한 CI/CD에 대해 알아보겠습니다.]]></summary></entry><entry><title type="html">[CI/CD] Jenkins CI/CD + Docker</title><link href="https://sweetlittlebird.github.io/posts/2024-12-08-CICD-Lite-Week1/" rel="alternate" type="text/html" title="[CI/CD] Jenkins CI/CD + Docker" /><published>2024-12-08T00:50:18+09:00</published><updated>2024-12-08T00:50:18+09:00</updated><id>https://sweetlittlebird.github.io/posts/CICD%20Lite%20-%20Week1</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-12-08-CICD-Lite-Week1/"><![CDATA[<h2 id="들어가며">들어가며</h2>
 
 <p>스터디 시간이 다시 돌아왔습니다. ^^ 이번 스터디는 3주차의 다소 짧은 스터디로 CI/CD에 관련해서 진행됩니다.
 즐거운 연말 다시 한번 과제로 달려보겠습니다. :laughing:</p>
@@ -19393,1468 +20308,4 @@ docker만 있으면 간단하게 설치가 가능하다는 것이 참 좋은것 
 <p>막연하게 알고 있었던 노드간의 파드의 통신에 대해서 알게되었고,
 쿠버네티스의 운영중 네트워크 장애에 대해 1주차 스터디와 이번 스터디를 통해
 자신감이 조금 생겼습니다.
-남은 스터디도 열심히해서 쿠버네티스의 네트워크에 대해 조금 아는 사람이 되어보겠습니다.</p>]]></content><author><name></name></author><category term="kans" /><category term="kubernetes," /><category term="network," /><category term="linux" /><summary type="html"><![CDATA[지난주에 이어 이번주에는 쿠버네티스에대해 간략하게 알아보고 KIND, PAUSE 컨테이너와 Flannel CNI에 대해 알아보겠습니다.]]></summary></entry><entry><title type="html">[KANS 3기] 컨테이너 격리</title><link href="https://sweetlittlebird.github.io/posts/2024-08-27-KANS-Study-Week1/" rel="alternate" type="text/html" title="[KANS 3기] 컨테이너 격리" /><published>2024-08-27T22:50:18+09:00</published><updated>2024-08-27T22:50:18+09:00</updated><id>https://sweetlittlebird.github.io/posts/KANS%20Study%20-%20Week1</id><content type="html" xml:base="https://sweetlittlebird.github.io/posts/2024-08-27-KANS-Study-Week1/"><![CDATA[<h2 id="들어가며">들어가며</h2>
-
-<p>지난 테라폼 스터디에 이어 이번 주 부터 KANS 스터디를 시작하게 되었습니다!
-KANS는 <strong>K</strong>ubernetes <strong>A</strong>dvanced <strong>N</strong>etworking <strong>S</strong>tudy의 줄임말로 쿠버네티스 네트워킹에 대한 심도있게 공부하는 스터디입니다.
-이번 스터디도 과제할 걱정도 :sweat: 되지만 재미있을것 같아 기대됩니다. :smile:</p>
-
-<p>첫 주 스터디도 컨테이너 격리와 리눅스 네트워크에 대해 많은것을 배웠고 이 자리에 정리해보려고 합니다. 
-이번 스터디도 다들 완주하기를 기도하며 스터디 정리를 시작해 보겠습니다.</p>
-
-<h2 id="도커-소개">도커 소개</h2>
-
-<h3 id="도커란-무엇인가">도커란 무엇인가?</h3>
-
-<ul>
-  <li>
-    <p>도커(Docker)는 컨테이너(Container)라고 불리는 가상실행 환경을 제공하고, 
-그 가상환경에서 유용한 어플리케이션을 실행할 수 있게 해주는 오픈소스 플랫폼입니다.</p>
-  </li>
-  <li>
-    <p>컨테이너라는 이름의 기원
-컨테이너라는 이름은 배에 화물을 실을때 사용하는 그 컨테이너에서 왔습니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_1.png" alt="컨테이너선" />
-과거에 컨테이너가 발명되기 이전에는 짐의 부피와 모양이 제각각이라서, 화물을 적재하기도 어렵고 
-파도가 쳐서 배가 흔들릴때 짐이 이리 저리 움직여서 파손되는 경우가 많았습니다.</p>
-
-    <p>이 문제를 해결하기 위해 Malcom McLean이라는 분이 발명한것이 직육면체의 바로 컨테이너입니다.<br />
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_2.png" alt="Shipping Container" />
-직육면체이기 때문에 적재가 쉽고, 파도가 치더라도 안정적으로 화물을 운반할 수 있었습니다. 
-또한 크고 작은 물건도 컨테이너 안에 넣어서 운반할 수 있어서 화물의 종류에 상관없이 효율적으로 운반할 수 있었습니다.</p>
-
-    <p>이 개념을 컴퓨팅에 도입한것이 컨테이너입니다. 
-기존에는 각 리눅스 버전마다, glibc냐 musl이냐, debian 기반이냐 redhat 기반이냐 등등 
-프로그램을 배포할때 환경을 맞춰야 하는것이 많았습니다. 그 뿐만아니라 각종 라이브러리들도 설치해야 하고
-심지어 프로그램 마다 필요한 라이브러리 버전이 다를때도 있었습니다.</p>
-
-    <p>이러한 문제를 해결하기위해 도커라는 컨테이너를 이용한 가상화 기술이 등장하게 되었습니다.
-도커 컨테이너 이미지에는 프로그램 실행에 필요한 모든것이 포함되어 있기 때문에
-마치 컨테이너에 화물을 싣듯이 프로그램을 배포할 수 있게 되었습니다. 
-도커의 로고가 컨테이너를 싣고 있는 배를 형상화한것도 이러한 의미에서 나온것입니다.</p>
-
-    <p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_3.png" alt="Docker Logo" class="image-center" /></p>
-  </li>
-  <li>
-    <p>컨테이너 이외에도 가상 머신(Virtual Machine)이라는 기술이 있습니다. 
-가상 머신은 하이퍼바이저(Hypervisor)를 이용하여 호스트 OS 위에 게스트 OS를 올리는 방식으로 가상화를 구현합니다.
-가상 머신은 게스트 OS를 올리기 때문에 무겁습니다. 
-반면 컨테이너는 호스트 OS의 커널을 공유하기 때문에 가볍습니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_4.png" alt="img.png" /></p>
-  </li>
-</ul>
-
-<h3 id="컨테이너와-가상-머신">컨테이너와 가상 머신</h3>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_5.png" alt="가상머신과 컨테이너 비교" /></p>
-
-<ul>
-  <li>가상머신은 호스트 OS 위에 하이퍼바이저를 두고 하드웨어 일부(또는 전부)를 가상화하고, 그 위에 게스트 OS를 올립니다. 즉, <strong>하드웨어 레벨의 가상화</strong>를 지원합니다.</li>
-  <li>컨테이너는 하드웨어 가상화와 게스트 OS 없이, 호스트의 리눅스 커널을 공유하여 바로 프로세스를 실행합니다. 단, 각종 라이브러리와 사용자 환경(User Land)는 컨테이너 단위로 패키징되어 <strong>OS 레벨의 가상화</strong>를 지원한다 할 수 있습니다.</li>
-  <li>따라서 컨테이너는 가상머신보다 가볍고 빠르며, 낮은 격리(Weak Isolation) 수준을 가집니다.</li>
-  <li>가상머신은 게스트 OS를 올리기 때문에 무겁고 느리지만, 높은 격리(Strong Isolation) 수준을 가집니다.
-    <ul>
-      <li>낮은 격리 수준을 보완하기 위해 리눅스의 pivot-root, namespace, cgroup 등의 기능들을 활용함으로써 프로세스 단위의 격리 환경과 리소스 제어를 제공합니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_6.png" alt="img.png" class="image-center" /></li>
-    </ul>
-  </li>
-</ul>
-
-<h3 id="도커-아키텍쳐">도커 아키텍쳐</h3>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_7.png" alt="도커 아키텍쳐" />
-<a href="https://docs.docker.com/get-started/overview/#docker-architecture">https://docs.docker.com/get-started/overview/#docker-architecture</a></p>
-
-<hr />
-
-<h2 id="도커-기본-사용">도커 기본 사용</h2>
-
-<h3 id="도커-설치-및-확인">도커 설치 및 확인</h3>
-
-<ul>
-  <li>도커 설치
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 방법1. debian 계열 리눅스에서 패키지 매니저로 설치</span>
-<span class="nv">$ </span><span class="nb">sudo </span>apt-get update
-<span class="nv">$ </span><span class="nb">sudo </span>apt <span class="nb">install</span> <span class="nt">-y</span> docker.io
-  
-<span class="c"># 방법2. 공식 사이트에서 설치</span>
-<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span>curl <span class="nt">-fsSL</span> https://get.docker.com | sh
-</code></pre></div>    </div>
-  </li>
-  <li>기본정보 확인
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 도커 정보 확인 : Client 와 Server , Storage Driver(overlay2), Cgroup Version(2), Default Runtime(runc)</span>
-<span class="nv">$ </span><span class="nb">sudo </span>docker info
-<span class="c">#    Client:</span>
-<span class="c">#     Context:    default</span>
-<span class="c">#     Debug Mode: false</span>
-<span class="c">#    </span>
-<span class="c">#    Server:</span>
-<span class="c">#     Containers: 0</span>
-<span class="c">#     ...</span>
-<span class="c">#     Server Version: 20.10.25+dfsg1</span>
-<span class="c">#     Storage Driver: overlay2</span>
-<span class="c">#     ...</span>
-<span class="c">#     Cgroup Driver: systemd</span>
-<span class="c">#     Cgroup Version: 2</span>
-<span class="c">#     ...</span>
-<span class="c">#     containerd version: 1.6.24~ds1-2</span>
-<span class="c">#     runc version: 1.1.12+ds1-5</span>
-<span class="c">#     ...</span>
-  
-<span class="nv">$ </span><span class="nb">sudo </span>docker version
-<span class="c"># =&gt; Client:</span>
-<span class="c">#     Version:           20.10.25+dfsg1</span>
-<span class="c">#     API version:       1.41</span>
-<span class="c">#     Go version:        go1.22.3</span>
-<span class="c">#     Git commit:        b82b9f3</span>
-<span class="c">#     Built:             Tue May  7 10:33:18 2024</span>
-<span class="c">#     OS/Arch:           linux/amd64</span>
-<span class="c">#     Context:           default</span>
-<span class="c">#     Experimental:      true</span>
-<span class="c">#    </span>
-<span class="c">#    Server:</span>
-<span class="c">#     Engine:</span>
-<span class="c">#      Version:          20.10.25+dfsg1</span>
-<span class="c">#      API version:      1.41 (minimum version 1.12)</span>
-<span class="c">#      Go version:       go1.22.3</span>
-<span class="c">#      Git commit:       5df983c</span>
-<span class="c">#      Built:            Tue May  7 10:33:18 2024</span>
-<span class="c">#      OS/Arch:          linux/amd64</span>
-<span class="c">#      Experimental:     false</span>
-<span class="c">#    ...  </span>
-  
-<span class="c"># 도커 서비스 상태 확인</span>
-<span class="nv">$ </span><span class="nb">sudo </span>systemctl status docker <span class="nt">-l</span> <span class="nt">--no-pager</span>
-  
-<span class="c"># 모든 서비스의 상태 표시</span>
-<span class="nv">$ </span>systemctl list-units <span class="nt">--type</span><span class="o">=</span>service
-  
-<span class="c"># 도커 루트 디렉터리 확인 : Docker Root Dir(/var/lib/docker)</span>
-<span class="nv">$ </span><span class="nb">sudo </span>tree <span class="nt">-L</span> 3 /var/lib/docker
-<span class="c"># =&gt; /var/lib/docker</span>
-<span class="c">#    |-- buildkit</span>
-<span class="c">#    |   ...</span>
-<span class="c">#    |-- containers</span>
-<span class="c">#    |-- image</span>
-<span class="c">#    |   `-- overlay2</span>
-<span class="c">#    |       |-- distribution</span>
-<span class="c">#    |       |-- imagedb</span>
-<span class="c">#    |       |-- layerdb</span>
-<span class="c">#    |       `-- repositories.json</span>
-<span class="c">#    |-- network</span>
-<span class="c">#    |   `-- files</span>
-<span class="c">#    |       `-- local-kv.db</span>
-<span class="c">#    |-- overlay2</span>
-<span class="c">#    |   ...</span>
-<span class="c">#    `-- volumes</span>
-<span class="c">#        |-- backingFsBlockDev</span>
-<span class="c">#        `-- metadata.db</span>
-<span class="c">#    </span>
-<span class="c">#    24 directories, 8 files</span>
-</code></pre></div>    </div>
-  </li>
-  <li>네트워크 정보 확인
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 프로세스 확인 - 셸변수</span>
-<span class="nv">$ </span>ps <span class="nt">-ef</span>      <span class="c"># 프로세스 목록 보기</span>
-<span class="nv">$ </span>pstree <span class="nt">-p</span>   <span class="c"># 프로세스 트리로 보기</span>
-  
-<span class="nv">$ </span><span class="nb">df</span> <span class="nt">-hT</span>    <span class="c"># 디스크 사용량 확인</span>
-
-<span class="c"># 네트워크 정보 확인. 도커에서 사용하는 docker0 네트워크가 추가되어있고 현재 DOWN 상태입니다.</span>
-<span class="c"># 컨테이너가 있으면 UP 상태로 변경됩니다.  </span>
-<span class="nv">$ </span>ip <span class="nt">-br</span> <span class="nt">-c</span> addr
-<span class="c"># =&gt; &lt;span style="color:teal;"&gt;lo               &lt;/span&gt;UNKNOWN        &lt;span style="color:purple;"&gt;127.0.0.1&lt;/span&gt;/8 &lt;span style="color:blue;"&gt;::1&lt;/span&gt;/128 </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;eth0             &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:purple;"&gt;10.10.10.109&lt;/span&gt;/24 &lt;span style="color:purple;"&gt;10.10.10.51&lt;/span&gt;/24 &lt;span style="color:blue;"&gt;fe80::a70d:8639:be6:671e&lt;/span&gt;/64</span>
-<span class="c">#    &lt;span style="color:teal;"&gt;docker0          &lt;/span&gt;&lt;span style="color:red;"&gt;DOWN           &lt;/span&gt;&lt;span style="color:purple;"&gt;172.17.0.1&lt;/span&gt;/16 &lt;span style="color:blue;"&gt;fe80::42:57ff:fe56:997c&lt;/span&gt;/64</span>
-<span class="nv">$ </span>ip <span class="nt">-c</span> addr
-<span class="nv">$ </span>ip <span class="nt">-c</span> <span class="nb">link</span>
-<span class="nv">$ </span>ip <span class="nt">-br</span> <span class="nt">-c</span> <span class="nb">link</span>
-<span class="nv">$ </span>ip <span class="nt">-c</span> route
-  
-<span class="c"># 이더넷 브릿지 정보 확인</span>
-<span class="nv">$ </span>brctl show
-<span class="c"># =&gt; bridge name	bridge id		STP enabled	interfaces</span>
-<span class="c">#    docker0		8000.02425756997c	no</span>
-  
-<span class="c"># iptables 정책 확인</span>
-<span class="c"># FORWARD 정책이 DROP으로 설정되어 있고, </span>
-<span class="c"># docker0에서 docker0 혹은 외부로 전달되는 패킷은 허용되어 있습니다.</span>
-<span class="nv">$ </span><span class="nb">sudo </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span>
-<span class="c"># =&gt; -P INPUT ACCEPT</span>
-<span class="c">#    &lt;span style="color: red;"&gt;-P FORWARD DROP&lt;/span&gt;</span>
-<span class="c">#    -P OUTPUT ACCEPT</span>
-<span class="c">#    -N DOCKER</span>
-<span class="c">#    -N DOCKER-ISOLATION-STAGE-1</span>
-<span class="c">#    -N DOCKER-ISOLATION-STAGE-2</span>
-<span class="c">#    -N DOCKER-USER</span>
-<span class="c">#    -A FORWARD -j DOCKER-USER</span>
-<span class="c">#    -A FORWARD -j DOCKER-ISOLATION-STAGE-1</span>
-<span class="c">#    -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT</span>
-<span class="c">#    -A FORWARD -o docker0 -j DOCKER</span>
-<span class="c">#    &lt;span style="color: red;"&gt;-A FORWARD -i docker0 ! -o docker0 -j ACCEPT&lt;/span&gt;</span>
-<span class="c">#    &lt;span style="color: red;"&gt;-A FORWARD -i docker0 -o docker0 -j ACCEPT&lt;/span&gt;</span>
-<span class="c">#    -A DOCKER-ISOLATION-STAGE-1 -i docker0 ! -o docker0 -j DOCKER-ISOLATION-STAGE-2</span>
-<span class="c">#    -A DOCKER-ISOLATION-STAGE-1 -j RETURN</span>
-<span class="c">#    -A DOCKER-ISOLATION-STAGE-2 -o docker0 -j DROP</span>
-<span class="c">#    -A DOCKER-ISOLATION-STAGE-2 -j RETURN</span>
-<span class="c">#    -A DOCKER-USER -j RETURN</span>
-
-<span class="c"># NAT POSTROUTING에 172.17.0.0/16에서 외부로 전달시 MASQUERADE (SNAT) 정책이 설정되어 있습니다.</span>
-<span class="nv">$ </span><span class="nb">sudo </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span>
-<span class="c"># =&gt; -P PREROUTING ACCEPT</span>
-<span class="c">#    -P INPUT ACCEPT</span>
-<span class="c">#    -P OUTPUT ACCEPT</span>
-<span class="c">#    -P POSTROUTING ACCEPT</span>
-<span class="c">#    -N DOCKER</span>
-<span class="c">#    -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER</span>
-<span class="c">#    -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER</span>
-<span class="c">#    &lt;span style="color: red;"&gt;-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE&lt;/span&gt;</span>
-<span class="c">#    -A DOCKER -i docker0 -j RETURN</span>
-</code></pre></div>    </div>
-  </li>
-</ul>
-
-<h3 id="도커를-비-root-유저로-관리하기">도커를 비 root 유저로 관리하기</h3>
-
-<p>도커는 기본적으로 root로 관리할 수 있습니다. 
-root가 아닌 유저로 docker 명령을 실행하면 다음과 같은 에러가 발생합니다.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">whoami</span>
-<span class="c"># =&gt; kali</span>
-
-<span class="nv">$ </span>docker info
-<span class="c"># =&gt; ...</span>
-<span class="c">#    Server:</span>
-<span class="c">#    ERROR: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get &amp;quot;http://%2Fvar%2Frun%2Fdocker.sock/v1.24/info&amp;quot;: dial unix /var/run/docker.sock: connect: permission denied</span>
-</code></pre></div></div>
-
-<p>하지만, 다음의 방법 처럼 현재 사용자를 docker 그룹에 추가하면, root가 아닌 일반 유저로도 관리할 수 있습니다.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">whoami</span> 
-<span class="c"># =&gt; kali</span>
-
-<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$USER</span>
-<span class="c"># =&gt; kali</span>
-
-<span class="c"># 도커 그룹 추가</span>
-<span class="nv">$ </span><span class="nb">sudo </span>usermod <span class="nt">-aG</span> docker <span class="nv">$USER</span>
-
-<span class="c"># 그룹 확인</span>
-<span class="nv">$ </span><span class="nb">groups</span> 
-<span class="c"># =&gt; adm ... kaboxer</span>
-
-<span class="c"># 로그아웃</span>
-<span class="nb">exit</span> 
-
-<span class="c"># ssh 재접속 후 확인</span>
-<span class="nv">$ </span><span class="nb">groups</span> 
-<span class="c"># =&gt; adm ... kaboxer docker</span>
-
-<span class="nv">$ </span>docker info
-<span class="c"># =&gt; Client:</span>
-<span class="c">#     Context:    default</span>
-<span class="c">#     Debug Mode: false</span>
-<span class="c">#    </span>
-<span class="c">#    Server:</span>
-<span class="c">#     Containers: 0</span>
-<span class="c">#     ...</span>
-<span class="c">#     Cgroup Version: 2</span>
-<span class="c">#     ...</span>
-<span class="c">#     Default Runtime: runc</span>
-<span class="c">#     Init Binary: docker-init</span>
-<span class="c">#     containerd version: 1.6.24~ds1-2</span>
-<span class="c">#     runc version: 1.1.12+ds1-5</span>
-<span class="c">#     ...    </span>
-
-<span class="c"># 컨테이너 확인</span>
-<span class="nv">$ </span>docker run <span class="nt">--rm</span> hello-world
-<span class="c"># =&gt; Hello from Docker!</span>
-<span class="c">#    This message shows that your installation appears to be working correctly.</span>
-<span class="c">#    ...</span>
-
-<span class="c"># 실행중인 도커 컨테이너 확인</span>
-<span class="nv">$ </span>docker ps
-<span class="c"># 전체 도커 컨테이너 확인</span>
-<span class="nv">$ </span>docker ps <span class="nt">-a</span>
-<span class="c"># 이미지 목록 확인</span>
-<span class="nv">$ </span>docker images
-<span class="c"># =&gt; REPOSITORY    TAG       IMAGE ID       CREATED         SIZE</span>
-<span class="c">#    hello-world   latest    d2c94e258dcb   16 months ago   13.3kB</span>
-
-<span class="c"># 도커 컨테이너 삭제</span>
-<span class="nv">$ </span>docker ps <span class="nt">-aq</span>
-<span class="nv">$ </span>docker <span class="nb">rm</span> <span class="nt">-f</span> <span class="si">$(</span>docker ps <span class="nt">-aq</span><span class="si">)</span>
-<span class="nv">$ </span>docker ps <span class="nt">-a</span>
-</code></pre></div></div>
-
-<h3 id="컨테이너가-host의-docker-socket-file-공유로-도커-실행">컨테이너가 host의 docker socket file 공유로 도커 실행</h3>
-
-<ul>
-  <li>
-    <p>도커 컨테이너를 GUI로 관리할 수 있는 툴인 <a href="https://www.portainer.io/">portainer</a>처럼 도커 컨테이너가 호스트의 도커 소켓 파일을 공유하여 도커를 관리하는데 사용 할 수 있습니다.</p>
-
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 도커 컨테이너 실행</span>
-<span class="nv">$ </span>docker run <span class="nt">-d</span> <span class="nt">-p</span> 9000:9000 <span class="nt">-v</span> /var/run/docker.sock:/var/run/docker.sock portainer/portainer-ce
-<span class="nv">$ </span>docker ps
-<span class="c"># =&gt; CONTAINER ID   IMAGE                    COMMAND        CREATED         STATUS         PORTS                                                           NAMES</span>
-<span class="c">#    1495728fd014   portainer/portainer-ce   &amp;quot;/portainer&amp;quot;   2 minutes ago   Up 2 minutes   8000/tcp, 9443/tcp, 0.0.0.0:9000-&amp;gt;9000/tcp, :::9000-&amp;gt;9000/tcp   wizardly_ride</span>
-  
-</code></pre></div>    </div>
-
-    <p><code class="language-plaintext highlighter-rouge">-v</code> 옵션으로 호스트의 도커 소켓 파일을 컨테이너의 도커 소켓 파일로 공유하면 아래와 같이 도커 컨테이너에서 호스트의 도커를 관리할 수 있습니다.</p>
-
-    <p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_8.png" alt="소켓 공유를 통해 portainer 사용" /></p>
-  </li>
-  <li>
-    <p>또한 Jenkins 같은 CI/CD 툴을 사용할때도 도커 소켓 파일을 공유하여 도커 기반 워커를 사용할 수도 있습니다.</p>
-  </li>
-</ul>
-
-<h3 id="cpu-아키텍쳐">CPU 아키텍쳐</h3>
-
-<ul>
-  <li>도커 허브에 등록된 이미지들은 CPU 아키텍쳐별로 이미지를 제공하는데, <strong>호스트의 CPU 아키텍쳐와 다른 이미지는 동작할 수 없습니다.</strong></li>
-  <li>아래와 같이 docker hub에서는 지원 CPU 아키텍쳐별로 필터링하는 기능을 제공하니, 특정 아키텍쳐의 이미지가 필요한 경우 사용할 수 있습니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_9.png" alt="img.png" /></li>
-  <li>또한 도커이미지 페이지의 Tags 탭에서 태그의 지원하는 아키텍쳐를 확인할 수 있습니다.
-<img src="../../../assets/2024/kans-3th/w1/20240831_kans_w1_10.png" alt="20240831_kans_w1_10.png" /></li>
-  <li>현재 리눅스의 CPU 아키텍쳐를 확인 해보겠습니다.
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>lscpu
-<span class="c"># =&gt; Architecture:                       x86_64</span>
-<span class="c">#    CPU op-mode(s):                     32-bit, 64-bit</span>
-<span class="c">#    ...</span>
-</code></pre></div>    </div>
-    <p>사용중인 CPU 아키텍쳐는 x86_64 입니다.</p>
-  </li>
-  <li>현재 CPU 아키텍쳐와는 다른 아키텍쳐의 이미지를 설치해서 실패하는것을 확인해 보겠습니다.
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># arm64 실행 실패</span>
-<span class="nv">$ </span>docker run <span class="nt">--rm</span> <span class="nt">-it</span> arm64v8/ubuntu bash
-<span class="c"># =&gt; WARNING: The requested image's platform (linux/arm64/v8) does not match the detected host platform (linux/amd64) and no specific platform was requested</span>
-<span class="c">#    exec /usr/bin/bash: exec format error</span>
-  
-<span class="c"># riscv64 실행 실패</span>
-<span class="nv">$ </span>docker run <span class="nt">--rm</span> <span class="nt">-it</span> riscv64/ubuntu bash
-<span class="c"># =&gt; WARNING: The requested image's platform (linux/riscv64) does not match the detected host platform (linux/amd64) and no specific platform was requested</span>
-<span class="c">#    exec /usr/bin/bash: exec format error</span>
-</code></pre></div>    </div>
-  </li>
-</ul>
-
-<hr />
-
-<h2 id="컨테이너-격리">컨테이너 격리</h2>
-
-<ul>
-  <li>docker는 리눅스의 프로세스 격리 기술을 활용하는데, 프로세스 격리 기술은 chroot에서 부터 cgroup, namespace 등을 거쳐 발전하고 있습니다.</li>
-  <li>주요 격리 기술들을 실습해보며 이해해보겠습니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_11.png" alt="img.png" />
-<a href="https://speakerdeck.com/kakao/ige-dwaeyo-dokeo-eobsi-keonteineo-mandeulgi?slide=200">https://speakerdeck.com/kakao/ige-dwaeyo-dokeo-eobsi-keonteineo-mandeulgi?slide=200</a></li>
-</ul>
-
-<h3 id="chroot">chroot</h3>
-
-<ul>
-  <li>chroot는 리눅스의 프로세스 격리 기술 중 하나로, 프로세스가 접근할 수 있는 파일 시스템의 루트 디렉터리를 변경하는 기술입니다.</li>
-  <li>1979년에 처음 등장했으며, 한계가 뚜렷하지만 다양한 목적으로 현재도 현역으로 사용되고 있습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 관리자 전환</span>
-<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span><span class="nb">whoami</span>
-<span class="c"># =&gt; root</span>
-
-<span class="nv">$ </span><span class="nb">cd</span> /tmp
-<span class="nv">$ </span><span class="nb">mkdir </span>myroot
-
-<span class="c"># chroot 실행 (chroot [새 루트] [명령])</span>
-<span class="nv">$ </span><span class="nb">chroot </span>myroot /bin/bash
-<span class="c"># =&gt; chroot: failed to run command ‘/bin/bash’: No such file or directory</span>
-</code></pre></div></div>
-
-<ul>
-  <li>/tmp/myroot 로 chroot하려니 bash가 없어서 실행이 되지 않습니다. bash를 복사해 넣어보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># bash를 실행하는데 필요한 라이브러리를 확인하겠습니다.</span>
-<span class="nv">$ </span>ldd /bin/bash
-<span class="c"># =&gt; linux-vdso.so.1 (0x00007fffecfa8000)</span>
-<span class="c">#    libtinfo.so.6 =&gt; /lib/x86_64-linux-gnu/libtinfo.so.6 (0x00007fbfe6a4f000)</span>
-<span class="c">#    libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007fbfe686a000)</span>
-<span class="c">#    /lib64/ld-linux-x86-64.so.2 (0x00007fbfe6be0000)</span>
-
-<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> myroot/bin
-<span class="nv">$ </span><span class="nb">cp</span> /bin/bash myroot/bin
-<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> myroot/<span class="o">{</span>lib64,lib/x86_64-linux-gnu<span class="o">}</span>
-<span class="nv">$ </span><span class="nb">cp</span> /lib/x86_64-linux-gnu/libtinfo.so.6 myroot/lib/x86_64-linux-gnu
-<span class="nv">$ </span><span class="nb">cp</span> /lib/x86_64-linux-gnu/libc.so.6 myroot/lib/x86_64-linux-gnu
-<span class="nv">$ </span><span class="nb">cp</span> /lib64/ld-linux-x86-64.so.2 myroot/lib64
-<span class="nv">$ </span>tree myroot
-<span class="c"># =&gt; myroot</span>
-<span class="c">#    |-- bin</span>
-<span class="c">#    |   `-- bash</span>
-<span class="c">#    |-- lib</span>
-<span class="c">#    |   `-- x86_64-linux-gnu</span>
-<span class="c">#    |       |-- libc.so.6</span>
-<span class="c">#    |       `-- libtinfo.so.6</span>
-<span class="c">#    `-- lib64</span>
-<span class="c">#        `-- ld-linux-x86-64.so.2</span>
-<span class="c">#    </span>
-<span class="c">#    5 directories, 4 files</span>
-
-<span class="nv">$ </span><span class="nb">chroot </span>myroot /bin/bash
-<span class="c"># =&gt; bash-5.2# </span>
-<span class="c"># bash와 bash에 필요한 라이브러리를 넣어주니 chroot로 실행할 수 있게 되었습니다.</span>
-<span class="c"># ls를 실행해보겠습니다.</span>
-<span class="nv">$ </span><span class="nb">ls</span>
-<span class="c"># =&gt; bash: ls: command not found</span>
-<span class="c"># ls가 없어서 실행이 되지 않습니다. ls를 넣기위해 chroot에서 나오겠습니다.</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># ls 위치 확인</span>
-<span class="nv">$ </span>whereis <span class="nb">ls</span>
-<span class="c"># =&gt; ls: /usr/bin/ls /usr/share/man/man1/ls.1.gz</span>
-<span class="nv">$ </span>ldd /usr/bin/ls
-<span class="c"># ldd로 확인된 라이브러리를 포함해 ls를 myroot에 넣어보겠습니다.</span>
-<span class="nv">$ </span><span class="nb">cp</span> /usr/bin/ls myroot/bin
-<span class="nv">$ </span><span class="nb">cp</span> /lib/x86_64-linux-gnu/libselinux.so.1 myroot/lib/x86_64-linux-gnu
-<span class="nv">$ </span><span class="nb">cp</span> /lib/x86_64-linux-gnu/libpcre2-8.so.0 myroot/lib/x86_64-linux-gnu
-
-<span class="nv">$ </span><span class="nb">chroot </span>myroot /bin/bash
-<span class="c"># ls시 /tmp/myroot에 있는 파일들을 확인할 수 있습니다.</span>
-<span class="nv">$ </span><span class="nb">ls</span>
-<span class="c"># =&gt; bin  lib  lib64</span>
-<span class="c"># 현재 디렉터리 확인시 / 로 되어있습니다. 이 처럼 chroot로 인해 루트 디렉터리가 변경되었습니다. </span>
-<span class="nv">$ </span><span class="nb">pwd</span>
-<span class="c"># =&gt; /</span>
-<span class="nv">$ </span><span class="nb">cd</span> ../../..
-<span class="nv">$ </span><span class="nb">ls</span>
-<span class="c"># =&gt; bin lib lib64</span>
-
-<span class="c"># chroot를 종료 합니다.</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-</code></pre></div></div>
-
-<ul>
-  <li>이 작업을 반복하면 거의 모든 프로그램을 chroot로 실행할 수 있습니다. 하지만 /proc, /dev 등의 가상 디렉터리는 다음의 방법으로 넣어주어야 합니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 다음 동작은 chroot 밖의 호스트에서 실행해야 합니다.</span>
-<span class="c"># mount 할 디렉터리 만들어주기</span>
-<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> myroot/<span class="o">{</span>proc,dev<span class="o">}</span>
-
-<span class="c"># /proc, /dev 마운트</span>
-<span class="nv">$ </span>mount <span class="nt">-t</span> proc none myroot/proc
-<span class="nv">$ </span>mount <span class="nt">-o</span> <span class="nb">bind</span> /dev myroot/dev
-
-<span class="c"># /proc 확인을 위해 ps도 chroot 환경에 넣어보겠습니다.</span>
-<span class="nv">$ </span><span class="nb">cp</span> /usr/bin/ps myroot/bin
-<span class="nv">$ </span><span class="nb">cp</span> /lib/x86_64-linux-gnu/<span class="o">{</span>libproc2.so.0,libc.so.6,libsystemd.so.0,libcap.so.2,libgcrypt.so.20,liblz4.so.1,liblzma.so.5,libzstd.so.1,libgpg-error.so.0<span class="o">}</span> myroot/lib/x86_64-linux-gnu/ 
-<span class="nv">$ </span><span class="nb">cp</span> /lib64/ld-linux-x86-64.so.2 myroot/lib64/ 
-
-<span class="nv">$ </span><span class="nb">chroot </span>myroot /bin/bash
-<span class="nv">$ </span><span class="nb">ls</span> /proc
-<span class="nv">$ </span>ps
-<span class="c"># =&gt;    PID TTY          TIME CMD</span>
-<span class="c">#    729517 ?        00:00:00 sudo</span>
-<span class="c">#    741301 ?        00:00:00 bash</span>
-<span class="c">#    741310 ?        00:00:00 ps</span>
-
-<span class="c"># chroot 종료</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># 마운트 해제</span>
-<span class="nv">$ </span>mount <span class="nt">-t</span> proc
-<span class="c"># =&gt; proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)</span>
-<span class="c">#    none on /tmp/myroot/proc type proc (rw,relatime)</span>
-<span class="nv">$ </span>umount myroot/proc
-<span class="nv">$ </span>umount myroot/dev
-<span class="nv">$ </span>mount <span class="nt">-t</span> proc
-<span class="c"># =&gt; proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>도커 컨테이너 이미지를 추출하여 chroot로 실행해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mkdir </span>nginx-root
-
-<span class="c"># nginx 컨테이너 이미지에서 파일들을 추출하여 nginx-root에 넣어줍니다.</span>
-<span class="nv">$ </span>docker <span class="nb">export</span> <span class="si">$(</span>docker create nginx<span class="si">)</span> | <span class="nb">tar</span> <span class="nt">-C</span> nginx-root <span class="nt">-xvf</span> -
-<span class="nv">$ </span>docker images
-
-<span class="nv">$ </span>tree <span class="nt">-L</span> 2 nginx-root
-
-<span class="c"># chroot로 nginx-root를 루트 디렉터리로 변경합니다.</span>
-<span class="nv">$ </span><span class="nb">chroot </span>nginx-root /bin/bash
-<span class="c"># nginx를 실행해봅니다.</span>
-<span class="nv">$ </span>nginx <span class="nt">-g</span> <span class="s1">'daemon off;'</span>
-
-<span class="c"># [터미널2] 터미널을 하나더 열고 nginx 동작 여부를 확인합니다.</span>
-<span class="nv">$ </span>ps <span class="nt">-f</span> <span class="nt">-C</span> nginx
-<span class="nv">$ </span>curl localhost
-</code></pre></div></div>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_12.png" alt="img.png" /></p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 생성된 docker 컨테이너를 확인합니다. docker create nginx로 인해 컨테이너가 생겨져있습니다.</span>
-<span class="nv">$ </span>docker ps <span class="nt">-a</span>
-<span class="c"># =&gt; CONTAINER ID   IMAGE     COMMAND                  CREATED              STATUS    PORTS     NAMES</span>
-<span class="c">#    0b506af00006   nginx     "/docker-entrypoint.…"   About a minute ago   Created             gifted_rosalind</span>
-
-<span class="c"># 사용하지 않는 도커이미지를 지워줍니다.</span>
-<span class="nv">$ </span>docker <span class="nb">rm </span>0b5
-</code></pre></div></div>
-
-<ul>
-  <li>아쉽게도 chroot는 탈옥이 가능하다고 합니다. 다음 코드를 컴파일하여 탈옥을 시도해보겠습니다.</li>
-</ul>
-
-<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;sys/stat.h&gt;</span><span class="cp">
-#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
-</span>
-<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">mkdir</span><span class="p">(</span><span class="s">".out"</span><span class="p">,</span> <span class="mo">0755</span><span class="p">);</span>
-  <span class="n">chroot</span><span class="p">(</span><span class="s">".out"</span><span class="p">);</span>
-  <span class="n">chdir</span><span class="p">(</span><span class="s">"../../../../../"</span><span class="p">);</span>
-  <span class="n">chroot</span><span class="p">(</span><span class="s">"."</span><span class="p">);</span>
-
-  <span class="k">return</span> <span class="n">execl</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="s">"-i"</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
-<span class="p">}</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 컴파일</span>
-<span class="nv">$ </span>gcc <span class="nt">-o</span> myroot/escape_chroot escape_chroot.c
-<span class="nv">$ </span>file myroot/escape_chroot
-<span class="c"># =&gt; myroot/escape_chroot: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=5a40e26463d1015f870c7f1b9db9be159727c250, for GNU/Linux 3.2.0, not stripped</span>
-
-<span class="c"># chroot 실행</span>
-<span class="nv">$ </span><span class="nb">chroot </span>myroot /bin/bash
-<span class="nv">$ </span><span class="nb">ls</span>
-<span class="nv">$ </span><span class="nb">cd</span> ../../
-<span class="nv">$ </span><span class="nb">cd</span> ../../
-<span class="nv">$ </span><span class="nb">ls</span>
-<span class="c"># 일반적인 방법으로는 myroot에서 벗어날 수 없었습니다.</span>
-
-<span class="c"># escape_chroot 실행해서 탈옥해보겠습니다.</span>
-<span class="nv">$ </span>./escape_chroot
-<span class="nv">$ </span><span class="nb">ls</span> /
-<span class="c"># 탈옥이 잘 되었습니다.</span>
-
-<span class="c"># 종료</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-</code></pre></div></div>
-
-<h3 id="마운트-네임스페이스--pivot_root">마운트 네임스페이스 + pivot_root</h3>
-
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">pivot_root</code>는 루트 파일 시스템을 변경하는 시스템 콜로, 루트 디렉터리를 변경하는 chroot와 달리 루트 파일 시스템을 별도의 디렉터리로 이동시킬 수 있습니다.</li>
-  <li>아래의 그림에서 처럼 /tmp/new_root가 있고 /tmp/new_root/put_old 디렉터리가 있는 경우, <code class="language-plaintext highlighter-rouge">pivot_root /tmp/new_root /tmp_new_root/put_old</code>를 하면 
-/tmp/new_root가 루트 디렉터리로 변경되고, 원래의 루트 /는 /tmp/new_root/put_old로 이동됩니다.</li>
-</ul>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_13.png" alt="img.png" />
-<a href="https://speakerdeck.com/kakao/ige-dwaeyo-dokeo-eobsi-keonteineo-mandeulgi?slide=80">https://speakerdeck.com/kakao/ige-dwaeyo-dokeo-eobsi-keonteineo-mandeulgi?slide=80</a></p>
-
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">pivot_root</code>를 사용하려면 <code class="language-plaintext highlighter-rouge">unshare</code> 명령을 통해 마운트 네임스페이스를 만들어야 합니다. 마운트 네임스페이스는 리눅스 커널에서 제공하는 기능으로, 프로세스가 마운트 정보를 독립적으로 가질 수 있게 해줍니다.</li>
-  <li>또한 다음과 같은 제약사항이 적용 됩니다.
-    <ul>
-      <li>new_root와 put_old가 디렉터리여야 한다.</li>
-      <li>new_root와 put_old가 현재 루트와 같은 마운트 상에 있어선 안 된다.</li>
-      <li>put_old가 new_root와 같거나 그 아래에 있어야 한다. 즉, put_old가 가리키는 경로명 앞에 “/..”를 0개 이상 붙여서 new_root와 같은 디렉터리가 나와야 한다.</li>
-      <li>new_root가 마운트 지점의 경로여야 하되, “/”일 수 없다. 마운트 지점이 아닌 경우에는 그 경로를 스스로에게 바인드 마운트 해서 마운트 지점으로 바꿀 수 있다.</li>
-      <li>new_root의 부모 마운트 및 현재 작업 디렉터리의 부모 마운트의 전파 유형이 MS_SHARED여선 안 된다. 마찬가지로 put_old가 기존 마운트 지점인 경우 그 전파 유형이 MS_SHARED여선 안 된다. 이 제약은 pivot_root()로 인해 다른 마운트 네임스페이스로 어떤 변화도 전파되지 않게 한다.</li>
-      <li>현재 루트 디렉터리가 마운트 지점이어야 한다.</li>
-    </ul>
-  </li>
-  <li>실습을 통해 마운트 네임스페이스와 pivot_root를 알아보겠습니다.</li>
-</ul>
-
-<h4 id="실습">실습</h4>
-
-<ul>
-  <li>먼저 pivot_root로 root 디렉터리로 만들 /tmp/new_root를 만들어보겠습니다.</li>
-  <li>위의 제약사항 중 new_root와 put_old가 현재 루트와 같은 마운트 상에 있어서는 안 되기 때문에 new_root를 tmpfs 로 마운트 하겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mkdir</span> /tmp/new_root
-<span class="c"># 마운트</span>
-<span class="nv">$ </span>mount <span class="nt">-t</span> tmpfs tmpfs /tmp/new_root 
-<span class="c"># 기존 루트를 이동시킬 /tmp/new_root/put_old 디렉터리를 만들기</span>
-<span class="nv">$ </span><span class="nb">mkdir</span> /tmp/new_root/put_old
-<span class="c"># /bin, /lib, /lib64 등 chroot 실습때 사용했던 /tmp/myroot를 /tmp/new_root 로 복사해서 재사용합니다.</span>
-<span class="nv">$ </span><span class="nb">cp</span> <span class="nt">-rv</span> /tmp/myroot/<span class="k">*</span> /tmp/new_root 
-
-<span class="nv">$ </span>mount <span class="nt">-t</span> proc proc /tmp/new_root/proc
-
-<span class="c"># unshare 해서 마운트 네임스페이스를 만들어줍니다.</span>
-<span class="nv">$ </span>unshare <span class="nt">--mount</span> /bin/bash 
-
-<span class="nv">$ </span><span class="nb">cd</span> /tmp/new_root
-
-<span class="c"># pivot_root를 실행</span>
-<span class="nv">$ </span>pivot_root <span class="nb">.</span> put_old
-
-<span class="c"># 새로운 루트로 이동되었습니다.</span>
-
-<span class="c"># 새 루트 확인</span>
-<span class="nv">$ </span><span class="nb">ls</span> / 
-<span class="c"># =&gt; bin  dev  escape_chroot  lib  lib64  proc  put_old</span>
-
-<span class="c"># 기존 루트 확인</span>
-<span class="nv">$ </span><span class="nb">ls</span> /put_old
-<span class="c"># =&gt; bin   dev  home        lib32  lost+found   mnt     proc  run   srv	  sys       usr  vmlinuz</span>
-<span class="c">#    boot  etc  initrd.img  lib	   lib64        media   opt   root  sbin  swapfile  tmp  var  </span>
-</code></pre></div></div>
-
-<ul>
-  <li>새로운 루트로 이동되었지만, 기존 루트에 있는 파일들을 삭제하거나 이동하지 않았기 때문에 /put_old로 기존 루트에 있는 파일들을 확인할 수 있습니다.</li>
-  <li>하지만 umount를 사용하면 /put_old와 기존 루트의 연결을 끊어서 기존 루트를 숨길 수 있습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>umount <span class="nt">-l</span> /put_old
-
-<span class="nv">$ </span><span class="nb">ls</span> /put_old
-<span class="c"># =&gt; (공백)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>escape_root를 통해 탈옥을 시도해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 탈옥 시도</span>
-<span class="nv">$ </span>/escape_chroot
-<span class="nv">$ </span><span class="nb">ls</span> /
-<span class="c"># =&gt; bin  dev  escape_chroot  lib  lib64  proc  put_old</span>
-<span class="nv">$ </span><span class="nb">cd</span> ../../..
-<span class="nv">$ </span>/escape_chroot
-<span class="nv">$ </span><span class="nb">ls</span> /
-<span class="c"># =&gt; bin  dev  escape_chroot  lib  lib64  proc  put_old</span>
-</code></pre></div></div>
-
-<ul>
-  <li>chroot와 달리 pivot_root는 탈옥이 불가능하고 훨씬 안전한것 같습니다.</li>
-</ul>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_14.png" alt="img.png" /></p>
-
-<h3 id="네임스페이스-namespace">네임스페이스 (namespace)</h3>
-
-<ul>
-  <li>여기에서의 네임스페이스는 쿠버네티스 등의 네임스페이스와는 다른,
-리눅스 커널에서 제공하는 프로세스 격리 기술로, 프로세스가 각종 자원을 격리하여 사용할 수 있게 해줍니다.</li>
-  <li>주요 네임스페이스의 유형은 아래와 같습니다.
-    <ul>
-      <li>Mount Namespace (2002년 도입)
-        <ul>
-          <li>pivot_root 예제에서 처럼 마운트 정보를 격리합니다.</li>
-          <li>즉, 서로 다른 네임스페이스가 독립적으로 파일 시스템을 마운트 할 수 있습니다.</li>
-        </ul>
-      </li>
-      <li>UTS Namespace (2006년 도입)
-        <ul>
-          <li>호스트 이름과 NIS 도메인 이름을 격리합니다. 각 네임스페이스는 자체 호스트 이름과 NIS 도메인 이름을 가질 수 있고,
-이를 통해 호스트 이름을 변경하더라도 다른 네임스페이스에 영향을 주지 않습니다.</li>
-        </ul>
-      </li>
-      <li>IPC Namespace (2006년 도입)
-        <ul>
-          <li>POSIX 메시지 큐, 세마포어, 공유 메모리 같은 IPC 리소스를 격리합니다.</li>
-          <li>이를 통해 서로 다른 네임스페이스는 독립적으로 System V IPC 객체와 POSIX 메시지 큐를 사용할 수 있습니다.</li>
-        </ul>
-      </li>
-      <li>PID Namespace (2008년 도입)
-        <ul>
-          <li>프로세스 ID를 격리합니다. 각 네임스페이스는 자체 PID를 가질 수 있으며 자체적인 PID 1을 가질 수 있습니다.</li>
-          <li>프로세스 ID가 1인것은 시스템 시작시에 최초로 실행된 것이며 이를 init 프로세스라고 합니다. 이 프로세스가 종료되면 
-시스템이 종료되거나 다시 부팅됩니다. 도커 컨테이너 실행시 실행되는 프로그램이 PID가 1이고, 해당 프로그램이 종료되며 
-컨테이너도 종료되는게 이때문입니다.</li>
-        </ul>
-      </li>
-      <li>Network Namespace (2009년 도입)
-        <ul>
-          <li>네트워크 인터페이스, IP 주소, 라우팅 테이블, 방화벽 규칙 등 네트워크 리소스를 격리합니다.</li>
-          <li>각 네임스페이스는 자체 네트워크 인터페이스, IP 주소, 라우팅 테이블, 방화벽 규칙을 가질 수 있습니다.</li>
-        </ul>
-      </li>
-      <li>USER Namespace (2012년 도입)
-        <ul>
-          <li>사용자 ID와 그룹 ID를 격리합니다. 각 네임스페이스는 자체 사용자 ID와 그룹 ID를 가질 수 있습니다.</li>
-          <li>이를 통해 root 권한을 가진 사용자도 일반 사용자로 격리하여 사용할 수 있고, 일반 사용자도 root 인것 처럼 보이게 할 수 있습니다.</li>
-          <li>실행 중인 도커컨테이너에서는 ps로 확인시 root로 실행 중인데, 호스트에서 ps로 확인시 일반 사용자로 실행 중인것 처럼 보이는것도 이것 때문입니다.</li>
-        </ul>
-      </li>
-      <li>CGROUP Namespace (2016년 도입)
-        <ul>
-          <li>CGROUP은 프로세스의 그룹으로 CPU, 메모리, 디스크 I/O, 네트워크 등의 자원을 제한하거나 할당할 수 있습니다.</li>
-          <li>CGROUP Namespace는 CPU, 메모리 등의 자원을 제한하거나 할당할 수 있는 CGROUP을 격리하는 기능입니다.</li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-</ul>
-
-<h3 id="cgroup-를-이용한-자원관리">cgroup 를 이용한 자원관리</h3>
-
-<ul>
-  <li>cgroups는 control groups의 줄일말로 리눅스 커널에서 제공하는 자원 제한 및 할당 기능으로, CPU, 메모리, 디스크 I/O, 네트워크 등의 자원을 제한하거나 할당할 수 있습니다.</li>
-  <li>프로세스는 실행중인 프로그램의 인스턴스를 의미하며, OS에서는 프로세스를 관리하기 위해 프로세스 ID(PID)를 사용합니다.</li>
-  <li>cgroups는 프로세스를 그룹으로 묶어서 자원을 제한하거나 할당할 수 있습니다.</li>
-  <li>cgroups는 /sys/fs/cgroup 디렉터리에 마운트되어 있으며, cgroup v1과 cgroup v2가 있습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># cgroup 버전 확인</span>
-<span class="nv">$ </span>mount | <span class="nb">grep </span>cgroup
-<span class="c"># =&gt; cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>현재 테스트 시스템에는 cgroup v2가 사용되고 있는것을 확인할 수 있습니다.</li>
-  <li>cgroup v2는 v1에 비해 자원 계층구조의 가시성이 향상 되었고, memoryQoS 라는 기능이 추가되어 컨테이너에서 OOM(Out Of Memory)이
-발생가능성을 줄였습니다. 최신 리눅스 배포판은 보통 cgroup v2를 사용하고 있어서 cgroup v2로 실습을 진행하겠습니다.</li>
-  <li>cgroup의 계층 구조는 /sys/fs/cgroup 에서 확인할 수 있습니다.</li>
-  <li>/proc는 보았지만 /sys는 눈에 익지 않습니다. 리눅스 커널 3.x 버전에서 생긴것으로 USER SPACE 쪽은 /proc에 KERNEL SPACE 쪽 정보는 /sys에 들어간다고 합니다.</li>
-</ul>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_23.png" alt="img.png" class="image-center" />
-<em class="image-caption">출처 : <a href="https://blog.naver.com/yu3papa/223562337709">https://blog.naver.com/yu3papa/223562337709</a></em></p>
-
-<ul>
-  <li>실습을 통해 cgroup의 정보를 확인해 보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mount <span class="nt">-t</span> cgroup
-<span class="nv">$ </span>mount <span class="nt">-t</span> cgroup2
-<span class="c"># =&gt; cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot)</span>
-
-<span class="nv">$ </span>findmnt <span class="nt">-t</span> cgroup2
-<span class="c"># =&gt; TARGET         SOURCE  FSTYPE  OPTIONS</span>
-<span class="c">#    /sys/fs/cgroup cgroup2 cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot</span>
-
-<span class="c"># cgroupv1 만 지원 시, cgroup2 출력되지 않음</span>
-<span class="nv">$ </span><span class="nb">grep </span>cgroup /proc/filesystems
-<span class="c"># =&gt; nodev   cgroup</span>
-<span class="c">#    nodev   cgroup2</span>
-
-<span class="nv">$ </span><span class="nb">stat</span> <span class="nt">-fc</span> %T /sys/fs/cgroup/
-<span class="c"># =&gt; cgroup2fs</span>
-
-<span class="c"># 터미널2</span>
-<span class="nv">$ </span><span class="nb">sleep </span>100000
-
-<span class="c"># 터미널1</span>
-<span class="c"># /proc 에 cgroup 정보 확인</span>
-<span class="nv">$ </span><span class="nb">cat</span> /proc/cgroups
-<span class="nv">$ </span><span class="nb">cat</span> /proc/<span class="si">$(</span>pgrep <span class="nb">sleep</span><span class="si">)</span>/cgroup
-<span class="c"># =&gt; 0::/user.slice/user-1000.slice/session-713.scope</span>
-
-<span class="nv">$ </span>tree /proc/<span class="si">$(</span>pgrep <span class="nb">sleep</span><span class="si">)</span> <span class="nt">-L</span> 2
-<span class="c"># =&gt; ...</span>
-<span class="c">#    |-- &lt;span style="font-weight:bold;color:blue;"&gt;ns&lt;/span&gt;</span>
-<span class="c">#    |   |-- &lt;span style="font-weight:bold;color:teal;"&gt;cgroup&lt;/span&gt; -&amp;gt; cgroup:[4026531835]</span>
-<span class="c">#    |   |-- &lt;span style="font-weight:bold;color:teal;"&gt;ipc&lt;/span&gt; -&amp;gt; ipc:[4026531839]</span>
-<span class="c">#    |   |-- &lt;span style="font-weight:bold;color:teal;"&gt;mnt&lt;/span&gt; -&amp;gt; mnt:[4026531841]</span>
-<span class="c">#    |   |-- &lt;span style="font-weight:bold;color:teal;"&gt;net&lt;/span&gt; -&amp;gt; net:[4026531840]</span>
-<span class="c">#    ...</span>
-
-<span class="c"># cgroup 목록 확인</span>
-<span class="nv">$ </span><span class="nb">ls</span> /sys/fs/cgroup
-<span class="nv">$ </span><span class="nb">cat</span> /sys/fs/cgroup/cgroup.controllers
-<span class="c"># =&gt; cpuset cpu io memory hugetlb pids rdma misc</span>
-<span class="nv">$ </span>tree /sys/fs/cgroup/ <span class="nt">-L</span> 1
-<span class="nv">$ </span>tree /sys/fs/cgroup/ <span class="nt">-L</span> 2
-<span class="nv">$ </span>tree /sys/fs/cgroup/user.slice <span class="nt">-L</span> 1
-<span class="nv">$ </span>tree /sys/fs/cgroup/user.slice/user-1000.slice <span class="nt">-L</span> 1
-</code></pre></div></div>
-
-<ul>
-  <li>이번에는 cgroup을 이용하여 자원을 제한하는 실습을 진행해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널 2개를 열어서 root 로 실습 하겠습니다.</span>
-<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span><span class="nb">whoami</span>
-<span class="c"># =&gt; root</span>
-
-<span class="c"># 툴 설치</span>
-<span class="nv">$ </span>apt <span class="nb">install</span> <span class="nt">-y</span> cgroup-tools stress htop
-
-<span class="c"># 터미널2</span>
-<span class="c"># CPU 사용률 확인을 위해 htop을 실행합니다.</span>
-<span class="nv">$ </span>htop
-
-<span class="c"># 터미널1에서 실습 진행</span>
-
-<span class="c"># 1개 CPU 코어에 부하 발생을 위해 stress를 실행합니다.</span>
-<span class="nv">$ </span>stress <span class="nt">--cpu</span> 1
-</code></pre></div></div>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_25.png" alt="img.png" /></p>
-
-<ul>
-  <li>CPU 0만 100% 사용중인것을 확인할 수 있습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cd</span> /sys/fs/cgroup
-<span class="nv">$ </span><span class="nb">mkdir </span>test_cgroup_parent <span class="o">&amp;&amp;</span> <span class="nb">cd </span>test_cgroup_parent
-<span class="nv">$ </span>tree
-
-<span class="c"># 제어가능한 항목 확인</span>
-<span class="nv">$ </span><span class="nb">cat </span>cgroup.controllers
-<span class="c"># =&gt; cpuset cpu io memory hugetlb pids rdma misc</span>
-
-<span class="c"># cpu를 subtree이 추가하여 컨트롤 할 수 있도록 설정 : +/-(추가/삭제) </span>
-<span class="nv">$ </span><span class="nb">cat </span>cgroup.subtree_control
-<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"+cpu"</span> <span class="o">&gt;&gt;</span> /sys/fs/cgroup/test_cgroup_parent/cgroup.subtree_control
-
-<span class="c"># cpu.max 제한 설정 : 첫 번쨰 값은 허용된 시간(마이크로초) 두 번째 값은 총 기간 길이 &gt; 1/10 실행 설정</span>
-<span class="nv">$ </span><span class="nb">echo </span>100000 1000000 <span class="o">&gt;</span> /sys/fs/cgroup/test_cgroup_parent/cpu.max
-
-<span class="c"># test용 자식 디렉토리를 생성하고, pid를 추가하여 제한을 걸어</span>
-<span class="nv">$ </span><span class="nb">mkdir </span>test_cgroup_child <span class="o">&amp;&amp;</span> <span class="nb">cd </span>test_cgroup_child
-<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$$</span> <span class="o">&gt;</span> /sys/fs/cgroup/test_cgroup_parent/test_cgroup_child/cgroup.procs
-<span class="nv">$ </span><span class="nb">cat</span> /sys/fs/cgroup/test_cgroup_parent/test_cgroup_child/cgroup.procs
-<span class="c"># =&gt; 1947587</span>
-<span class="c">#    2194781</span>
-<span class="nv">$ </span><span class="nb">cat</span> /proc/<span class="nv">$$</span>/cgroup
-<span class="c"># =&gt; 0::/test_cgroup_parent/test_cgroup_child</span>
-
-<span class="c"># 부하 발생 확인 : 터미널2에 htop 확인</span>
-<span class="nv">$ </span>stress <span class="nt">--cpu</span> 1
-</code></pre></div></div>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_26.png" alt="img.png" /></p>
-
-<ul>
-  <li>cpu.max 제한 설정에서 설정한 대로 (100000/1000000 =&gt; 10%) CPU 사용량이 10%로 제한된것을 확인할 수 있습니다.</li>
-  <li>값 수정을 해서 100%로 변경해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 값 수정</span>
-<span class="nv">$ </span><span class="nb">echo </span>1000000 1000000 <span class="o">&gt;</span> /sys/fs/cgroup/test_cgroup_parent/cpu.max
-
-<span class="c"># 부하 발생 확인 : 터미널2에 htop 확인</span>
-<span class="nv">$ </span>stress <span class="nt">--cpu</span> 1
-</code></pre></div></div>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_27.png" alt="img.png" /></p>
-
-<ul>
-  <li>테스트에 사용한 cgroup 을 삭제하고 실습을 마무리하겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">exit</span>
-<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span><span class="nb">rmdir</span> /sys/fs/cgroup/test_cgroup_parent/test_cgroup_child
-<span class="nv">$ </span><span class="nb">rmdir</span> /sys/fs/cgroup/test_cgroup_parent
-</code></pre></div></div>
-
-<ul>
-  <li>이상과 같이 cgroup을 사용하여 cpu 자원을 제한하는것을 실습해 보았습니다.</li>
-</ul>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_24.png" alt="img.png" class="image-center" /></p>
-
-<hr />
-
-<h2 id="컨테이너-네트워크--iptables">컨테이너 네트워크 &amp; Iptables</h2>
-
-<ul>
-  <li>도커는 호스트와 컨테이너간, 컨테이너 간의 네트워크를 앞에서 살펴본 네트워크 네임스페이스를 통해 격리합니다.</li>
-  <li>또한 iptables를 통해 네트워크 패킷을 제어하고, 컨테이너 간의 통신을 제어합니다.</li>
-  <li>실습을 통해 네트워크 네임스페이스를 통한 격리와 iptables의 사용법에 대해 알아보겠습니다.</li>
-</ul>
-
-<h3 id="red--blue-네트워크-네임스페이스-간-통신">Red &lt;=&gt; Blue 네트워크 네임스페이스 간 통신</h3>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_17.png" alt="img.png" />
-<a href="https://www.slideshare.net/slideshow/make-container-withoutdocker6overlaynetwork1/248297122">출처 : 도커없이 컨테이너 만들기</a></p>
-
-<ul>
-  <li>먼저 터미널 3개를 열고 모두 관리자로 로그인 하겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span><span class="nb">whoami</span>
-<span class="c"># =&gt; root</span>
-</code></pre></div></div>
-
-<ul>
-  <li>veth (Virtual Ethernet)를 사용하여 Red와 Blue 네트워크 네임스페이스를 만듭니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ip <span class="nb">link </span>add veth0 <span class="nb">type </span>veth peer name veth1
-
-<span class="c"># veth 생성 확인 (상태 DOWN)</span>
-<span class="nv">$ </span>ip <span class="nb">link</span>
-<span class="c"># =&gt; 22: &lt;span style="color:teal;"&gt;veth1@veth0: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,M-DOWN&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9e:74:34:5c:70:ef&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt;</span>
-<span class="c">#    23: &lt;span style="color:teal;"&gt;veth0@veth1: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,M-DOWN&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;72:c0:05:36:cd:1b&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt;</span>
-<span class="nv">$ </span>ip addr | <span class="nb">grep </span>veth
-<span class="c"># =&gt; 22: &lt;span style="color:teal;"&gt;veth1@veth0: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,M-DOWN&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9e:74:34:5c:70:ef&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt;</span>
-<span class="c">#    23: &lt;span style="color:teal;"&gt;veth0@veth1: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,M-DOWN&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;72:c0:05:36:cd:1b&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt;</span>
-
-<span class="c"># 네트워크 네임스페이스 생성</span>
-<span class="nv">$ </span>ip netns add RED
-<span class="nv">$ </span>ip netns add BLUE
-
-<span class="c"># 네트워크 네임스페이스 확인</span>
-<span class="nv">$ </span>ip netns
-<span class="c"># =&gt; RED</span>
-<span class="c">#    BLUE</span>
-
-<span class="c"># veth0와 veth1을 각각 RED와 BLUE 네트워크 네임스페이스로 이동시킵니다.</span>
-<span class="nv">$ </span>ip <span class="nb">link set </span>veth0 netns RED  
-<span class="nv">$ </span>ip <span class="nb">link set </span>veth1 netns BLUE
-
-<span class="c"># 네트워크 네임스페이스 확인. id 라는것이 추가되었습니다.</span>
-<span class="nv">$ </span>ip netns list
-<span class="c"># =&gt; RED (id: 0)</span>
-<span class="c">#    BLUE (id: 1)</span>
-
-<span class="c"># ip 링크를 확인하면 veth0와 veth1이 각각 RED와 BLUE 네트워크 네임스페이스로 이동되어 기본 명령에서는 보이지 않습니다.</span>
-<span class="nv">$ </span>ip <span class="nb">link</span> | <span class="nb">grep</span> <span class="s2">"veth."</span>
-<span class="c"># =&gt; (공백)</span>
-
-<span class="c"># ip netns exec [네임스페이스명] [명령] 으로 네트워크 네임스페이스에서 명령을 실행할 수 있습니다.</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip <span class="nb">link</span>
-<span class="c"># =&gt; 1: &lt;span style="color:teal;"&gt;lo: &lt;/span&gt;&amp;lt;LOOPBACK&amp;gt; mtu 65536 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/loopback &lt;span style="color:olive;"&gt;00:00:00:00:00:00&lt;/span&gt; brd &lt;span style="color:olive;"&gt;00:00:00:00:00:00&lt;/span&gt;</span>
-<span class="c">#    23: &lt;span style="color:teal;"&gt;veth0@if22: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;72:c0:05:36:cd:1b&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns BLUE</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip <span class="nb">link</span>
-<span class="c"># =&gt; 1: &lt;span style="color:teal;"&gt;lo: &lt;/span&gt;&amp;lt;LOOPBACK&amp;gt; mtu 65536 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/loopback &lt;span style="color:olive;"&gt;00:00:00:00:00:00&lt;/span&gt; brd &lt;span style="color:olive;"&gt;00:00:00:00:00:00&lt;/span&gt;</span>
-<span class="c">#    22: &lt;span style="color:teal;"&gt;veth1@if23: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9e:74:34:5c:70:ef&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns RED</span>
-
-<span class="c"># veth0과 veth1을 활성화 (UP) 시키겠습니다.</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip <span class="nb">link set </span>veth0 up
-<span class="c"># veth0의 IP 확인</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    23: &lt;span style="color:teal;"&gt;veth0@if22: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state &lt;span style="color:green;"&gt;UP &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;72:c0:05:36:cd:1b&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns BLUE</span>
-<span class="c">#        inet6 &lt;span style="color:blue;"&gt;fe80::70c0:5ff:fe36:cd1b&lt;/span&gt;/64 scope link proto kernel_ll </span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip <span class="nb">link set </span>veth1 up
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    22: &lt;span style="color:teal;"&gt;veth1@if23: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state &lt;span style="color:green;"&gt;UP &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9e:74:34:5c:70:ef&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns RED</span>
-<span class="c">#        inet6 &lt;span style="color:blue;"&gt;fe80::9c74:34ff:fe5c:70ef&lt;/span&gt;/64 scope link proto kernel_ll </span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-
-<span class="c"># UP 상태로 되었으나 IP가 없습니다. IP를 할당해보겠습니다.</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip addr add 11.11.11.2/24 dev veth0
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip addr add 11.11.11.3/24 dev veth1
-
-<span class="c"># IP 를 확인해보겠습니다.</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    23: &lt;span style="color:teal;"&gt;veth0@if22: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state &lt;span style="color:green;"&gt;UP &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;72:c0:05:36:cd:1b&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns BLUE</span>
-<span class="c">#        inet &lt;span style="color:purple;"&gt;11.11.11.2&lt;/span&gt;/24 scope global veth0</span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-<span class="c">#        inet6 &lt;span style="color:blue;"&gt;fe80::70c0:5ff:fe36:cd1b&lt;/span&gt;/64 scope link proto kernel_ll </span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    22: &lt;span style="color:teal;"&gt;veth1@if23: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state &lt;span style="color:green;"&gt;UP &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9e:74:34:5c:70:ef&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns RED</span>
-<span class="c">#        inet &lt;span style="color:purple;"&gt;11.11.11.3&lt;/span&gt;/24 scope global veth1</span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-<span class="c">#        inet6 &lt;span style="color:blue;"&gt;fe80::9c74:34ff:fe5c:70ef&lt;/span&gt;/64 scope link proto kernel_ll </span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-</code></pre></div></div>
-
-<ul>
-  <li>이제 Red와 Blue 네트워크 네임스페이스 간의 통신을 테스트 해보겠습니다.</li>
-  <li><code class="language-plaintext highlighter-rouge">nsenter</code> 명령을 사용하여 네트워크에 attach 하고, <code class="language-plaintext highlighter-rouge">tcpdump</code>와 <code class="language-plaintext highlighter-rouge">ping</code>을 사용하여 통신을 확인합니다.</li>
-  <li><code class="language-plaintext highlighter-rouge">tcpdump</code>는 네트워크 패킷을 캡처하는 명령어로, 패킷을 캡처하여 확인할 수 있고, <code class="language-plaintext highlighter-rouge">ping</code>은 네트워크 상태를 확인하는 명령어입니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>tree /var/run/netns
-<span class="c"># =&gt; &lt;span style="font-weight:bold;color:blue;"&gt;/var/run/netns&lt;/span&gt;</span>
-<span class="c">#    |-- BLUE</span>
-<span class="c">#    `-- RED</span>
-<span class="c">#    </span>
-<span class="c">#    1 directory, 2 files</span>
-
-<span class="c"># 터미널 1 (RED 11.11.11.2)</span>
-<span class="c"># 네트워크 네임스페이스에 attach. </span>
-<span class="c"># 이때 --net 옵션을 사용해 앞에서 확인한 /var/run/netns/RED를 사용해 네트워크 네임스페이스에 attach 합니다.</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/RED
-<span class="c"># 이웃하는 IP/ARP 정보 확인</span>
-<span class="nv">$ </span>ip neigh
-<span class="c"># =&gt; (공백)</span>
-<span class="c"># 라우팅 정보, iptables 정보</span>
-<span class="nv">$ </span>ip route
-<span class="c"># =&gt; &lt;span style="color:purple;"&gt;11.11.11.0/24 &lt;/span&gt;dev &lt;span style="color:teal;"&gt;veth0 &lt;/span&gt;proto kernel scope link src &lt;span style="color:purple;"&gt;11.11.11.2 &lt;/span&gt;</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> 
-
-<span class="c"># 터미널 2 (호스트)</span>
-<span class="c"># 네트워크 네임스페이스 상태 확인</span>
-<span class="nv">$ </span>lsns <span class="nt">-t</span> net
-<span class="c"># =&gt;         NS TYPE NPROCS     PID USER     NETNSID NSFS            COMMAND</span>
-<span class="c">#    ...</span>
-<span class="c">#    4026532444 net       1 1940569 root           0 /run/netns/RED  -zsh</span>
-<span class="c">#    4026532527 net       0         root             /run/netns/BLUE</span>
-<span class="c"># 네트워크 정보 확인</span>
-<span class="nv">$ </span>ip addr 
-<span class="nv">$ </span>ip neigh
-<span class="nv">$ </span>ip route
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> 
-
-<span class="c"># 터미널 3 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/BLUE
-<span class="nv">$ </span>ip neigh
-<span class="nv">$ </span>ip route
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-S</span> 
-
-<span class="c"># ping 통신 확인</span>
-
-<span class="c"># 터미널3 (BLUE)</span>
-<span class="nv">$ </span>tcpdump <span class="nt">-i</span> veth1
-<span class="nv">$ </span>ip <span class="nt">-c</span> neigh
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># 터미널1 (RED)</span>
-<span class="nv">$ </span>ping 11.11.11.3 <span class="nt">-c</span> 1 
-<span class="nv">$ </span>ip <span class="nt">-c</span> neigh
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># 네임스페이스 삭제</span>
-<span class="nv">$ </span>ip netns del RED
-<span class="nv">$ </span>ip netns del BLUE 
-</code></pre></div></div>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_15.png" alt="img.png" /></p>
-
-<ul>
-  <li>위의 캡쳐와 같이 통신이 되어서 tcpdump에 ARP, ICMP 패킷이 잡히는것을 확인할 수 있습니다.</li>
-  <li>또한 <code class="language-plaintext highlighter-rouge">ip neigh</code> 명령을 확인했을때 ARP 테이블에 상대방의 IP와 MAC 주소가 등록되어 있는것을 확인할 수 있습니다.</li>
-</ul>
-
-<h3 id="red---bridge-br0---blue-네트워크-네임스페이스-간-통신">Red &lt;- Bridge (br0) -&gt; Blue 네트워크 네임스페이스 간 통신</h3>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_16.png" alt="img.png" />
-<a href="https://www.slideshare.net/slideshow/make-container-withoutdocker6overlaynetwork1/248297122">출처 : 도커없이 컨테이너 만들기</a></p>
-
-<ul>
-  <li>이전 실습에서는 Red와 Blue를 연결하여 peer 네트워크로 구성하였는데, 
-이번에는 각각 독립적인 네트워크로 구성하여 Bridge를 사용하여 Red와 Blue 네트워크 네임스페이스 간의 통신을 확인해보겠습니다.</li>
-  <li>왜 Bridge를 두는가 하면, peer 네트워크를 구성할 경우 구성원들 간의 통신을 위해서는 모든 노드가 서로서로 연결되어야 하기 때문입니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_18.png" alt="img.png" class="image-center" /></li>
-  <li>Bridge를 두면 각 노드는 Bridge와만 연결되어 있으면 통신이 가능하므로 효율적입니다.</li>
-  <li>실습을 통해 아래의 그림과 같이 격리된 네트워크 네임스페이스를 만들고 브릿지를 통해 통신해보겠습니다.
-<img src="/assets/2024/kans-3th/w1/20240831_kans_w1_19.png" alt="img.png" /></li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널 3개를 root 로 엽니다.</span>
-<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-i</span>
-<span class="nv">$ </span><span class="nb">whoami</span>
-<span class="c"># =&gt; root</span>
-
-<span class="c"># 네트워크 네임스페이스 및 veth 생성</span>
-<span class="nv">$ </span>ip netns add RED
-<span class="nv">$ </span>ip <span class="nb">link </span>add reth0 <span class="nb">type </span>veth peer name reth1
-<span class="nv">$ </span>ip <span class="nb">link set </span>reth0 netns RED
-<span class="nv">$ </span>ip netns add BLUE
-<span class="nv">$ </span>ip <span class="nb">link </span>add beth0 <span class="nb">type </span>veth peer name beth1
-<span class="nv">$ </span>ip <span class="nb">link set </span>beth0 netns BLUE
-
-<span class="c"># 확인</span>
-<span class="nv">$ </span>ip netns list
-<span class="nv">$ </span>ip <span class="nb">link</span>
-<span class="c"># =&gt; ...</span>
-<span class="c">#    26: &lt;span style="color:teal;"&gt;reth1@if27: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;9a:1f:bf:6f:fe:64&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns RED</span>
-<span class="c">#    28: &lt;span style="color:teal;"&gt;beth1@if29: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;mode DEFAULT group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;7e:31:cf:5f:00:8f&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netns BLUE</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    27: &lt;span style="color:teal;"&gt;reth0@if26: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;ea:7f:a0:1f:00:3d&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netnsid 0</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    29: &lt;span style="color:teal;"&gt;beth0@if28: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; mtu 1500 qdisc noop state &lt;span style="color:red;"&gt;DOWN &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;66:23:89:a6:f7:70&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt; link-netnsid 0</span>
-
-<span class="c"># 브릿지 정보 확인 </span>
-<span class="nv">$ </span>brctl show
-<span class="c"># =&gt; bridge name	bridge id		STP enabled	interfaces</span>
-<span class="c">#    docker0		8000.02425756997c	no		</span>
-
-<span class="c"># br0 브릿지 생성</span>
-<span class="nv">$ </span>ip <span class="nb">link </span>add br0 <span class="nb">type </span>bridge
-
-<span class="c"># br0 브릿지 정보 확인</span>
-<span class="nv">$ </span>brctl show br0
-<span class="c"># =&gt; bridge name	bridge id		STP enabled	interfaces</span>
-<span class="c">#    br0		8000.000000000000	no		</span>
-<span class="nv">$ </span>brctl showmacs br0
-<span class="nv">$ </span>brctl showstp br0
-
-<span class="c"># reth1과 beth1을 br0 브릿지에 연결</span>
-<span class="nv">$ </span>ip <span class="nb">link set </span>reth1 master br0
-<span class="nv">$ </span>ip <span class="nb">link set </span>beth1 master br0
-<span class="nv">$ </span>brctl show br0
-<span class="c"># =&gt; bridge name     bridge id               STP enabled     interfaces</span>
-<span class="c">#    br0             8000.7e31cf5f008f       no              beth1</span>
-<span class="c">#                                                            reth1</span>
-<span class="nv">$ </span>brctl showmacs br0
-<span class="c"># =&gt; port no mac addr                is local?       ageing timer</span>
-<span class="c">#      2     7e:31:cf:5f:00:8f       yes                0.00</span>
-<span class="c">#      2     7e:31:cf:5f:00:8f       yes                0.00</span>
-<span class="c">#      1     9a:1f:bf:6f:fe:64       yes                0.00</span>
-<span class="c">#      1     9a:1f:bf:6f:fe:64       yes                0.00</span>
-<span class="nv">$ </span>ip <span class="nt">-br</span> <span class="nb">link</span>
-<span class="c"># =&gt; ... </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;reth1@if27       &lt;/span&gt;&lt;span style="color:red;"&gt;DOWN           &lt;/span&gt;&lt;span style="color:olive;"&gt;9a:1f:bf:6f:fe:64 &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;beth1@if29       &lt;/span&gt;&lt;span style="color:red;"&gt;DOWN           &lt;/span&gt;&lt;span style="color:olive;"&gt;7e:31:cf:5f:00:8f &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;br0              &lt;/span&gt;&lt;span style="color:red;"&gt;DOWN           &lt;/span&gt;&lt;span style="color:olive;"&gt;7e:31:cf:5f:00:8f &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST&amp;gt; </span>
-
-<span class="c"># reth0과 beth0에 IP 설정 및 활성화(UP) 시키고, reth1, beth1, br0를 활성화(UP) 합니다.</span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED  ip addr add 11.11.11.2/24 dev reth0
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip addr add 11.11.11.3/24 dev beth0
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED  ip <span class="nb">link set </span>reth0 up
-<span class="nv">$ </span>ip <span class="nb">link set </span>reth1 up
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip <span class="nb">link set </span>beth0 up
-<span class="nv">$ </span>ip <span class="nb">link set </span>beth1 up
-<span class="nv">$ </span>ip <span class="nb">link set </span>br0 up
-<span class="nv">$ </span>ip <span class="nt">-br</span> addr
-<span class="c"># =&gt; ... </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;reth1@if27       &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:blue;"&gt;fe80::981f:bfff:fe6f:fe64&lt;/span&gt;/64 </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;beth1@if29       &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:blue;"&gt;fe80::7c31:cfff:fe5f:8f&lt;/span&gt;/64 </span>
-<span class="c">#    &lt;span style="color:teal;"&gt;br0              &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:blue;"&gt;fe80::7c31:cfff:fe5f:8f&lt;/span&gt;/64 </span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>RED ip <span class="nt">-br</span> addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    &lt;span style="color:teal;"&gt;reth0@if26       &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:purple;"&gt;11.11.11.2&lt;/span&gt;/24 &lt;span style="color:blue;"&gt;fe80::e87f:a0ff:fe1f:3d&lt;/span&gt;/64 </span>
-<span class="nv">$ </span>ip netns <span class="nb">exec </span>BLUE ip <span class="nt">-br</span> addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    &lt;span style="color:teal;"&gt;beth0@if28       &lt;/span&gt;&lt;span style="color:green;"&gt;UP             &lt;/span&gt;&lt;span style="color:purple;"&gt;11.11.11.3&lt;/span&gt;/24 &lt;span style="color:blue;"&gt;fe80::6423:89ff:fea6:f770&lt;/span&gt;/64 </span>
-
-<span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/RED
-<span class="nv">$ </span>ip <span class="nt">-c</span> a<span class="p">;</span><span class="nb">echo</span><span class="p">;</span> ip <span class="nt">-c</span> route<span class="p">;</span><span class="nb">echo</span><span class="p">;</span> ip <span class="nt">-c</span> neigh
-<span class="c"># 현재 네트워크 네임스페이스 확인</span>
-<span class="nv">$ </span>ip netns identify <span class="nv">$$</span>
-<span class="c"># =&gt; RED</span>
-
-<span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>brctl showmacs br0
-<span class="nv">$ </span>bridge fdb show
-<span class="nv">$ </span>bridge fdb show dev br0
-
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-L</span> <span class="nt">-n</span> <span class="nt">-v</span>
-
-<span class="c"># 터미널3 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/BLUE
-<span class="nv">$ </span>ip <span class="nt">-c</span> a<span class="p">;</span><span class="nb">echo</span><span class="p">;</span> ip <span class="nt">-c</span> route<span class="p">;</span><span class="nb">echo</span><span class="p">;</span> ip <span class="nt">-c</span> neigh
-<span class="c"># 현재 네트워크 네임스페이스 확인</span>
-<span class="nv">$ </span>ip netns identify <span class="nv">$$</span>
-<span class="c"># =&gt; BLUE</span>
-
-<span class="c"># 터미널2 (호스트)</span>
-<span class="c"># ping 통신 전 사전 설정</span>
-<span class="c">## iptables 정보 확인</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span> | <span class="nb">grep</span> <span class="s1">'\-P'</span>
-<span class="c"># =&gt; -P INPUT ACCEPT</span>
-<span class="c">#    -P FORWARD DROP</span>
-<span class="c">#    -P OUTPUT ACCEPT</span>
-<span class="nv">$ </span>iptables <span class="nt">-nvL</span> <span class="nt">-t</span> filter
-
-<span class="c"># 호스트에서 패킷 라우팅 설정 확인 - 0(off), 1(on)</span>
-<span class="nv">$ </span><span class="nb">cat</span> /proc/sys/net/ipv4/ip_forward
-<span class="c"># =&gt; 1</span>
-<span class="c"># 위의 결과가 0인 경우 아래의 명령을 실행</span>
-<span class="c"># echo 1 &gt; /proc/sys/net/ipv4/ip_forward</span>
-
-<span class="c"># ping 통신 확인</span>
-<span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>tcpdump <span class="nt">-l</span> <span class="nt">-i</span> br0
-<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
-<span class="c">#    listening on br0, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
-<span class="c">#    (터미널1에서 ping 실행시)</span>
-<span class="c">#    08:40:00.413198 IP 11.11.11.2 &gt; 11.11.11.3: ICMP echo request, id 41028, seq 1, length 64</span>
-<span class="c">#    08:40:05.455528 ARP, Request who-has 11.11.11.3 tell 11.11.11.2, length 28</span>
-<span class="c">#    08:40:05.455556 ARP, Reply 11.11.11.3 is-at 66:23:89:a6:f7:70 (oui Unknown), length 28</span>
-<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'iptables -v --numeric --table filter --list FORWARD'</span>
-<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'iptables -v --numeric --table filter --list FORWARD;echo;iptables -v --numeric --table filter --list DOCKER-USER;echo;iptables -v --numeric --table filter --list DOCKER-ISOLATION-STAGE-1'</span>
-
-<span class="c"># 터미널3 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>tcpdump <span class="nt">-l</span> <span class="nt">-i</span> beth0
-
-<span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>ping 11.11.11.3 <span class="nt">-c</span> 1
-<span class="c"># =&gt; 실패</span>
-</code></pre></div></div>
-
-<p>위의 캡쳐와 같이 브릿지에서는 패킷이 잡히지만, 브릿지를 통해 Blue로 패킷이 전달되지 않는것을 확인할 수 있습니다.
-그렇다면 왜 패킷이 전달되지 않을까요? 그것은 <code class="language-plaintext highlighter-rouge">iptables -t filter -S | grep '\-P'</code> 명령을 통해 확인했을때 FORWARD 체인이 DROP으로 설정되어 있기 때문입니다.
-패킷이 브릿지를 통해 전달되려면 FORWARD 체인을 통해야 하는데 DROP이면 패킷이 전달되지 않습니다.</p>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_20.png" alt="img.png" class="image-center" />
-<em class="image-caption">Iptables 처리 흐름도 (<a href="https://natnat1.medium.com/iptables-b9ce0602253f">https://natnat1.medium.com/iptables-b9ce0602253f</a>)</em></p>
-
-<ul>
-  <li>위의 그림과 같이 iptables는 패킷이 들어오면 PREROUTING 체인을 통해 패킷을 처리하고, FORWARD 체인을 통해 패킷을 전달합니다.</li>
-</ul>
-
-<p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_21.png" alt="img.png" /></p>
-
-<ul>
-  <li>br0 입장에서 살펴보면 위와 같습니다. 그렇다면 11.11.11.2 &lt;=&gt; 11.11.11.3으로 FORWARD를 허용하면 되는데 방법을 살펴보면 아래와 같습니다.
-    <ul>
-      <li>출발지 11.11.11.2와 11.11.11.3 허용</li>
-      <li>도착지 11.11.11.0/24 대역 출발지 허용</li>
-      <li>FORWARD 기본 정책을 ACCEPT로 변경</li>
-      <li>등등 기타 어떤 방법으로든 11.11.11.2와 11.11.11.3이 FORWARD 체인을 통해 패킷이 전달되도록 설정하면 됩니다.</li>
-    </ul>
-  </li>
-  <li>실습을 통해 iptables를 통해 패킷이 전달되도록 설정해보겠습니다.</li>
-  <li>방법1. 11.11.11.2와 11.11.11.3 허용하기
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널2 (호스트)</span>
-<span class="c"># 출발지 11.11.11.2 허용하기</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-A</span> FORWARD <span class="nt">-s</span> 11.11.11.2/32 <span class="nt">-j</span> ACCEPT
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-A</span> FORWARD <span class="nt">-s</span> 11.11.11.3/32 <span class="nt">-j</span> ACCEPT
-<span class="nv">$ </span>tcpdump <span class="nt">-l</span> <span class="nt">-i</span> br0
-  
-<span class="c"># 터미널3 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>tcpdump <span class="nt">-l</span> <span class="nt">-i</span> beth0
-<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
-<span class="c">#    listening on beth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
-<span class="c">#    10:39:20.225225 IP 11.11.11.2 &gt; 11.11.11.3: ICMP echo request, id 33335, seq 1, length 64</span>
-<span class="c">#    10:39:20.225233 IP 11.11.11.3 &gt; 11.11.11.2: ICMP echo reply, id 33335, seq 1, length 64</span>
-  
-<span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>ping 11.11.11.3
-<span class="c"># =&gt; PING 11.11.11.3 (11.11.11.3) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 11.11.11.3: icmp_seq=1 ttl=64 time=0.055 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 11.11.11.3 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 0.055/0.055/0.055/0.000 ms</span>
-  
-<span class="c"># 터미널2 (호스트)</span>
-<span class="c"># 허용 룰 제거</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-D</span> FORWARD <span class="nt">-s</span> 11.11.11.2/32 <span class="nt">-j</span> ACCEPT
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-D</span> FORWARD <span class="nt">-s</span> 11.11.11.3/32 <span class="nt">-j</span> ACCEPT
-</code></pre></div>    </div>
-
-    <p><img src="/assets/2024/kans-3th/w1/20240831_kans_w1_22.png" alt="img.png" /></p>
-  </li>
-  <li>방법2. 도착지 11.11.11.0/24 대역 허용하기
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-A</span> FORWARD <span class="nt">-d</span> 11.11.11.0/24 <span class="nt">-j</span> ACCEPT
-<span class="c"># 테스트 후 허용 룰 제거</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-D</span> FORWARD <span class="nt">-d</span> 11.11.11.0/24 <span class="nt">-j</span> ACCEPT
-</code></pre></div>    </div>
-  </li>
-  <li>방법3. FORWARD 기본 정책을 ACCEPT로 변경하기
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-P</span> FORWARD ACCEPT
-<span class="c"># 테스트 후 허용 룰 제거</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-P</span> FORWARD DROP
-</code></pre></div>    </div>
-  </li>
-</ul>
-
-<h3 id="호스트--redblue-네트워크-네임스페이스로-접근하기">호스트 &lt;=&gt; RED/BLUE 네트워크 네임스페이스로 접근하기</h3>
-
-<ul>
-  <li>“Red &lt;- Bridge (br0) -&gt; Blue 네트워크 네임스페이스 간 통신”을 실습한 환경에 이어서 실습해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/RED
-<span class="nv">$ </span>tcpdump <span class="nt">-i</span> any
-
-<span class="c"># 터미널3를 호스트 네트워크로 변경합니다.</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-<span class="nv">$ </span>ip netns identify <span class="nv">$$</span>
-<span class="c"># =&gt; (공백)</span>
-<span class="nv">$ </span>tcpdump <span class="nt">-i</span> br0 <span class="nt">-n</span>
-
-<span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>ping <span class="nt">-c</span> 1 11.11.11.2
-<span class="c"># =&gt; 1 packets transmitted, 0 received, 100% packet loss, time 0ms</span>
-<span class="c"># (ping 이 실패합니다.)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>호스트에서 RED (11.11.11.2) 로 ping시 패킷이 전달되지 않는것을 확인할 수 있습니다.</li>
-  <li>그 이유는 RED 네트워크로 접근하기 위해서는 br0를 거쳐서 접근해야하는데, br0는 ip가 없기 때문에 패킷이 전달되지 않습니다.</li>
-  <li>br0에 ip를 할당하고, RED와 BLUE 네트워크 네임스페이스로 접근해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>ip addr add 11.11.11.1/24 dev br0
-<span class="nv">$ </span>ip addr
-<span class="c"># =&gt; ...</span>
-<span class="c">#    30: &lt;span style="color:teal;"&gt;br0: &lt;/span&gt;&amp;lt;BROADCAST,MULTICAST,UP,LOWER_UP&amp;gt; mtu 1500 qdisc noqueue state &lt;span style="color:green;"&gt;UP &lt;/span&gt;group default qlen 1000</span>
-<span class="c">#        link/ether &lt;span style="color:olive;"&gt;7e:31:cf:5f:00:8f&lt;/span&gt; brd &lt;span style="color:olive;"&gt;ff:ff:ff:ff:ff:ff&lt;/span&gt;</span>
-<span class="c">#        inet &lt;span style="color:purple;"&gt;11.11.11.1&lt;/span&gt;/24 scope global br0</span>
-<span class="c">#           valid_lft forever preferred_lft forever</span>
-<span class="nv">$ </span>ping 11.11.11.2 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 11.11.11.2 (11.11.11.2) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 11.11.11.2: icmp_seq=1 ttl=64 time=0.044 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 11.11.11.2 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 0.044/0.044/0.044/0.000 ms</span>
-<span class="nv">$ </span>ping 11.11.11.3 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 11.11.11.3 (11.11.11.3) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 11.11.11.3: icmp_seq=1 ttl=64 time=0.052 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 11.11.11.3 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 0.052/0.052/0.052/0.000 ms</span>
-</code></pre></div></div>
-
-<ul>
-  <li>이번에는 RED에서 호스트로 ping이 되는것을 확인해 보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="c"># br0 에 ping 테스트</span>
-<span class="nv">$ </span>ping 11.11.11.1 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 11.11.11.1 (11.11.11.1) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 11.11.11.1: icmp_seq=1 ttl=64 time=0.041 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 11.11.11.1 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 0.041/0.041/0.041/0.000 ms</span>
-
-<span class="c"># 호스트로 ping 테스트</span>
-<span class="nv">$ </span>ping 10.10.10.51 <span class="nt">-c</span> 1
-<span class="c"># =&gt; ping: connect: Network is unreachable</span>
-</code></pre></div></div>
-
-<ul>
-  <li>br0에는 ping 이 성공하는데 호스트로는 Network is unreachable 에러가 발생하는것을 확인할 수 있습니다.</li>
-  <li>그 이유는 11.11.11.0/24에서 호스트 네트워크인 10.10.10.0/24로 패킷을 라우팅하는 정보가 없기 때문입니다.</li>
-  <li>RED나 BLUE에서 호스트로 패킷을 전달하기 위해서는 br0를 통해야 하는데, RED와 BLUE에 기본 게이트웨이를 br0로 설정하여 테스트해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>ip route add default via 11.11.11.1
-<span class="nv">$ </span>ip route
-<span class="c"># =&gt; default via 11.11.11.1 dev reth0</span>
-<span class="c">#    11.11.11.0/24 dev reth0 proto kernel scope link src 11.11.11.2</span>
-<span class="nv">$ </span>ping 10.10.10.51 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 10.10.10.51 (10.10.10.51) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 10.10.10.51: icmp_seq=1 ttl=64 time=0.041 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 10.10.10.51 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># BLUE에서도 동일하게 테스트해보겠습니다</span>
-
-<span class="c"># 터미널1 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/BLUE
-<span class="nv">$ </span>ip netns identify <span class="nv">$$</span>
-<span class="c"># =&gt; BLUE</span>
-<span class="nv">$ </span>ping 10.10.10.51 <span class="nt">-c</span> 1
-<span class="c"># =&gt; ping: connect: Network is unreachable</span>
-<span class="nv">$ </span>ip route add default via 11.11.11.1
-<span class="nv">$ </span>ip route
-<span class="c"># =&gt; default via 11.11.11.1 dev beth0</span>
-<span class="c">#    11.11.11.0/24 dev beth0 proto kernel scope link src 11.11.11.3</span>
-<span class="nv">$ </span>ping 10.10.10.51 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 10.10.10.51 (10.10.10.51) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 10.10.10.51: icmp_seq=1 ttl=64 time=0.049 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 10.10.10.51 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 0.049/0.049/0.049/0.000 ms</span>
-</code></pre></div></div>
-
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">ip route add default via 11.11.11.1</code> 로 기본 게이트웨이를 br0로 설정하고, 호스트로 ping이 되는것을 확인할 수 있습니다.</li>
-</ul>
-
-<h3 id="redblue에서-외부-인터넷-통신">RED/BLUE에서 외부 인터넷 통신</h3>
-
-<ul>
-  <li>이번에는 RED와 BLUE 네트워크 네임스페이스에서 외부 인터넷으로 통신하는 방법을 실습해보겠습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/RED
-<span class="nv">$ </span>ping 8.8.8.8 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.</span>
-<span class="c">#    </span>
-<span class="c">#    --- 8.8.8.8 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 0 received, 100% packet loss, time 0ms</span>
-</code></pre></div></div>
-
-<ul>
-  <li>RED에서 외부 인터넷으로 ping이 되지 않는것을 확인할 수 있습니다.</li>
-  <li>RED/BLUE와 같이 호스트 아래의 내부 네트워크에서 외부 인터넷으로 패킷을 전달하기 위해서는
-호스트의 IP로 패킷을 전달하고, 응답을 호스트 IP로 받아서 내부 네트워크(RED/BLUE)로 전달해야하는데, 
-이러한 과정을 SNAT (Source Network Address Translation) 또는 MASQUERADE라고 합니다.</li>
-  <li>nat 테이블의 POSTROUTING 체인에 MASQUERADE 룰을 추가하면 SNAT이 적용되어서 외부 인터넷으로 패킷을 전달할 수 있습니다.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널2 (호스트)</span>
-<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-A</span> POSTROUTING <span class="nt">-s</span> 11.11.11.0/24 <span class="nt">-j</span> MASQUERADE
-<span class="c"># SNAT 통계 모니터링</span>
-<span class="nv">$ </span>watch <span class="nt">-d</span> <span class="s1">'iptables -v --numeric --table nat --list POSTROUTING'</span>
-<span class="nv">$ </span>iptables <span class="nt">-nvL</span> <span class="nt">-t</span> nat
-<span class="nv">$ </span>conntrack <span class="nt">-L</span> <span class="nt">--src-nat</span>
-<span class="c"># =&gt; icmp     1 29 src=11.11.11.2 dst=8.8.8.8 type=8 code=0 id=62779 src=8.8.8.8 dst=10.10.10.109 type=0 code=0 id=62779 mark=0 use=1</span>
-<span class="c">#    conntrack v1.4.8 (conntrack-tools): 1 flow entries have been shown.</span>
-
-<span class="c"># 터미널1 (RED 11.11.11.2)</span>
-<span class="nv">$ </span>ping 8.8.8.8 <span class="nt">-c</span> 1
-<span class="c"># =&gt; PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.</span>
-<span class="c">#    64 bytes from 8.8.8.8: icmp_seq=1 ttl=113 time=26.3 ms</span>
-<span class="c">#    </span>
-<span class="c">#    --- 8.8.8.8 ping statistics ---</span>
-<span class="c">#    1 packets transmitted, 1 received, 0% packet loss, time 0ms</span>
-<span class="c">#    rtt min/avg/max/mdev = 26.277/26.277/26.277/0.000 ms</span>
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># 터미널1 (BLUE 11.11.11.3)</span>
-<span class="nv">$ </span>nsenter <span class="nt">--net</span><span class="o">=</span>/var/run/netns/BLUE
-<span class="nv">$ </span>ip route add default via 11.11.11.1
-<span class="nv">$ </span>ping 8.8.8.8 <span class="nt">-c</span> 1
-<span class="nv">$ </span><span class="nb">exit</span>
-
-<span class="c"># 삭제</span>
-<span class="nv">$ </span>ip netns delete RED
-<span class="nv">$ </span>ip netns delete BLUE
-<span class="nv">$ </span>ip <span class="nb">link </span>delete br0
-
-<span class="nv">$ </span>iptables <span class="nt">-t</span> nat <span class="nt">-D</span> POSTROUTING <span class="nt">-s</span> 11.11.11.0/24 <span class="nt">-j</span> MASQUERADE
-</code></pre></div></div>
-
-<ul>
-  <li>SNAT 추가한 이후 ping이 잘 되는것을 확인할 수 있었습니다.</li>
-</ul>
-
-<hr />
-
-<h2 id="마치며">마치며</h2>
-
-<p>첫주부터 이론과 실습할것이 굉장히 많았습니다. 테라폼 스터디가 순한맛으로 보일 정도입니다. 😅
-하지만 그동안 막연하게 알고 있었던 도커 컨테이너의 격리 원리와 리눅스 네트워크와 iptables에 
-대해 더 깊게 이해할 수 있어서 좋았습니다.</p>
-
-<p><del>개인적으로 *BSD를 좋아하는데 이 정도면 FreeBSD에서도 BSD만의 docker 같은 에코시스템 구축이 가능할것 같은데
-왜 못하고 있는지 의문입니다. 비슷하게 돌릴 수 있는 다양한 시도들은 많은데 흐지부지 되는 이유는 대체 무엇인지..</del></p>
-
-<p>항상 무언가를 배우는것은 즐겁습니다. 다음 스터디도 기대됩니다! :smile:</p>]]></content><author><name></name></author><category term="kans" /><category term="kubernetes," /><category term="network," /><category term="linux" /><summary type="html"><![CDATA[지난 테라폼 스터디에 이어 이번 주 부터 KANS 스터디를 시작하게 되었습니다! KANS는 Kubernetes Advanced Networking Study의 줄임말로 쿠버네티스 네트워킹에 대한 심도있게 공부하는 스터디입니다. 이번 스터디도 과제할 걱정도 되지만 재미있을것 같아 기대됩니다.]]></summary></entry></feed>
+남은 스터디도 열심히해서 쿠버네티스의 네트워크에 대해 조금 아는 사람이 되어보겠습니다.</p>]]></content><author><name></name></author><category term="kans" /><category term="kubernetes," /><category term="network," /><category term="linux" /><summary type="html"><![CDATA[지난주에 이어 이번주에는 쿠버네티스에대해 간략하게 알아보고 KIND, PAUSE 컨테이너와 Flannel CNI에 대해 알아보겠습니다.]]></summary></entry></feed>
