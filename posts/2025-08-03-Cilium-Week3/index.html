@@ -1,0 +1,2737 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>[Cilium] Networking - 노드의 파드들간 통신 상세 part 1 | Sweet Little Bird</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="[Cilium] Networking - 노드의 파드들간 통신 상세 part 1">
+<meta property="og:locale" content="ko">
+<meta name="description" content="Cilium의 Networking에 대해 살펴보겠습니다. Cilium이 어떻게 노드에 있는 파드들 간의 통신을 처리하는지, IP 주소 할당(IPAM), 라우팅, 마스커레이딩, DNS 설정 등을 다룰 것입니다.">
+<meta property="og:description" content="Cilium의 Networking에 대해 살펴보겠습니다. Cilium이 어떻게 노드에 있는 파드들 간의 통신을 처리하는지, IP 주소 할당(IPAM), 라우팅, 마스커레이딩, DNS 설정 등을 다룰 것입니다.">
+<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2025-08-03-Cilium-Week3/">
+<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2025-08-03-Cilium-Week3/">
+<meta property="og:site_name" content="Sweet Little Bird">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2025-08-03T00:10:18+09:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="[Cilium] Networking - 노드의 파드들간 통신 상세 part 1">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-08-03T00:10:18+09:00","datePublished":"2025-08-03T00:10:18+09:00","description":"Cilium의 Networking에 대해 살펴보겠습니다. Cilium이 어떻게 노드에 있는 파드들 간의 통신을 처리하는지, IP 주소 할당(IPAM), 라우팅, 마스커레이딩, DNS 설정 등을 다룰 것입니다.","headline":"[Cilium] Networking - 노드의 파드들간 통신 상세 part 1","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2025-08-03-Cilium-Week3/"},"url":"https://sweetlittlebird.github.io/posts/2025-08-03-Cilium-Week3/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
+  <link rel="stylesheet" href="/assets/dist/main.min.css">
+  <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!--  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&display=swap" rel="stylesheet">-->
+  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&amp;family=Milonga&amp;display=swap" rel="stylesheet">
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+<link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird">
+</head>
+<body class="body--contents">
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a>
+</div>
+      </nav>
+</div>
+  
+  <span id="scroll-indicator"></span>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">[Cilium] Networking - 노드의 파드들간 통신 상세 part 1</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-08-03T00:10:18+09:00" itemprop="datePublished">2025년 08월 03일에 작성
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <div class="table-of-content">
+      <header>목차</header>
+      <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#%EC%8B%A4%EC%8A%B5-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1">실습 환경 구성</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC-%ED%8C%8C%EC%9D%BC">실습환경 배포 파일</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC-%EB%B0%8F-%EB%B6%84%EC%84%9D-%ED%88%B4-%EC%84%A4%EC%B9%98">실습환경 배포 및 분석 툴 설치</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#ipam">IPAM</a>
+<ul>
+<li class="toc-entry toc-h3">
+<a href="#kubernetes-host-scope">Kubernetes Host Scope</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EC%83%98%ED%94%8C-%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EB%B0%8F-%ED%99%95%EC%9D%B8">샘플 애플리케이션 배포 및 확인</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#cilium-cluster-scope">[Cilium] Cluster Scope</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#ipam-%EB%AA%A8%EB%93%9C%EB%A5%BC-cluster-scope%EB%A1%9C-%EB%B3%80%EA%B2%BD">IPAM 모드를 Cluster Scope로 변경</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#cilium-cni-chaining-aws-vpc-cni-plugin">[Cilium CNI Chaining] AWS VPC CNI plugin</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#routing">Routing</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#method-1-encapsulation-vxlan-geneve">Method 1. Encapsulation (VXLAN, GENEVE)</a></li>
+<li class="toc-entry toc-h3"><a href="#method-2-native-routing">Method 2. Native Routing</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#masquerading">Masquerading</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#masquerading-%EC%86%8C%EA%B0%9C">Masquerading 소개</a></li>
+<li class="toc-entry toc-h3"><a href="#ebpf-%EA%B8%B0%EB%B0%98-masquerading">eBPF 기반 Masquerading</a></li>
+<li class="toc-entry toc-h3"><a href="#iptables-%EA%B8%B0%EB%B0%98-masquerading">iptables 기반 Masquerading</a></li>
+<li class="toc-entry toc-h3"><a href="#masquerading-%EC%8B%A4%EC%8A%B5">Masquerading 실습</a></li>
+<li class="toc-entry toc-h3"><a href="#ip-masq-agent-%EC%84%A4%EC%A0%95">ip-masq-agent 설정</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#coredns-nodelocaldns">CoreDNS, NodeLocalDNS</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#coredns">CoreDNS</a></li>
+<li class="toc-entry toc-h3"><a href="#nodelocaldns">NodeLocalDNS</a></li>
+<li class="toc-entry toc-h3"><a href="#nodelocal-dnscache-%EC%84%A4%EC%B9%98-%EB%B0%8F-%ED%99%95%EC%9D%B8">NodeLocal DNSCache 설치 및 확인</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-local-redirect-policy">Cilium Local Redirect Policy</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#%EB%B6%80%EB%A1%9D">부록</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#k9s-%EC%A3%BC%EC%9A%94-%EB%8B%A8%EC%B6%95%ED%82%A4">K9s 주요 단축키</a></li>
+</ul>
+</li>
+</ul>
+    </div>
+    <h2 id="들어가며">들어가며</h2>
+
+<p>이번 포스트에서는 Cilium의 Networking에 대해 살펴보겠습니다. 
+Cilium이 어떻게 노드에 있는 파드들 간의 통신을 처리하는지, IP 주소 할당(IPAM), 라우팅, 마스커레이딩, DNS 설정 등을 다룰 것입니다.</p>
+
+<hr>
+
+<h2 id="실습-환경-구성">실습 환경 구성</h2>
+
+<ul>
+  <li>이번 실습에서는 다음 그림과 같이 worker 노드를 1대 줄이고, router 노드를 추가해서 실습할 예정입니다.
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_1.png" alt="img.png" class="image-center" loading="lazy" width="1879" height="650">
+    <ul>
+      <li>
+<strong>가상머신</strong> : k8s-ctr, k8s-w1, router</li>
+      <li>
+<strong>router</strong> : 사내망 10.10.0.0/16 대역 통신과 연결, k8s 에 join 되지 않은 서버, loop1/loop2 dump 인터페이스 배치</li>
+      <li>Cilium CNI 가 설치된 상태로 배포됩니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="실습환경-배포-파일">실습환경 배포 파일</h3>
+
+<ul>
+  <li>
+    <p><strong>Vagrantfile</strong> : 가상머신 정의, 부팅 시 초기 프로비저닝 설정을 포함하는 Vagrantfile입니다.</p>
+
+    <div class="language-ruby highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c1"># Variables</span>
+<span class="no">K8SV</span> <span class="o">=</span> <span class="s1">'1.33.2-1.1'</span> <span class="c1"># Kubernetes Version : apt list -a kubelet, ex) 1.32.5-1.1</span>
+<span class="no">CONTAINERDV</span> <span class="o">=</span> <span class="s1">'1.7.27-1'</span> <span class="c1"># Containerd Version : apt list -a containerd.io, ex) 1.6.33-1</span>
+<span class="no">CILIUMV</span> <span class="o">=</span> <span class="s1">'1.17.6'</span> <span class="c1"># Cilium CNI Version : https://github.com/cilium/cilium/tags</span>
+<span class="no">N</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1"># max number of worker nodes</span>
+  
+<span class="c1"># Base Image  https://portal.cloud.hashicorp.com/vagrant/discover/bento/ubuntu-24.04</span>
+<span class="no">BOX_IMAGE</span> <span class="o">=</span> <span class="s2">"bento/ubuntu-24.04"</span>
+<span class="no">BOX_VERSION</span> <span class="o">=</span> <span class="s2">"202502.21.0"</span>
+  
+<span class="no">Vagrant</span><span class="p">.</span><span class="nf">configure</span><span class="p">(</span><span class="s2">"2"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+<span class="c1">#-ControlPlane Node</span>
+    <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">define</span> <span class="s2">"k8s-ctr"</span> <span class="k">do</span> <span class="o">|</span><span class="n">subconfig</span><span class="o">|</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box</span> <span class="o">=</span> <span class="no">BOX_IMAGE</span>
+        
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box_version</span> <span class="o">=</span> <span class="no">BOX_VERSION</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provider</span> <span class="s2">"virtualbox"</span> <span class="k">do</span> <span class="o">|</span><span class="n">vb</span><span class="o">|</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">customize</span> <span class="p">[</span><span class="s2">"modifyvm"</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">"--groups"</span><span class="p">,</span> <span class="s2">"/Cilium-Lab"</span><span class="p">]</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">customize</span> <span class="p">[</span><span class="s2">"modifyvm"</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">"--nicpromisc2"</span><span class="p">,</span> <span class="s2">"allow-all"</span><span class="p">]</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">name</span> <span class="o">=</span> <span class="s2">"k8s-ctr"</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">cpus</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">memory</span> <span class="o">=</span> <span class="mi">2560</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">linked_clone</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">host_name</span> <span class="o">=</span> <span class="s2">"k8s-ctr"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"private_network"</span><span class="p">,</span> <span class="ss">ip: </span><span class="s2">"192.168.10.100"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"forwarded_port"</span><span class="p">,</span> <span class="ss">guest: </span><span class="mi">22</span><span class="p">,</span> <span class="ss">host: </span><span class="mi">60000</span><span class="p">,</span> <span class="ss">auto_correct: </span><span class="kp">true</span><span class="p">,</span> <span class="ss">id: </span><span class="s2">"ssh"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">synced_folder</span> <span class="s2">"./"</span><span class="p">,</span> <span class="s2">"/vagrant"</span><span class="p">,</span> <span class="ss">disabled: </span><span class="kp">true</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"init_cfg.sh"</span><span class="p">,</span> <span class="ss">args: </span><span class="p">[</span> <span class="no">K8SV</span><span class="p">,</span> <span class="no">CONTAINERDV</span> <span class="p">]</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"k8s-ctr.sh"</span><span class="p">,</span> <span class="ss">args: </span><span class="p">[</span> <span class="no">N</span><span class="p">,</span> <span class="no">CILIUMV</span><span class="p">,</span> <span class="no">K8SV</span> <span class="p">]</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"route-add1.sh"</span>
+    <span class="k">end</span>
+  
+<span class="c1">#-Worker Nodes Subnet1</span>
+  <span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="no">N</span><span class="p">).</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+    <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">define</span> <span class="s2">"k8s-w</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">do</span> <span class="o">|</span><span class="n">subconfig</span><span class="o">|</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box</span> <span class="o">=</span> <span class="no">BOX_IMAGE</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box_version</span> <span class="o">=</span> <span class="no">BOX_VERSION</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provider</span> <span class="s2">"virtualbox"</span> <span class="k">do</span> <span class="o">|</span><span class="n">vb</span><span class="o">|</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">customize</span> <span class="p">[</span><span class="s2">"modifyvm"</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">"--groups"</span><span class="p">,</span> <span class="s2">"/Cilium-Lab"</span><span class="p">]</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">customize</span> <span class="p">[</span><span class="s2">"modifyvm"</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">"--nicpromisc2"</span><span class="p">,</span> <span class="s2">"allow-all"</span><span class="p">]</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">name</span> <span class="o">=</span> <span class="s2">"k8s-w</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">cpus</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">memory</span> <span class="o">=</span> <span class="mi">1536</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">linked_clone</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">host_name</span> <span class="o">=</span> <span class="s2">"k8s-w</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"private_network"</span><span class="p">,</span> <span class="ss">ip: </span><span class="s2">"192.168.10.10</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"forwarded_port"</span><span class="p">,</span> <span class="ss">guest: </span><span class="mi">22</span><span class="p">,</span> <span class="ss">host: </span><span class="s2">"6000</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="ss">auto_correct: </span><span class="kp">true</span><span class="p">,</span> <span class="ss">id: </span><span class="s2">"ssh"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">synced_folder</span> <span class="s2">"./"</span><span class="p">,</span> <span class="s2">"/vagrant"</span><span class="p">,</span> <span class="ss">disabled: </span><span class="kp">true</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"init_cfg.sh"</span><span class="p">,</span> <span class="ss">args: </span><span class="p">[</span> <span class="no">K8SV</span><span class="p">,</span> <span class="no">CONTAINERDV</span><span class="p">]</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"k8s-w.sh"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"route-add1.sh"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  
+<span class="c1">#-Router Node</span>
+    <span class="n">config</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">define</span> <span class="s2">"router"</span> <span class="k">do</span> <span class="o">|</span><span class="n">subconfig</span><span class="o">|</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box</span> <span class="o">=</span> <span class="no">BOX_IMAGE</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">box_version</span> <span class="o">=</span> <span class="no">BOX_VERSION</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provider</span> <span class="s2">"virtualbox"</span> <span class="k">do</span> <span class="o">|</span><span class="n">vb</span><span class="o">|</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">customize</span> <span class="p">[</span><span class="s2">"modifyvm"</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">"--groups"</span><span class="p">,</span> <span class="s2">"/Cilium-Lab"</span><span class="p">]</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">name</span> <span class="o">=</span> <span class="s2">"router"</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">cpus</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">memory</span> <span class="o">=</span> <span class="mi">768</span>
+        <span class="n">vb</span><span class="p">.</span><span class="nf">linked_clone</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="k">end</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">host_name</span> <span class="o">=</span> <span class="s2">"router"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"private_network"</span><span class="p">,</span> <span class="ss">ip: </span><span class="s2">"192.168.10.200"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">network</span> <span class="s2">"forwarded_port"</span><span class="p">,</span> <span class="ss">guest: </span><span class="mi">22</span><span class="p">,</span> <span class="ss">host: </span><span class="mi">60009</span><span class="p">,</span> <span class="ss">auto_correct: </span><span class="kp">true</span><span class="p">,</span> <span class="ss">id: </span><span class="s2">"ssh"</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">synced_folder</span> <span class="s2">"./"</span><span class="p">,</span> <span class="s2">"/vagrant"</span><span class="p">,</span> <span class="ss">disabled: </span><span class="kp">true</span>
+      <span class="n">subconfig</span><span class="p">.</span><span class="nf">vm</span><span class="p">.</span><span class="nf">provision</span> <span class="s2">"shell"</span><span class="p">,</span> <span class="ss">path: </span><span class="s2">"router.sh"</span>
+    <span class="k">end</span>    
+<span class="k">end</span>  
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>init_cfg.sh</strong> : args 참고하여 초기 설정을 수행하는 스크립트입니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Initial Config Start &lt;&lt;&lt;&lt;"</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 1] Setting Profile &amp; Bashrc"</span>
+<span class="nb">echo</span> <span class="s1">'alias vi=vim'</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nb">echo</span> <span class="s2">"sudo su -"</span> <span class="o">&gt;&gt;</span> /home/vagrant/.bashrc
+<span class="nb">ln</span> <span class="nt">-sf</span> /usr/share/zoneinfo/Asia/Seoul /etc/localtime <span class="c"># Change Timezone</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 2] Disable AppArmor"</span>
+systemctl stop ufw <span class="o">&amp;&amp;</span> systemctl disable ufw <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+systemctl stop apparmor <span class="o">&amp;&amp;</span> systemctl disable apparmor <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 3] Disable and turn off SWAP"</span>
+swapoff <span class="nt">-a</span> <span class="o">&amp;&amp;</span> <span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'/swap/s/^/#/'</span> /etc/fstab
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 4] Install Packages"</span>
+apt update <span class="nt">-qq</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+apt-get <span class="nb">install </span>apt-transport-https ca-certificates curl gpg <span class="nt">-y</span> <span class="nt">-qq</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="c"># Download the public signing key for the Kubernetes package repositories.</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> <span class="nt">-m</span> 755 /etc/apt/keyrings
+<span class="nv">K8SMMV</span><span class="o">=</span><span class="si">$(</span><span class="nb">echo</span> <span class="nv">$1</span> | <span class="nb">sed</span> <span class="nt">-En</span> <span class="s1">'s/^([0-9]+\.[0-9]+)\..*/\1/p'</span><span class="si">)</span>
+curl <span class="nt">-fsSL</span> https://pkgs.k8s.io/core:/stable:/v<span class="nv">$K8SMMV</span>/deb/Release.key | <span class="nb">sudo </span>gpg <span class="nt">--dearmor</span> <span class="nt">-o</span> /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+<span class="nb">echo</span> <span class="s2">"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v</span><span class="nv">$K8SMMV</span><span class="s2">/deb/ /"</span> <span class="o">&gt;&gt;</span> /etc/apt/sources.list.d/kubernetes.list
+curl <span class="nt">-fsSL</span> https://download.docker.com/linux/ubuntu/gpg <span class="nt">-o</span> /etc/apt/keyrings/docker.asc
+<span class="nb">echo</span> <span class="s2">"deb [arch=</span><span class="si">$(</span>dpkg <span class="nt">--print-architecture</span><span class="si">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu </span><span class="si">$(</span><span class="nb">.</span> /etc/os-release <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"</span><span class="nv">$VERSION_CODENAME</span><span class="s2">"</span><span class="si">)</span><span class="s2"> stable"</span> | <span class="nb">tee</span> /etc/apt/sources.list.d/docker.list <span class="o">&gt;</span> /dev/null
+  
+<span class="c"># packets traversing the bridge are processed by iptables for filtering</span>
+<span class="nb">echo </span>1 <span class="o">&gt;</span> /proc/sys/net/ipv4/ip_forward
+<span class="nb">echo</span> <span class="s2">"net.ipv4.ip_forward = 1"</span> <span class="o">&gt;&gt;</span> /etc/sysctl.d/k8s.conf
+  
+<span class="c"># enable br_netfilter for iptables </span>
+modprobe br_netfilter
+modprobe overlay
+<span class="nb">echo</span> <span class="s2">"br_netfilter"</span> <span class="o">&gt;&gt;</span> /etc/modules-load.d/k8s.conf
+<span class="nb">echo</span> <span class="s2">"overlay"</span> <span class="o">&gt;&gt;</span> /etc/modules-load.d/k8s.conf
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 5] Install Kubernetes components (kubeadm, kubelet and kubectl)"</span>
+<span class="c"># Update the apt package index, install kubelet, kubeadm and kubectl, and pin their version</span>
+apt update <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="c"># apt list -a kubelet ; apt list -a containerd.io</span>
+apt-get <span class="nb">install</span> <span class="nt">-y</span> <span class="nv">kubelet</span><span class="o">=</span><span class="nv">$1</span> <span class="nv">kubectl</span><span class="o">=</span><span class="nv">$1</span> <span class="nv">kubeadm</span><span class="o">=</span><span class="nv">$1</span> containerd.io<span class="o">=</span><span class="nv">$2</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+apt-mark hold kubelet kubeadm kubectl <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="c"># containerd configure to default and cgroup managed by systemd</span>
+containerd config default <span class="o">&gt;</span> /etc/containerd/config.toml
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/SystemdCgroup = false/SystemdCgroup = true/g'</span> /etc/containerd/config.toml
+  
+<span class="c"># avoid WARN&amp;ERRO(default endpoints) when crictl run  </span>
+<span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> &gt; /etc/crictl.yaml
+runtime-endpoint: unix:///run/containerd/containerd.sock
+image-endpoint: unix:///run/containerd/containerd.sock
+</span><span class="no">EOF
+  
+</span><span class="c"># ready to install for k8s </span>
+systemctl restart containerd <span class="o">&amp;&amp;</span> systemctl <span class="nb">enable </span>containerd
+systemctl <span class="nb">enable</span> <span class="nt">--now</span> kubelet
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 6] Install Packages &amp; Helm"</span>
+<span class="nb">export </span><span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive
+apt-get <span class="nb">install</span> <span class="nt">-y</span> bridge-utils sshpass net-tools conntrack ngrep tcpdump ipset arping wireguard jq yq tree bash-completion unzip kubecolor termshark <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+curl <span class="nt">-s</span> https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Initial Config End &lt;&lt;&lt;&lt;"</span>
+  
+</code></pre></div>    </div>
+  </li>
+  <li>
+<strong>k8s-ctr.sh</strong> : kubeadm init를 통하여 kubernetes controlplane 노드를 설정하고 Cilium CNI 설치, 편리성 설정(k, kc)하는 스크립트입니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; K8S Controlplane config Start &lt;&lt;&lt;&lt;"</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 1] Initial Kubernetes"</span>
+curl <span class="nt">--silent</span> <span class="nt">-o</span> /root/kubeadm-init-ctr-config.yaml https://raw.githubusercontent.com/gasida/vagrant-lab/refs/heads/main/cilium-study/kubeadm-init-ctr-config.yaml
+<span class="nv">K8SMMV</span><span class="o">=</span><span class="si">$(</span><span class="nb">echo</span> <span class="nv">$3</span> | <span class="nb">sed</span> <span class="nt">-En</span> <span class="s1">'s/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'</span><span class="si">)</span>
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/K8S_VERSION_PLACEHOLDER/v</span><span class="k">${</span><span class="nv">K8SMMV</span><span class="k">}</span><span class="s2">/g"</span> /root/kubeadm-init-ctr-config.yaml
+kubeadm init <span class="nt">--config</span><span class="o">=</span><span class="s2">"/root/kubeadm-init-ctr-config.yaml"</span>  <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 2] Setting kube config file"</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> /root/.kube
+<span class="nb">cp</span> <span class="nt">-i</span> /etc/kubernetes/admin.conf /root/.kube/config
+<span class="nb">chown</span> <span class="si">$(</span><span class="nb">id</span> <span class="nt">-u</span><span class="si">)</span>:<span class="si">$(</span><span class="nb">id</span> <span class="nt">-g</span><span class="si">)</span> /root/.kube/config
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 3] Source the completion"</span>
+<span class="nb">echo</span> <span class="s1">'source &lt;(kubectl completion bash)'</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nb">echo</span> <span class="s1">'source &lt;(kubeadm completion bash)'</span> <span class="o">&gt;&gt;</span> /etc/profile
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 4] Alias kubectl to k"</span>
+<span class="nb">echo</span> <span class="s1">'alias k=kubectl'</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nb">echo</span> <span class="s1">'alias kc=kubecolor'</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nb">echo</span> <span class="s1">'complete -F __start_kubectl k'</span> <span class="o">&gt;&gt;</span> /etc/profile
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 5] Install Kubectx &amp; Kubens"</span>
+git clone https://github.com/ahmetb/kubectx /opt/kubectx <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="nb">ln</span> <span class="nt">-s</span> /opt/kubectx/kubens /usr/local/bin/kubens
+<span class="nb">ln</span> <span class="nt">-s</span> /opt/kubectx/kubectx /usr/local/bin/kubectx
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 6] Install Kubeps &amp; Setting PS1"</span>
+git clone https://github.com/jonmosco/kube-ps1.git /root/kube-ps1 <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="sh">"</span><span class="no">EOT</span><span class="sh">" &gt;&gt; /root/.bash_profile
+source /root/kube-ps1/kube-ps1.sh
+KUBE_PS1_SYMBOL_ENABLE=true
+function get_cluster_short() {
+  echo "</span><span class="nv">$1</span><span class="sh">" | cut -d . -f1
+}
+KUBE_PS1_CLUSTER_FUNCTION=get_cluster_short
+KUBE_PS1_SUFFIX=') '
+PS1='</span><span class="si">$(</span>kube_ps1<span class="si">)</span><span class="sh">'</span><span class="nv">$PS1</span><span class="sh">
+</span><span class="no">EOT
+</span>kubectl config rename-context <span class="s2">"kubernetes-admin@kubernetes"</span> <span class="s2">"HomeLab"</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 7] Install Cilium CNI"</span>
+<span class="nv">NODEIP</span><span class="o">=</span><span class="si">$(</span>ip <span class="nt">-4</span> addr show eth1 | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'(?&lt;=inet\s)\d+(\.\d+){3}'</span><span class="si">)</span>
+helm repo add cilium https://helm.cilium.io/ <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+helm repo update <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+helm <span class="nb">install </span>cilium cilium/cilium <span class="nt">--version</span> <span class="nv">$2</span> <span class="nt">--namespace</span> kube-system <span class="se">\</span>
+<span class="nt">--set</span> <span class="nv">k8sServiceHost</span><span class="o">=</span>192.168.10.100 <span class="nt">--set</span> <span class="nv">k8sServicePort</span><span class="o">=</span>6443 <span class="se">\</span>
+<span class="nt">--set</span> ipam.mode<span class="o">=</span><span class="s2">"kubernetes"</span> <span class="nt">--set</span> k8s.requireIPv4PodCIDR<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> <span class="nv">ipv4NativeRoutingCIDR</span><span class="o">=</span>10.244.0.0/16 <span class="se">\</span>
+<span class="nt">--set</span> <span class="nv">routingMode</span><span class="o">=</span>native <span class="nt">--set</span> <span class="nv">autoDirectNodeRoutes</span><span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> endpointRoutes.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+<span class="nt">--set</span> <span class="nv">kubeProxyReplacement</span><span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> bpf.masquerade<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> <span class="nv">installNoConntrackIptablesRules</span><span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+<span class="nt">--set</span> endpointHealthChecking.enabled<span class="o">=</span><span class="nb">false</span> <span class="nt">--set</span> <span class="nv">healthChecking</span><span class="o">=</span><span class="nb">false</span> <span class="se">\</span>
+<span class="nt">--set</span> hubble.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.relay.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.ui.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+<span class="nt">--set</span> hubble.ui.service.type<span class="o">=</span>NodePort <span class="nt">--set</span> hubble.ui.service.nodePort<span class="o">=</span>30003 <span class="se">\</span>
+<span class="nt">--set</span> prometheus.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> operator.prometheus.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.metrics.enableOpenMetrics<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+<span class="nt">--set</span> hubble.metrics.enabled<span class="o">=</span><span class="s2">"{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip</span><span class="se">\,</span><span class="s2">source_namespace</span><span class="se">\,</span><span class="s2">source_workload</span><span class="se">\,</span><span class="s2">destination_ip</span><span class="se">\,</span><span class="s2">destination_namespace</span><span class="se">\,</span><span class="s2">destination_workload</span><span class="se">\,</span><span class="s2">traffic_direction}"</span> <span class="se">\</span>
+<span class="nt">--set</span> operator.replicas<span class="o">=</span>1 <span class="nt">--set</span> debug.enabled<span class="o">=</span><span class="nb">true</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="c">#--set ipam.mode="cluster-pool" --set ipam.operator.clusterPoolIPv4PodCIDRList={"172.20.0.0/16"} --set ipv4NativeRoutingCIDR=172.20.0.0/16 \</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 8] Install Cilium / Hubble CLI"</span>
+<span class="nv">CILIUM_CLI_VERSION</span><span class="o">=</span><span class="si">$(</span>curl <span class="nt">-s</span> https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt<span class="si">)</span>
+<span class="nv">CLI_ARCH</span><span class="o">=</span>amd64
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">uname</span> <span class="nt">-m</span><span class="si">)</span><span class="s2">"</span> <span class="o">=</span> <span class="s2">"aarch64"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then </span><span class="nv">CLI_ARCH</span><span class="o">=</span>arm64<span class="p">;</span> <span class="k">fi
+</span>curl <span class="nt">-L</span> <span class="nt">--fail</span> <span class="nt">--remote-name-all</span> https://github.com/cilium/cilium-cli/releases/download/<span class="k">${</span><span class="nv">CILIUM_CLI_VERSION</span><span class="k">}</span>/cilium-linux-<span class="k">${</span><span class="nv">CLI_ARCH</span><span class="k">}</span>.tar.gz <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="nb">tar </span>xzvfC cilium-linux-<span class="k">${</span><span class="nv">CLI_ARCH</span><span class="k">}</span>.tar.gz /usr/local/bin
+<span class="nb">rm </span>cilium-linux-<span class="k">${</span><span class="nv">CLI_ARCH</span><span class="k">}</span>.tar.gz
+  
+<span class="nv">HUBBLE_VERSION</span><span class="o">=</span><span class="si">$(</span>curl <span class="nt">-s</span> https://raw.githubusercontent.com/cilium/hubble/master/stable.txt<span class="si">)</span>
+<span class="nv">HUBBLE_ARCH</span><span class="o">=</span>amd64
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">uname</span> <span class="nt">-m</span><span class="si">)</span><span class="s2">"</span> <span class="o">=</span> <span class="s2">"aarch64"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then </span><span class="nv">HUBBLE_ARCH</span><span class="o">=</span>arm64<span class="p">;</span> <span class="k">fi
+</span>curl <span class="nt">-L</span> <span class="nt">--fail</span> <span class="nt">--remote-name-all</span> https://github.com/cilium/hubble/releases/download/<span class="nv">$HUBBLE_VERSION</span>/hubble-linux-<span class="k">${</span><span class="nv">HUBBLE_ARCH</span><span class="k">}</span>.tar.gz <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="nb">tar </span>xzvfC hubble-linux-<span class="k">${</span><span class="nv">HUBBLE_ARCH</span><span class="k">}</span>.tar.gz /usr/local/bin
+<span class="nb">rm </span>hubble-linux-<span class="k">${</span><span class="nv">HUBBLE_ARCH</span><span class="k">}</span>.tar.gz
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 9] Remove node taint"</span>
+kubectl taint nodes k8s-ctr node-role.kubernetes.io/control-plane-
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 10] local DNS with hosts file"</span>
+<span class="nb">echo</span> <span class="s2">"192.168.10.100 k8s-ctr"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+<span class="k">for</span> <span class="o">((</span> <span class="nv">i</span><span class="o">=</span>1<span class="p">;</span> i&lt;<span class="o">=</span><span class="nv">$1</span><span class="p">;</span> i++  <span class="o">))</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"192.168.10.10</span><span class="nv">$i</span><span class="s2"> k8s-w</span><span class="nv">$i</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> /etc/hosts<span class="p">;</span> <span class="k">done
+  
+</span><span class="nb">echo</span> <span class="s2">"[TASK 11] Install Prometheus &amp; Grafana"</span>
+kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/cilium/cilium/1.17.6/examples/kubernetes/addons/prometheus/monitoring-example.yaml <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+kubectl patch svc <span class="nt">-n</span> cilium-monitoring prometheus <span class="nt">-p</span> <span class="s1">'{"spec": {"type": "NodePort", "ports": [{"port": 9090, "targetPort": 9090, "nodePort": 30001}]}}'</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+kubectl patch svc <span class="nt">-n</span> cilium-monitoring grafana <span class="nt">-p</span> <span class="s1">'{"spec": {"type": "NodePort", "ports": [{"port": 3000, "targetPort": 3000, "nodePort": 30002}]}}'</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 12] Dynamically provisioning persistent local storage with Kubernetes"</span>
+kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.31/deploy/local-path-storage.yaml <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+kubectl patch storageclass local-path <span class="nt">-p</span> <span class="s1">'{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; K8S Controlplane Config End &lt;&lt;&lt;&lt;"</span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li>이번 실습에서는 <code class="language-plaintext highlighter-rouge">--set endpointHealthChecking.enabled=false</code> 과 <code class="language-plaintext highlighter-rouge">--set healthChecking=false</code> 옵션을 통해 endpoint health check를 완전히 해제합니다.</li>
+      <li>참고로 해당 health check 기능은 비교적 소규모의 클러스터(3~10노드)에만 활성화 하기를 권장하고 있습니다. 대규모의 클러스터에서는 방화벽 정책이나 하이퍼바이저 설정으로 인해 패킷 손실이 발생할 수 있기 때문입니다. - <a href="https://docs.cilium.io/en/stable/operations/performance/scalability/report/">Docs</a>
+</li>
+      <li>
+        <p><strong>kubeadm-init-ctr-config.yaml</strong></p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  apiVersion: kubeadm.k8s.io/v1beta4
+  kind: <span class="k">**</span>InitConfiguration<span class="k">**</span>
+  bootstrapTokens:
+  - token: <span class="s2">"123456.1234567890123456"</span>
+    ttl: <span class="s2">"0s"</span>
+    usages:
+    - signing
+    - authentication
+  localAPIEndpoint:
+    advertiseAddress: <span class="s2">"192.168.10.100"</span>
+  nodeRegistration:
+    <span class="k">**</span>kubeletExtraArgs:
+      - name: node-ip
+        value: <span class="s2">"192.168.10.100"</span><span class="k">**</span>
+    criSocket: <span class="s2">"unix:///run/containerd/containerd.sock"</span>
+  <span class="nt">---</span>
+  apiVersion: kubeadm.k8s.io/v1beta4
+  kind: <span class="k">**</span>ClusterConfiguration<span class="k">**</span>
+  kubernetesVersion: <span class="s2">"**K8S_VERSION_PLACEHOLDER**"</span>
+  networking:
+    podSubnet: <span class="s2">"10.244.0.0/16"</span>
+    serviceSubnet: <span class="s2">"10.96.0.0/16"</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>k8s-w.sh</strong> : kubernetes worker 노드 설정, kubeadm join, Cilium CNI 설치 등을 수행하는  스크립트입니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; K8S Node config Start &lt;&lt;&lt;&lt;"</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 1] K8S Controlplane Join"</span>
+curl <span class="nt">--silent</span> <span class="nt">-o</span> /root/kubeadm-join-worker-config.yaml https://raw.githubusercontent.com/gasida/vagrant-lab/refs/heads/main/cilium-study/2w/kubeadm-join-worker-config.yaml
+<span class="nv">NODEIP</span><span class="o">=</span><span class="si">$(</span>ip <span class="nt">-4</span> addr show eth1 | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'(?&lt;=inet\s)\d+(\.\d+){3}'</span><span class="si">)</span>
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/NODE_IP_PLACEHOLDER/</span><span class="k">${</span><span class="nv">NODEIP</span><span class="k">}</span><span class="s2">/g"</span> /root/kubeadm-join-worker-config.yaml
+kubeadm <span class="nb">join</span> <span class="nt">--config</span><span class="o">=</span><span class="s2">"/root/kubeadm-join-worker-config.yaml"</span> <span class="o">&gt;</span> /dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; K8S Node config End &lt;&lt;&lt;&lt;"</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>
+        <p><strong>kubeadm-join-worker-config.yaml</strong></p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>apiVersion: kubeadm.k8s.io/v1beta4
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    token: <span class="s2">"123456.1234567890123456"</span>
+    apiServerEndpoint: <span class="s2">"192.168.10.100:6443"</span>
+    unsafeSkipCAVerification: <span class="nb">true
+</span>nodeRegistration:
+  criSocket: <span class="s2">"unix:///run/containerd/containerd.sock"</span>
+  kubeletExtraArgs:
+    - name: node-ip
+      value: <span class="s2">"NODE_IP_PLACEHOLDER"</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p><strong>route-add1.sh</strong> : k8s node 들이 사내망(?)과 통신을 위한 route 설정 스크립트입니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Route Add Config Start &lt;&lt;&lt;&lt;"</span>
+  
+<span class="nb">chmod </span>600 /etc/netplan/01-netcfg.yaml
+<span class="nb">chmod </span>600 /etc/netplan/50-vagrant.yaml
+  
+<span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOT</span><span class="sh">&gt;&gt; /etc/netplan/50-vagrant.yaml
+      routes:
+      - to: 10.10.0.0/16
+        via: 192.168.10.200
+</span><span class="no">EOT
+  
+</span>netplan apply
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Route Add Config End &lt;&lt;&lt;&lt;"</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>router.sh</strong> : router 역할과 추가적으로 웹서버 역할을 하는 서버의 초기 설정을 담당합니다.</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env bash</span>
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Initial Config Start &lt;&lt;&lt;&lt;"</span>
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 1] Setting Profile &amp; Bashrc"</span>
+<span class="nb">echo</span> <span class="s1">'alias vi=vim'</span> <span class="o">&gt;&gt;</span> /etc/profile
+<span class="nb">echo</span> <span class="s2">"sudo su -"</span> <span class="o">&gt;&gt;</span> /home/vagrant/.bashrc
+<span class="nb">ln</span> <span class="nt">-sf</span> /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 2] Disable AppArmor"</span>
+systemctl stop ufw <span class="o">&amp;&amp;</span> systemctl disable ufw <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+systemctl stop apparmor <span class="o">&amp;&amp;</span> systemctl disable apparmor <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 3] Add Kernel setting - IP Forwarding"</span>
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g'</span> /etc/sysctl.conf
+sysctl <span class="nt">-p</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 4] Setting Dummy Interface"</span>
+modprobe dummy
+ip <span class="nb">link </span>add loop1 <span class="nb">type </span>dummy
+ip <span class="nb">link set </span>loop1 up
+ip addr add 10.10.1.200/24 dev loop1
+  
+ip <span class="nb">link </span>add loop2 <span class="nb">type </span>dummy
+ip <span class="nb">link set </span>loop2 up
+ip addr add 10.10.2.200/24 dev loop2
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 5] Install Packages"</span>
+<span class="nb">export </span><span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive
+apt update <span class="nt">-qq</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+apt-get <span class="nb">install </span>net-tools jq tree ngrep tcpdump arping <span class="nt">-y</span> <span class="nt">-qq</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+  
+<span class="nb">echo</span> <span class="s2">"[TASK 6] Install Apache"</span>
+apt <span class="nb">install </span>apache2 <span class="nt">-y</span> <span class="o">&gt;</span>/dev/null 2&gt;&amp;1
+<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"&lt;h1&gt;Web Server : </span><span class="si">$(</span><span class="nb">hostname</span><span class="si">)</span><span class="s2">&lt;/h1&gt;"</span> <span class="o">&gt;</span> /var/www/html/index.html
+  
+<span class="nb">echo</span> <span class="s2">"&gt;&gt;&gt;&gt; Initial Config End &lt;&lt;&lt;&lt;"</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="실습환경-배포-및-분석-툴-설치">실습환경 배포 및 분석 툴 설치</h3>
+
+<ul>
+  <li>
+    <p>실습환경 배포</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>vagrant up
+<span class="c"># =&gt;     ...</span>
+<span class="c">#        router: [TASK 5] Install Packages</span>
+<span class="c">#        router: [TASK 6] Install Apache</span>
+<span class="c">#        router: &gt;&gt;&gt;&gt; Initial Config End &lt;&lt;&lt;&lt;</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+<code class="language-plaintext highlighter-rouge">k8s-ctr</code>, cilium 설치정보확인은 지난주의 포스트를 참고해주세요. <a href="https://sweetlittlebird.github.io/posts/2025-07-27-Cilium-Week2/#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC">링크</a>
+</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">k9s</code>
+    <ul>
+      <li>이번 주에는 k9s라는 CLI 기반의 Kubernetes 대시보드 툴을 설치하고 살펴보겠습니다. <a href="https://github.com/derailed/k9s">github</a>
+</li>
+      <li>설치 및 실행
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># arm64 CPU 일 경우</span>
+<span class="nv">$ </span>wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_arm64.deb <span class="nt">-O</span> /tmp/k9s_linux_arm64.deb
+<span class="nv">$ </span>apt <span class="nb">install</span> /tmp/k9s_linux_arm64.deb
+<span class="c"># =&gt; ...</span>
+<span class="c">#    Preparing to unpack /tmp/k9s_linux_arm64.deb ...</span>
+<span class="c">#    Unpacking k9s (0.50.9) ...</span>
+<span class="c">#    Setting up k9s (0.50.9) ...</span>
+    
+<span class="c"># amd64 CPU 일 경우</span>
+<span class="nv">$ </span>wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb <span class="nt">-O</span> /tmp/k9s_linux_amd64.deb
+<span class="nv">$ </span>apt <span class="nb">install</span> /tmp/k9s_linux_amd64.deb
+    
+<span class="c"># k9s 설치 경로 확인</span>
+<span class="nv">$ </span>which k9s
+<span class="c"># =&gt; /usr/bin/k9s</span>
+    
+<span class="c"># k9s 실행</span>
+<span class="nv">$ </span>k9s
+</code></pre></div>        </div>
+      </li>
+      <li>실행 화면
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_2.png" alt="img.png" loading="lazy" width="1390" height="723">
+터미널이지만 한눈에 보기 쉽게 구성되어 있습니다.</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">k9s</code> 기본 사용법
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 버전 확인</span>
+<span class="nv">$ </span>k9s version
+<span class="c"># =&gt;  ____  __ ________</span>
+<span class="c">#    |    |/  /   __   \______</span>
+<span class="c">#    |       /\____    /  ___/</span>
+<span class="c">#    |    \   \  /    /\___  \</span>
+<span class="c">#    |____|\__ \/____//____  /</span>
+<span class="c">#             \/           \/</span>
+<span class="c">#    Version:    v0.50.9</span>
+<span class="c">#    Commit:     ffdc7b70f044e1f26c2f6fbb93b5495e4ebdb1ad</span>
+    
+<span class="c"># k9s 런타임에 대한 정보</span>
+<span class="nv">$ </span>k9s info
+<span class="c"># =&gt; ...</span>
+<span class="c">#    Version:           v0.50.9</span>
+<span class="c">#    Config:            /root/.config/k9s/config.yaml</span>
+<span class="c">#    Custom Views:      /root/.config/k9s/views.yaml</span>
+<span class="c">#    Plugins:           /root/.config/k9s/plugins.yaml</span>
+<span class="c">#    Hotkeys:           /root/.config/k9s/hotkeys.yaml</span>
+<span class="c">#    Aliases:           /root/.config/k9s/aliases.yaml</span>
+<span class="c">#    Skins:             /root/.config/k9s/skins</span>
+<span class="c">#    Context Configs:   /root/.local/share/k9s/clusters</span>
+<span class="c">#    Logs:              /root/.local/state/k9s/k9s.log</span>
+<span class="c">#    Benchmarks:        /root/.local/state/k9s/benchmarks</span>
+<span class="c">#    ScreenDumps:       /root/.local/state/k9s/screen-dumps</span>
+    
+<span class="c"># CLI의 도움말</span>
+<span class="nv">$ </span>k9s <span class="nb">help</span>
+    
+<span class="c"># 특정 네임스페이스에서 K9s 시작</span>
+<span class="nv">$ </span>k9s <span class="nt">-n</span> mycoolns
+    
+<span class="c"># KubeConfig에 존재하는 컨텍스트로 K9s 시작</span>
+<span class="nv">$ </span>k9s <span class="nt">--context</span> coolCtx
+    
+<span class="c"># K9s를 읽기 전용 모드로 시작 - 클러스터 수정 명령이 비활성화됩니다.</span>
+<span class="nv">$ </span>k9s <span class="nt">--readonly</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+<code class="language-plaintext highlighter-rouge">termshark</code>
+    <ul>
+      <li>터미널에서 Wireshark 처럼 패킷을 볼 수 있는 툴입니다. <a href="https://github.com/gcla/termshark">github</a>, <a href="https://termshark.io/">Home</a>
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 이미 설치되어 있음</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive
+<span class="nv">$ </span>apt-get <span class="nb">install</span> <span class="nt">-y</span> termshark
+<span class="c"># =&gt; Reading package lists... Done</span>
+<span class="c">#    Building dependency tree... Done</span>
+<span class="c">#    Reading state information... Done</span>
+<span class="c">#    termshark is already the newest version (2.4.0-1ubuntu0.24.04.3).</span>
+<span class="c">#    0 upgraded, 0 newly installed, 0 to remove and 170 not upgraded.</span>
+    
+<span class="c"># pcap 파일 분석</span>
+<span class="nv">$ </span>termshark <span class="nt">-r</span> test.pcap
+    
+<span class="c"># eth0 인터페이스에서 ping 패킷을 캡처합니다.</span>
+<span class="nv">$ </span>termshark <span class="nt">-i</span> eth0 icmp
+</code></pre></div>        </div>
+      </li>
+      <li>실행 화면
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_3.png" alt="img.png" loading="lazy" width="1392" height="820">
+</li>
+    </ul>
+  </li>
+</ul>
+
+<hr>
+
+<h2 id="ipam">IPAM</h2>
+
+<ul>
+  <li>
+    <p>IPAM은 <code class="language-plaintext highlighter-rouge">IP Address Management</code>의 약자로, 네트워크 엔드포인트(컨테이너 등)에 대한 IP 주소를 할당하고 관리하는 시스템입니다. <a href="https://docs.cilium.io/en/stable/network/concepts/ipam/">Docs</a></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th><strong>Feature</strong></th>
+          <th><strong>Kubernetes Host Scope</strong></th>
+          <th><strong>Cluster Scope (default)</strong></th>
+          <th><strong>Multi-Pool (Beta)</strong></th>
+          <th><strong>CRD-backed</strong></th>
+          <th><strong>AWS ENI…</strong></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tunnel routing</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td>Direct routing</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td>CIDR Configuration</td>
+          <td>Kubernetes</td>
+          <td>Cilium</td>
+          <td>Cilium</td>
+          <td>External</td>
+          <td>External (AWS)</td>
+        </tr>
+        <tr>
+          <td>Multiple CIDRs per cluster</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>Multiple CIDRs per node</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>Dynamic CIDR/IP allocation</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <blockquote>
+      <p>기존 <strong>클러스터의 IPAM 모드</strong>를 변경하지 마세요.<br>
+라이브 환경에서 IPAM 모드를 변경하면 기존 워크로드의 <strong>지속적인 연결 중단</strong>이 발생할 수 있습니다.<br>
+IPAM 모드를 변경하는 가장 안전한 방법은 새로운 IPAM 구성으로 새로운 Kubernetes 클러스터를 설치하는 것입니다.</p>
+    </blockquote>
+  </li>
+</ul>
+
+<h3 id="kubernetes-host-scope">Kubernetes Host Scope</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/network/concepts/ipam/kubernetes/">Docs</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_4.png" alt="img.png" loading="lazy" width="1488" height="454"></p>
+
+<ul>
+  <li>Kubernetes 호스트 범위 IPAM 모드는 <code class="language-plaintext highlighter-rouge">ipam: Kubernetes</code>로 활성화되며, 클러스터의 각 개별 노드에 주소 할당을 위임합니다.</li>
+  <li>IP는 Kubernetes에 의해 각 노드에 연결된 PodCIDR 범위에서 할당됩니다. 즉, CIDR 설정의 주체는 Kubernetes입니다.</li>
+  <li>이 모드에서는 Cilium 에이전트가 <code class="language-plaintext highlighter-rouge">Kubernetes v1.Node</code> 객체를 통해 PodCIDR 범위가 다음 방법 중 하나를 통해 활성화된 모든 주소 패밀리에 대해 제공될때까지 시작시 대기합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 클러스터 정보 확인</span>
+<span class="nv">$ </span>kubectl cluster-info dump | <span class="nb">grep</span> <span class="nt">-m</span> 2 <span class="nt">-E</span> <span class="s2">"cluster-cidr|service-cluster-ip-range"</span>
+<span class="c"># =&gt;                             "--service-cluster-ip-range=10.96.0.0/16",</span>
+<span class="c">#                                "--cluster-cidr=10.244.0.0/16",</span>
+
+<span class="c"># ipam 모드 확인</span>
+<span class="nv">$ </span>cilium config view | <span class="nb">grep</span> ^ipam
+<span class="c"># =&gt; ipam                                              kubernetes</span>
+<span class="c">#    ipam-cilium-node-update-rate                      15s</span>
+
+<span class="c"># 노드별 파드에 할당되는 IPAM(PodCIDR) 정보 확인</span>
+<span class="c"># --allocate-node-cidrs=true 로 설정된 kube-controller-manager에서 CIDR을 자동 할당함</span>
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{range .items[*]}{.metadata.name}{"\t"}{.spec.podCIDR}{"\n"}{end}'</span>
+<span class="c"># =&gt; k8s-ctr 10.244.0.0/24</span>
+<span class="c">#    k8s-w1  10.244.1.0/24</span>
+
+<span class="nv">$ </span>kc describe pod <span class="nt">-n</span> kube-system kube-controller-manager-k8s-ctr
+<span class="c"># =&gt; ....</span>
+<span class="c">#    Command:</span>
+<span class="c">#          kube-controller-manager</span>
+<span class="c">#          --allocate-node-cidrs=true</span>
+<span class="c">#          --cluster-cidr=10.244.0.0/16</span>
+<span class="c">#          --service-cluster-ip-range=10.96.0.0/16</span>
+<span class="c">#    ...</span>
+
+<span class="nv">$ </span>kubectl get ciliumnode <span class="nt">-o</span> json | <span class="nb">grep </span>podCIDRs <span class="nt">-A2</span>
+<span class="c"># =&gt;                     "podCIDRs": [</span>
+<span class="c">#                            "10.244.0.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="c">#    --</span>
+<span class="c">#                        "podCIDRs": [</span>
+<span class="c">#                            "10.244.1.0/24"</span>
+<span class="c">#                        ],</span>
+
+<span class="c"># 파드 정보 : 상태, 파드 IP 확인</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                      SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    cilium-monitoring    grafana-5c69859d9-zgx9k                   22364               ready            10.244.0.5</span>
+<span class="c">#    cilium-monitoring    prometheus-6fc896bc5d-5rbpx               15628               ready            10.244.0.143</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-dhckj                  28257               ready            10.244.0.155</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-n4xbw                  28257               ready            10.244.0.7</span>
+<span class="c">#    kube-system          hubble-relay-5dcd46f5c-9bcxl              9702                ready            10.244.0.59</span>
+<span class="c">#    kube-system          hubble-ui-76d4965bb6-rq9gv                64346               ready            10.244.0.166</span>
+<span class="c">#    local-path-storage   local-path-provisioner-74f9666bc9-rrn2r   29718               ready            10.244.0.130</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 현재 모든 파드가 k8s-ctr에서 동작 중이어서 10.244.0.0/24 아이피가 할당된 것을 확인할 수 있습니다.&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<h4 id="샘플-애플리케이션-배포-및-확인">샘플 애플리케이션 배포 및 확인</h4>
+
+<ul>
+  <li>샘플 애플리케이션을 배포하고 IPAM이 올바르게 작동하는지 확인합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 샘플 애플리케이션 배포</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webpod
+  template:
+    metadata:
+      labels:
+        app: webpod
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - sample-app
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: webpod
+        image: traefik/whoami
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webpod
+  labels:
+    app: webpod
+spec:
+  selector:
+    app: webpod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+</span><span class="no">EOF
+</span><span class="c"># =&gt; deployment.apps/webpod created</span>
+<span class="c">#    service/webpod created</span>
+
+<span class="c"># k8s-ctr 노드에 curl-pod 파드 배포</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-pod
+  labels:
+    app: curl
+spec:
+  nodeName: k8s-ctr
+  containers:
+  - name: curl
+    image: nicolaka/netshoot
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+  terminationGracePeriodSeconds: 0
+</span><span class="no">EOF
+</span><span class="c"># =&gt; pod/curl-pod created</span>
+</code></pre></div></div>
+
+<ul>
+  <li>배포 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 배포 확인</span>
+<span class="nv">$ </span>kubectl get deploy,svc,ep webpod <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                     READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES           SELECTOR</span>
+<span class="c">#    deployment.apps/webpod   2/2     2            2           77s   webpod       traefik/whoami   app=webpod</span>
+<span class="c">#    </span>
+<span class="c">#    NAME             TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE   SELECTOR</span>
+<span class="c">#    service/webpod   ClusterIP   10.96.194.47   &lt;none&gt;        80/TCP    77s   app=webpod</span>
+<span class="c">#    </span>
+<span class="c">#    NAME               ENDPOINTS                       AGE</span>
+<span class="c">#    endpoints/webpod   10.244.0.2:80,10.244.1.188:80   77s</span>
+<span class="nv">$ </span>kubectl get endpointslices <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>webpod
+<span class="c"># =&gt; NAME           ADDRESSTYPE   PORTS   ENDPOINTS                 AGE</span>
+<span class="c">#    webpod-j45jt   IPv4          80      10.244.0.2,10.244.1.188   95s</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints <span class="c"># IP 확인</span>
+<span class="c"># =&gt; NAME                      SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    curl-pod                  1072                ready            10.244.0.188</span>
+<span class="c">#    webpod-697b545f57-2zpdp   24748               ready            10.244.0.2</span>
+<span class="c">#    webpod-697b545f57-thl79   24748               ready            10.244.1.188</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent <span class="nt">--</span> cilium-dbg endpoint list
+
+<span class="c"># 통신 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl webpod | <span class="nb">grep </span>Hostname
+<span class="c"># =&gt; Hostname: webpod-697b545f57-2zpdp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> sh <span class="nt">-c</span> <span class="s1">'while true; do curl -s webpod | grep Hostname; sleep 1; done'</span>
+<span class="c"># =&gt; Hostname: webpod-697b545f57-thl79</span>
+<span class="c">#    Hostname: webpod-697b545f57-2zpdp</span>
+<span class="c">#    Hostname: webpod-697b545f57-thl79</span>
+<span class="c">#    Hostname: webpod-697b545f57-thl79</span>
+<span class="c">#    Hostname: webpod-697b545f57-2zpdp</span>
+<span class="c">#    ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Hubble 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># hubble ui 웹 접속 주소 확인 : default 네임스페이스 확인</span>
+<span class="nv">$ NODEIP</span><span class="o">=</span><span class="si">$(</span>ip <span class="nt">-4</span> addr show eth1 | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'(?&lt;=inet\s)\d+(\.\d+){3}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"http://</span><span class="nv">$NODEIP</span><span class="s2">:30003"</span>
+<span class="c"># =&gt; http://192.168.10.100:30003</span>
+
+<span class="c"># hubble relay 포트 포워딩 실행</span>
+<span class="nv">$ </span>cilium hubble port-forward&amp;
+<span class="c"># =&gt; ℹ️   Hubble Relay is available at 127.0.0.1:4245</span>
+<span class="nv">$ </span>hubble status
+<span class="c"># =&gt; Healthcheck (via localhost:4245): Ok</span>
+<span class="c">#    Current/Max Flows: 5,284/8,190 (64.52%)</span>
+<span class="c">#    Flows/s: 33.82</span>
+<span class="c">#    Connected Nodes: 2/2</span>
+
+<span class="c"># flow log 모니터링</span>
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--protocol</span> tcp <span class="nt">--to-pod</span> curl-pod
+<span class="c"># =&gt; Aug  2 08:36:29.808: default/curl-pod:56772 (ID:1072) &lt;- default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: ACK, FIN)</span>
+<span class="c">#    Aug  2 08:36:30.530: default/curl-pod:50248 (ID:1072) &lt;- default/webpod-697b545f57-2zpdp:80 (ID:24748) to-endpoint FORWARDED (TCP Flags: SYN, ACK)</span>
+<span class="c">#    Aug  2 08:36:30.533: default/curl-pod:50248 (ID:1072) &lt;- default/webpod-697b545f57-2zpdp:80 (ID:24748) to-endpoint FORWARDED (TCP Flags: ACK, PSH)</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--protocol</span> tcp <span class="nt">--from-pod</span> curl-pod
+<span class="c"># =&gt; Aug  2 08:36:57.991: default/curl-pod (ID:1072) &lt;&gt; 10.96.194.47:80 (world) pre-xlate-fwd TRACED (TCP)</span>
+<span class="c">#    Aug  2 08:36:57.991: default/curl-pod (ID:1072) &lt;&gt; default/webpod-697b545f57-thl79:80 (ID:24748) post-xlate-fwd TRANSLATED (TCP)</span>
+<span class="c">#    Aug  2 08:36:57.991: default/curl-pod:51316 (ID:1072) -&gt; default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: SYN)</span>
+<span class="c">#    Aug  2 08:36:57.992: default/curl-pod:51316 (ID:1072) -&gt; default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: ACK, PSH)</span>
+<span class="c">#    Aug  2 08:36:57.993: default/curl-pod:51316 (ID:1072) -&gt; default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: ACK)</span>
+<span class="c">#    Aug  2 08:36:57.999: default/curl-pod:51316 (ID:1072) -&gt; default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: ACK, FIN)</span>
+<span class="c">#    Aug  2 08:36:57.999: default/curl-pod:51316 (ID:1072) -&gt; default/webpod-697b545f57-thl79:80 (ID:24748) to-network FORWARDED (TCP Flags: ACK)</span>
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--protocol</span> tcp <span class="nt">--pod</span> curl-pod
+<span class="c"># =&gt; Aug  2 08:37:22.316: default/curl-pod (ID:1072) &lt;&gt; 10.96.194.47:80 (world) pre-xlate-fwd TRACED (TCP)</span>
+<span class="c">#    Aug  2 08:37:22.316: default/curl-pod (ID:1072) &lt;&gt; default/webpod-697b545f57-2zpdp:80 (ID:24748) post-xlate-fwd TRANSLATED (TCP)</span>
+<span class="c">#    Aug  2 08:37:22.317: default/curl-pod:51022 (ID:1072) -&gt; default/webpod-697b545f57-2zpdp:80 (ID:24748) to-endpoint FORWARDED (TCP Flags: SYN)</span>
+<span class="c">#    Aug  2 08:37:22.317: default/curl-pod:51022 (ID:1072) &lt;- default/webpod-697b545f57-2zpdp:80 (ID:24748) to-endpoint FORWARDED (TCP Flags: SYN, ACK)</span>
+<span class="c">#    Aug  2 08:37:22.317: default/curl-pod:51022 (ID:1072) -&gt; default/webpod-697b545f57-2zpdp:80 (ID:24748) to-endpoint FORWARDED (TCP Flags: ACK)</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 pre-xlate-fwd, TRACED : NAT (IP 변환) 전, 추적 중인 flow&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;   post-xlate-fwd, TRANSLATED : NAT 후의 흐름, NAT 변환이 일어났음&lt;/span&gt;</span>
+
+<span class="c"># 호출 시도</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl webpod | <span class="nb">grep </span>Hostname
+<span class="c"># =&gt; Hostname: webpod-697b545f57-2zpdp</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl webpod | <span class="nb">grep </span>Hostname
+<span class="c"># =&gt; Hostname: webpod-697b545f57-thl79</span>
+<span class="c"># 혹은</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> sh <span class="nt">-c</span> <span class="s1">'while true; do curl -s webpod | grep Hostname; sleep 1; done'</span>
+
+<span class="c"># tcpdump 확인 : 파드 IP 확인</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 tcp port 80 <span class="nt">-nn</span>
+<span class="c"># =&gt; 20:11:41.085067 IP 10.244.0.188.56954 &gt; 10.244.1.188.80: Flags [P.], seq 1:71, ack 1, win 502, options [nop,nop,TS val 2064675417 ecr 2283779636], length 70: HTTP: GET / HTTP/1.1</span>
+
+<span class="c"># http 패킷 캡처</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 tcp port 80 <span class="nt">-w</span> /tmp/http.pcap
+
+<span class="c"># termshark로 pcap 파일 분석</span>
+<span class="nv">$ </span>termshark <span class="nt">-r</span> /tmp/http.pcap
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_5.png" alt="img.png" class="image-center" loading="lazy" width="1132" height="652">
+<em class="image-caption">hubble UI에서 확인한 흐름 정보</em></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_6.png" alt="img_1.png" class="image-center" loading="lazy" width="1201" height="723">
+<em class="image-caption">termshark에서 확인한 패킷 정보</em></p>
+
+<h3 id="cilium-cluster-scope">[Cilium] Cluster Scope</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/network/concepts/ipam/cluster-pool/">Docs</a>, <a href="https://docs.cilium.io/en/stable/network/kubernetes/ipam-cluster-pool/">IPAM</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_7.png" alt="img.png" loading="lazy" width="714" height="175"></p>
+
+<ul>
+  <li>각 노드에 노드별 PodCIDR 범위가 할당되며, 각 노드의 호스트 범위 할당기를 사용하여 IP를 할당합니다.</li>
+  <li>이 모드는 Kubernetes Host Scope IPAM 모드와 유사하지만, Cilium이 <code class="language-plaintext highlighter-rouge">v2.CiliumNode</code>라는 리소스(CRD)를 통해 노드별 PodCIDR 범위를 관리하는 점이 다릅니다.</li>
+  <li>장점은 Kubernetes가 노드별 PodCIDR 범위를 관리하지 않기 때문에, Cilium이 노드별 PodCIDR 범위를 동적으로 할당할 수 있습니다.</li>
+  <li>최소 마스크 길이는 /30이며, 권장 최소 마스크 길이는 /29 이상입니다. 2개 주소는 예약되어 있습니다. (네트워크, 브로드캐스트 주소)</li>
+  <li>기본 pod CIDR은 <code class="language-plaintext highlighter-rouge">10.0.0.0/8</code>입니다.</li>
+</ul>
+
+<h4 id="ipam-모드를-cluster-scope로-변경">IPAM 모드를 Cluster Scope로 변경</h4>
+
+<blockquote>
+  <p>앞서 언급한것 처럼 라이브 환경에서 IPAM 모드를 변경하지 마세요.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 반복 요청 해두기</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> sh <span class="nt">-c</span> <span class="s1">'while true; do curl -s webpod | grep Hostname; sleep 1; done'</span>
+
+<span class="c"># Cluster Scopre 로 설정 변경</span>
+<span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+  <span class="nt">--set</span> ipam.mode<span class="o">=</span><span class="s2">"cluster-pool"</span> <span class="nt">--set</span> ipam.operator.clusterPoolIPv4PodCIDRList<span class="o">={</span><span class="s2">"172.20.0.0/16"</span><span class="o">}</span> <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">ipv4NativeRoutingCIDR</span><span class="o">=</span>172.20.0.0/16
+
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart deploy/cilium-operator <span class="c"># 오퍼레이터 재시작 필요</span>
+<span class="c"># =&gt; deployment.apps/cilium-operator restarted</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds/cilium
+<span class="c"># =&gt; daemonset.apps/cilium restarted</span>
+
+<span class="c"># 변경 확인</span>
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{range .items[*]}{.metadata.name}{"\t"}{.spec.podCIDR}{"\n"}{end}'</span>
+<span class="c"># =&gt; k8s-ctr 10.244.0.0/24</span>
+<span class="c">#    k8s-w1  10.244.1.0/24</span>
+<span class="nv">$ </span>cilium config view | <span class="nb">grep</span> ^ipam
+<span class="c"># =&gt; ipam                                              cluster-pool</span>
+<span class="c">#    ipam-cilium-node-update-rate                      15s</span>
+
+<span class="nv">$ </span>kubectl get ciliumnode <span class="nt">-o</span> json | <span class="nb">grep </span>podCIDRs <span class="nt">-A2</span>
+<span class="c"># =&gt;                     "podCIDRs": [</span>
+<span class="c">#                            "10.244.0.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="c">#    --</span>
+<span class="c">#                        "podCIDRs": [</span>
+<span class="c">#                            "10.244.1.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                      SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    cilium-monitoring    grafana-5c69859d9-zgx9k                   22364               ready            10.244.0.5</span>
+<span class="c">#    cilium-monitoring    prometheus-6fc896bc5d-5rbpx               15628               ready            10.244.0.143</span>
+<span class="c">#    default              curl-pod                                  1072                ready            10.244.0.188</span>
+<span class="c">#    default              webpod-697b545f57-2zpdp                   24748               ready            10.244.0.2</span>
+<span class="c">#    default              webpod-697b545f57-thl79                   24748               ready            10.244.1.188</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-dhckj                  28257               ready            10.244.0.155</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-n4xbw                  28257               ready            10.244.0.7</span>
+<span class="c">#    local-path-storage   local-path-provisioner-74f9666bc9-rrn2r   29718               ready            10.244.0.130</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 IPAM 모드는 변경되었으나 podCIDR을 비롯한 IP는 아직 변경되지 않았습니다.&lt;/span&gt;</span>
+
+<span class="c"># IPAM 모드 변경 후, 반영을 위해 Cilium 노드 리소스를 삭제하고 데몬셋을 재시작합니다.</span>
+<span class="nv">$ </span>kubectl delete ciliumnode k8s-w1
+<span class="c"># =&gt; ciliumnode.cilium.io "k8s-w1" deleted</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds/cilium
+<span class="c"># =&gt; daemonset.apps/cilium restarted</span>
+<span class="nv">$ </span>kubectl get ciliumnode <span class="nt">-o</span> json | <span class="nb">grep </span>podCIDRs <span class="nt">-A2</span>
+<span class="c"># =&gt;                     "podCIDRs": [</span>
+<span class="c">#                            "10.244.0.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="c">#    --</span>
+<span class="c">#                        "podCIDRs": [</span>
+<span class="c">#                            "172.20.0.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-w1의 podCIDR이 변경되었습니다.&lt;/span&gt;</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                      SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    cilium-monitoring    grafana-5c69859d9-zgx9k                   22364               ready            10.244.0.5</span>
+<span class="c">#    cilium-monitoring    prometheus-6fc896bc5d-5rbpx               15628               ready            10.244.0.143</span>
+<span class="c">#    default              curl-pod                                  1072                ready            10.244.0.188</span>
+<span class="c">#    default              webpod-697b545f57-2zpdp                   24748               ready            10.244.0.2</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-dhckj                  28257               ready            10.244.0.155</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-n4xbw                  28257               ready            10.244.0.7</span>
+<span class="c">#    kube-system          hubble-relay-5b48c999f9-qktv5             9702                ready            172.20.0.167</span>
+<span class="c">#    kube-system          hubble-ui-655f947f96-ts4n6                64346               ready            172.20.0.122</span>
+<span class="c">#    local-path-storage   local-path-provisioner-74f9666bc9-rrn2r   29718               ready            10.244.0.130</span>
+
+<span class="c"># 마찬가지로 k8s-ctr 노드의 podCIDR도 변경합니다.</span>
+<span class="nv">$ </span>kubectl delete ciliumnode k8s-ctr
+<span class="c"># =&gt; ciliumnode.cilium.io "k8s-ctr" deleted</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds/cilium
+<span class="c"># =&gt; daemonset.apps/cilium restarted</span>
+<span class="nv">$ </span>kubectl get ciliumnode <span class="nt">-o</span> json | <span class="nb">grep </span>podCIDRs <span class="nt">-A2</span>
+<span class="c"># =&gt;                     "podCIDRs": [</span>
+<span class="c">#                            "172.20.1.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="c">#    --</span>
+<span class="c">#                        "podCIDRs": [</span>
+<span class="c">#                            "172.20.0.0/24"</span>
+<span class="c">#                        ],</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span> <span class="c"># 파드 IP 변경 되는가?</span>
+<span class="c"># =&gt; NAMESPACE     NAME                            SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    kube-system   coredns-674b8bbfcf-tg9ll        28257               ready            172.20.0.56</span>
+<span class="c">#    kube-system   hubble-relay-5b48c999f9-qktv5   9702                ready            172.20.0.167</span>
+<span class="c">#    kube-system   hubble-ui-655f947f96-ts4n6      64346               ready            172.20.0.122</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 변경되었습니다.&lt;/span&gt;</span>
+
+<span class="c"># 노드의 podcidr static routing 자동 변경 적용 확인</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.1.113 dev lxc781feae60918&lt;/span&gt; proto kernel scope link</span>
+<span class="nv">$ </span>sshpass <span class="nt">-p</span> <span class="s1">'vagrant'</span> ssh vagrant@k8s-w1 ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.0.56 dev lxc1bf5de6d4ec4&lt;/span&gt; proto kernel scope link</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.0.122 dev lxcb644cb2f80be&lt;/span&gt; proto kernel scope link</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.0.167 dev lxc9c5d083a0332&lt;/span&gt; proto kernel scope link</span>
+
+<span class="c"># 직접 rollout restart 하자! </span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> <span class="nt">-owide</span> | <span class="nb">grep </span>10.244.
+<span class="c"># =&gt; cilium-monitoring    grafana-5c69859d9-zgx9k                   0/1     Running   1 (4h58m ago)   20h     10.244.0.5       k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    cilium-monitoring    prometheus-6fc896bc5d-5rbpx               1/1     Running   1 (4h58m ago)   20h     10.244.0.143     k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    default              curl-pod                                  1/1     Running   0               4h18m   10.244.0.188     k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    default              webpod-697b545f57-2zpdp                   1/1     Running   0               4h18m   10.244.0.2       k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    default              webpod-697b545f57-thl79                   1/1     Running   0               4h18m   10.244.1.188     k8s-w1    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    local-path-storage   local-path-provisioner-74f9666bc9-rrn2r   1/1     Running   1 (4h58m ago)   20h     10.244.0.130     k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 아직 변경되지 않은 pod들이 남아있어서 재시작하겠습니다.&lt;/span&gt;</span>
+
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart deploy/hubble-relay deploy/hubble-ui
+<span class="c"># =&gt; deployment.apps/hubble-relay restarted</span>
+<span class="c">#    deployment.apps/hubble-ui restarted</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> cilium-monitoring rollout restart deploy/prometheus deploy/grafana
+<span class="c"># =&gt; deployment.apps/prometheus restarted</span>
+<span class="c">#    deployment.apps/grafana restarted</span>
+<span class="nv">$ </span>kubectl rollout restart deploy/webpod
+<span class="c"># =&gt; deployment.apps/webpod restarted</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>cilium hubble port-forward&amp;
+<span class="c"># =&gt; ℹ️ Hubble Relay is available at 127.0.0.1:4245</span>
+
+<span class="c"># curl-pod는 파드만 수동으로 배포한것이라 삭제하고 다시 만들겠습니다.</span>
+<span class="nv">$ </span>kubectl delete pod curl-pod
+<span class="c"># =&gt; pod "curl-pod" deleted</span>
+<span class="c"># k8s-ctr 노드에 curl-pod 파드 배포</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-pod
+  labels:
+    app: curl
+spec:
+  nodeName: k8s-ctr
+  containers:
+  - name: curl
+    image: nicolaka/netshoot
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+  terminationGracePeriodSeconds: 0
+</span><span class="no">EOF
+</span><span class="c"># =&gt; pod/curl-pod created</span>
+
+<span class="c"># 파드 IP 변경 확인!</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE           NAME                            SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    cilium-monitoring   grafana-74f45ff4b-8s8jk         22364               ready            172.20.0.129</span>
+<span class="c">#    cilium-monitoring   prometheus-5cd9888b5c-nq2jh     15628               ready            172.20.0.22</span>
+<span class="c">#    default             curl-pod                        1072                ready            172.20.1.80</span>
+<span class="c">#    default             webpod-bb8b9557f-7rn8t          24748               ready            172.20.0.130</span>
+<span class="c">#    default             webpod-bb8b9557f-9tzvj          24748               ready            172.20.1.31</span>
+<span class="c">#    kube-system         coredns-674b8bbfcf-58c7n        28257               ready            172.20.1.113</span>
+<span class="c">#    kube-system         coredns-674b8bbfcf-tg9ll        28257               ready            172.20.0.56</span>
+<span class="c">#    kube-system         hubble-relay-575fc84f49-m7bkm   9702                ready            172.20.0.177</span>
+<span class="c">#    kube-system         hubble-ui-5b686f8966-cnqxd      64346               ready            172.20.0.244</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 모든 파드의 IP가 변경되었습니다.&lt;/span&gt;</span>
+
+<span class="c"># 반복 요청</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> sh <span class="nt">-c</span> <span class="s1">'while true; do curl -s webpod | grep Hostname; sleep 1; done'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>이렇듯 IPAM 모드를 변경해도 이미 배포된 파드들은 IP가 변경되지 않기 때문에 운영중인 클러스터에서 IPAM 모드를 변경하는 것은 권장하지 않습니다. <br>
+새로운 IPAM 모드로 새로운 클러스터를 설치하고, 기존 클러스터에서 워크로드를 이전하는 것이 가장 안전한 방법입니다.</li>
+</ul>
+
+<h3 id="cilium-cni-chaining-aws-vpc-cni-plugin">[Cilium CNI Chaining] AWS VPC CNI plugin</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/installation/cni-chaining-aws-cni/">Docs</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_8.png" alt="img.png" loading="lazy" width="1848" height="1040"></p>
+
+<ul>
+  <li>이번에 알아볼 것은 Cilium을 AWS VPC CNI 플러그인과 함께 사용하는 방법입니다.</li>
+  <li>이 하이브리드 모드에서는 AWS VPC CNI 플러그인이 가상 네트워크 장치 설정뿐만 아니라 ENI를 통한 IP 주소 관리(IPAM)도 담당합니다.</li>
+  <li>주어진 pod에 대해 초기 네트워킹이 설정된 후, Cilium CNI 플러그인은 네트워크 정책을 시행하고 로드밸런싱을 수행하며 암호화를 제공하기 위해 AWS VPC CNI 플러그인이 설정한 네트워크 장치에 eBPF 프로그램을 연결하도록 호출합니다.</li>
+</ul>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_9.png" alt="img.png" loading="lazy" width="762" height="416"></p>
+
+<ul>
+  <li>
+<strong>AWS-CNI 역할</strong> : Device plumbing, IPAM(ENI), Routing(Native-Routing 등)</li>
+  <li>
+<strong>Cilium 역할</strong> : LB, Network Policy, Encrption, Multi-Cluster, Visiblity</li>
+  <li>
+<strong>설정</strong>
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>helm <span class="nb">install </span>cilium cilium/cilium <span class="nt">--version</span> 1.17.6 <span class="se">\</span>
+  <span class="nt">--namespace</span> kube-system <span class="se">\</span>
+  <span class="nt">--set</span> cni.chainingMode<span class="o">=</span>aws-cni <span class="se">\</span>
+  <span class="nt">--set</span> cni.exclusive<span class="o">=</span><span class="nb">false</span> <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">enableIPv4Masquerade</span><span class="o">=</span><span class="nb">false</span> <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">routingMode</span><span class="o">=</span>native
+</code></pre></div>    </div>
+  </li>
+  <li>AWS ENI IPAM 모드 
+<a href="https://docs.cilium.io/en/stable/network/concepts/ipam/eni/">Docs</a>
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_10.png" alt="img.png" loading="lazy" width="849" height="359">
+</li>
+  <li>AWS ENI 할당기는 AWS 클라우드에서 수행되는 Cilium 배포에 특화되어있으며, AWS EC2 API와 통신하여 AWS Elastic Network Interface(ENI)의 IP를 기반으로 IP 를 할당합니다.</li>
+  <li>이 모드는 대규모 클러스터에서의 속도 제한 문제를 해결하기 위해 단일 운영자만 EC2 서비스 API와 통신할 수 있도록 보장합니다.</li>
+  <li>사전 할당 워터마크는 클러스터에서 새 pod가 예약될때 EC2 API를 호출할 필요없이 노드에서 항상 사용할 수 있도록 여러 IP 주소를 유지하는데 사용됩니다.</li>
+</ul>
+
+<hr>
+
+<h2 id="routing">Routing</h2>
+
+<ul>
+  <li>Cilium은 Encapsulation과 Native Routing을 지원합니다. 각각에 대해 살펴 보겠습니다.</li>
+</ul>
+
+<h3 id="method-1-encapsulation-vxlan-geneve">Method 1. Encapsulation (VXLAN, GENEVE)</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/network/concepts/routing/">Docs</a></p>
+
+<ul>
+  <li>Encapsulation 모드는 특별한 인프라 요구사항이 없기 때문에 Cilium은 기본적으로 Encapsulation 모드를 사용합니다.</li>
+  <li>이 모드에서는 모든 클러스터 노드가 UDP 기반의 VXLAN 또는 GENEVE를 사용하여 터널링을 통해 서로 통신합니다.</li>
+  <li>Cilium 노드간의 모든 트래픽이 캡슐화 됩니다.</li>
+  <li>그리고 캡슐화는 일반 노드간 연결에 의존합니다. 즉, Cilium 노드가 이미 서로 연결될 수 있다면 Encapsulation 모드를 사용할 수 있다는 이야기 입니다.</li>
+  <li>기본 네트워크는 IPv4를 지원해야 하며, 다음의 UDP 포트를 방화벽에서 허용해야 합니다.
+    <ul>
+      <li>VXLAN (Defaut) : UDP 8472</li>
+      <li>GENEVE : UDP 6081</li>
+    </ul>
+  </li>
+  <li>장점
+    <ul>
+      <li>
+<strong>단순함</strong> (Simplicity)
+        <ul>
+          <li>
+            <ul>
+              <li>클러스터 노드를 연결하는 네트워크는 PodCIDR을 인식할 필요가 없습니다.</li>
+            </ul>
+          </li>
+          <li>클러스터 노드는 여러 라우팅 또는 링크 계층 도메인을 생성할 수 있습니다.</li>
+          <li>클러스터 노드가 IP/UDP를 사용하여 서로 연결할 수 있는 한 기본 네트워크의 토폴로지는 중요하지 않습니다.</li>
+        </ul>
+      </li>
+      <li>
+<strong>정체성 맥락</strong> (Identity context)
+        <ul>
+          <li>캡슐화 프로토콜은 네트워크 패킷과 함께 메타데이터를 전송할 수 있게 해줍니다.</li>
+          <li>Cilium은 소스 보안 ID와 같은 메타데이터를 전송하는 이 기능을 활용합니다.</li>
+          <li>정체성 전달은 원격 노드에서 하나의 정체성 조회를 피하기 위해 설계된 최적화입니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>단점
+    <ul>
+      <li>
+<strong>MTU Overhead</strong>
+        <ul>
+          <li>캡슐화 헤더가 추가됨에 의해서 페이로드에 사용할 수 있는 유효 MTU가 줄어듭니다. (VXLAN의 경우 50바이트, GENEVE의 경우 60바이트)</li>
+          <li>이로 인해 특정 네트워크 연결에 대한 최대 처리량이 낮아집니다.</li>
+          <li>점보 프레임(Jumbo Frame)을 사용하여 MTU를 늘려 해당 문제를 크게 완화할 수 있지만, 모든 네트워크 장치가 점보 프레임을 지원하지는 않습니다.</li>
+        </ul>
+      </li>
+      <li>
+<strong>Encapsulation/Decapsulation Overhead</strong>
+        <ul>
+          <li>캡슐화 및 디캡슐화는 CPU 오버헤드를 발생시킵니다.</li>
+          <li>이 오버헤드는 일반적으로 네트워크 대역폭에 비해 작지만, 대규모 클러스터에서는 성능에 영향을 미칠 수 있습니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>설정방법
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">tunnel-protocol</code> : Encapsulation 프로토콜을 <code class="language-plaintext highlighter-rouge">vxlan</code>이나 <code class="language-plaintext highlighter-rouge">geneve</code>로 설정합니다. (기본값: vxlan)</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">tunnel-port</code> : Encapsulation 프로토콜을 위한 UDP 포트를 설정합니다. vxlan의 경우 8472, geneve의 경우 6081입니다. (기본값: 8472)</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="method-2-native-routing">Method 2. Native Routing</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/network/concepts/routing/#native-routing">Docs</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_11.png" alt="img.png" loading="lazy" width="882" height="375"></p>
+
+<ul>
+  <li>Native Routing 모드는 Cilium이 캡슐화 없이 Pod 간에 직접 통신할 수 있도록 합니다.</li>
+  <li>캡슐화를 수행하는 대신 Cilium이 실행되는 네트워크의 라우팅 기능을 활용합니다.</li>
+  <li>Native Routing 모드에서는 Cilium이 다른 로컬 엔드포인트로 주소를 지정하지 않은 모든 패킷을 Linux 커널 라우팅 하위 시스템에 위임합니다.</li>
+  <li>이는 패킷이 로컬 프로세스가 패킷을 방출하는 것 처럼 라우팅 된다는것을 의미합니다.</li>
+  <li>따라서 클러스터 노드를 연결하는 네트워크가 PodCIDR을 인식하고, PodCIDR를 라우팅하는 설정되어 있어야 합니다.</li>
+  <li>PodCIDR 라우팅 방안 1
+    <ul>
+      <li>각 개별 노드는 다른 모든 노드의 모든 포드 IP를 인식하고 이를 표현하기 위해 Linux 커널 라우팅 테이블에 삽입합니다.</li>
+      <li>모든 노드가 단일 L2 네트워크를 공유하는 경우 <code class="language-plaintext highlighter-rouge">auto-direct-node-routes: true</code>하여 이 문제를 해결할 수 있습니다.</li>
+      <li>그렇지 않으면 <strong>BGP</strong> 데몬과 같은 추가 시스템 구성 요소를 실행하여 경로를 배포해야 합니다.</li>
+    </ul>
+  </li>
+  <li>PodCIDR 라우팅 방안 2
+    <ul>
+      <li>노드 자체는 모든 포드 IP를 라우팅하는 방법을 모르지만 다른 모든 포드에 도달하는 방법을 아는 라우터가 네트워크에 존재합니다.</li>
+      <li>이 시나리오에서는 Linux 노드가 이러한 라우터를 가리키는 기본 경로를 포함하도록 구성됩니다.</li>
+      <li>이 모델은 클라우드 제공자 네트워크 통합에 사용됩니다. 자세한 내용은 <a href="https://docs.cilium.io/en/stable/network/concepts/routing/#google-cloud">Google Cloud</a>, <a href="https://docs.cilium.io/en/stable/network/concepts/routing/#aws-eni">AWS ENI</a> 및 Azure IPAM을 참조하세요.</li>
+    </ul>
+  </li>
+  <li>설정방법
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">routing-mode: native</code>: Native Routing 모드를 활성화합니다.</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">ipv4-native-routing-cidr: x.x.x.x/y</code>: Native Routing 모드에서 PodCIDR를 라우팅하는 CIDR을 설정합니다.</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">auto-direct-node-routes: true</code> : 동일 L2 네트워크 공유 시, 걱 노드의 PodCIDR에 대한 Linux 커널 라우팅 테이블에 삽입합니다.</li>
+    </ul>
+  </li>
+  <li>Native Roung 실습을 위한 Cilium Agent 단축키 지정
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># cilium 파드 이름</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">CILIUMPOD0</span><span class="o">=</span><span class="si">$(</span>kubectl get <span class="nt">-l</span> k8s-app<span class="o">=</span>cilium pods <span class="nt">-n</span> kube-system <span class="nt">--field-selector</span> spec.nodeName<span class="o">=</span>k8s-ctr <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[0].metadata.name}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">CILIUMPOD1</span><span class="o">=</span><span class="si">$(</span>kubectl get <span class="nt">-l</span> k8s-app<span class="o">=</span>cilium pods <span class="nt">-n</span> kube-system <span class="nt">--field-selector</span> spec.nodeName<span class="o">=</span>k8s-w1  <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[0].metadata.name}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$CILIUMPOD0</span> <span class="nv">$CILIUMPOD1</span> <span class="nv">$CILIUMPOD2</span>
+<span class="c"># =&gt; cilium-6ggxf cilium-hb6jp</span>
+  
+<span class="c"># 단축키(alias) 지정</span>
+<span class="nv">$ </span><span class="nb">alias </span><span class="nv">c0</span><span class="o">=</span><span class="s2">"kubectl exec -it </span><span class="nv">$CILIUMPOD0</span><span class="s2"> -n kube-system -c cilium-agent -- cilium"</span>
+<span class="nv">$ </span><span class="nb">alias </span><span class="nv">c1</span><span class="o">=</span><span class="s2">"kubectl exec -it </span><span class="nv">$CILIUMPOD1</span><span class="s2"> -n kube-system -c cilium-agent -- cilium"</span>
+</code></pre></div>    </div>
+  </li>
+  <li>노드간 파드 통신 상세 확인 with Native Routing</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                     READY   STATUS    RESTARTS   AGE    IP             NODE      NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    curl-pod                 1/1     Running   0          104m   172.20.1.80    k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    webpod-bb8b9557f-7rn8t   1/1     Running   0          105m   172.20.0.130   k8s-w1    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    webpod-bb8b9557f-9tzvj   1/1     Running   0          105m   172.20.1.31    k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="c"># Webpod1,2 파드 IP</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">WEBPODIP1</span><span class="o">=</span><span class="si">$(</span>kubectl get <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>webpod pods <span class="nt">--field-selector</span> spec.nodeName<span class="o">=</span>k8s-ctr <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[0].status.podIP}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">WEBPODIP2</span><span class="o">=</span><span class="si">$(</span>kubectl get <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>webpod pods <span class="nt">--field-selector</span> spec.nodeName<span class="o">=</span>k8s-w1  <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[0].status.podIP}'</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$WEBPODIP1</span> <span class="nv">$WEBPODIP2</span>
+<span class="c"># =&gt; 172.20.1.31 172.20.0.130</span>
+
+<span class="c"># curl-pod 에서 WEBPODIP2 로 ping</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> ping <span class="nv">$WEBPODIP2</span>
+
+<span class="c"># 커널 라우팅 확인</span>
+<span class="nv">$ </span>ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.0.0/24 via 192.168.10.101 dev eth1 proto kernel&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 curl-pod가 있는 k8s-ctr에서는 WEBPODIP2의 172.20.0.130이 포함된 패킷을 192.168.10.101 (k8s-w1 노드 IP)로 라우팅합니다.&lt;/span&gt;</span>
+
+<span class="nv">$ </span>sshpass <span class="nt">-p</span> <span class="s1">'vagrant'</span> ssh vagrant@k8s-w1 ip <span class="nt">-c</span> route
+<span class="c"># =&gt; ...</span>
+<span class="c">#    &lt;span style="color: green;"&gt;172.20.0.130 dev lxc9938d1653585 proto kernel scope link&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-w1에서는 172.20.0.130의 IP를 해당 pod의 veth로 전달합니다.&lt;/span&gt;</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>cilium hubble port-forward&amp;
+<span class="c"># =&gt; ℹ️   Hubble Relay is available at 127.0.0.1:424</span>
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--pod</span> curl-pod
+<span class="c"># =&gt; Aug  2 14:29:00.271: default/curl-pod (ID:1072) -&gt; default/webpod-bb8b9557f-7rn8t (ID:24748) to-network FORWARDED (ICMPv4 EchoRequest)</span>
+<span class="c">#    Aug  2 14:29:00.272: default/curl-pod (ID:1072) &lt;- default/webpod-bb8b9557f-7rn8t (ID:24748) to-endpoint FORWARDED (ICMPv4 EchoReply)</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 icmp
+<span class="c"># =&gt; tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span>
+<span class="c">#    listening on eth1, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span>
+<span class="c">#    23:29:18.464606 IP 172.20.1.80 &gt; 172.20.0.130: ICMP echo request, id 13, seq 815, length 64</span>
+<span class="c">#    23:29:18.465333 IP 172.20.0.130 &gt; 172.20.1.80: ICMP echo reply, id 13, seq 815, length 64</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 icmp <span class="nt">-w</span> /tmp/icmp.pcap
+<span class="nv">$ </span>termshark <span class="nt">-r</span> /tmp/icmp.pcap
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_14.png" alt="img.png" class="image-center" loading="lazy" width="1392" height="948">
+<em class="image-caption">termshark에서 확인한 ICMP 패킷 정보</em></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_13.png" alt="img_1.png" class="image-center" loading="lazy" width="1132" height="652">
+<em class="image-caption">Hubble UI에서 확인한 ICMP 흐름 정보</em></p>
+
+<hr>
+
+<h2 id="masquerading">Masquerading</h2>
+
+<h3 id="masquerading-소개">Masquerading 소개</h3>
+
+<p><a href="https://docs.cilium.io/en/stable/network/concepts/masquerading/">Docs</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_15.png" alt="img.png" loading="lazy" width="768" height="472"></p>
+
+<ul>
+  <li>Masquerading는 Pod가 외부 네트워크와 통신할 때 Pod의 IP 주소를 Cilium 노드의 IP 주소로 변환하는 기능입니다.</li>
+  <li>Pod에서 사용되는 IPv4 주소는 일반적으로 RFC1918 개인 주소 공간에 할당되므로 외부로 라우팅 할 수 없습니다.</li>
+  <li>Cilium은 이러한 Pod IP를 이미 네트워크에서 라우팅 가능한 Cilium 노드의 IP로 변환하여 외부 네트워크와 통신할 수 있도록 합니다.</li>
+  <li>
+    <p>만약 masquerading 기능을 사용하지 않으려면,  <code class="language-plaintext highlighter-rouge">enable-ipv4-masquerade: false</code>, <code class="language-plaintext highlighter-rouge">enable-ipv6-masquerade: false</code> 를 지정합니다</p>
+  </li>
+  <li>기본 동작은 로컬 노드의 IP 할당 CIDR 내에서 모든 목적지를 제외하는 것입니다.</li>
+  <li>즉, Pod가 로컬 노드의 IP 할당 CIDR 내에 있는 다른 Pod와 통신할 때는 masquerading를 수행하지 않습니다.</li>
+  <li>더 넓은 CIDR 범위를 제외하려면 <code class="language-plaintext highlighter-rouge">ipv4-native-routing-cidr: 10.0.0/8</code> (또는 IPv6 주소의 경우 <code class="language-plaintext highlighter-rouge">ipv6-native-routing-cidr: fd00:/100</code>) 
+옵션을 사용하여 지정할 수 있습니다. 이 경우 해당 CIDR 내의 모든 목적지는 masquerade 되지 않습니다.</li>
+</ul>
+
+<h3 id="ebpf-기반-masquerading">eBPF 기반 Masquerading</h3>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">bpf.masquerade=true</code> 옵션을 사용하여 eBPF 기반 masquerading을 활성화할 수 있습니다.</li>
+  <li>기본적으로 BPF masquerading은 BPF Host-Routing 모드도 활성화 시킵니다. 해당 모드의 장점과 한계를 확인하려면 <a href="https://docs.cilium.io/en/stable/operations/performance/tuning/#ebpf-host-routing">eBPF Host-Routing</a> 문서를 참조하세요.</li>
+  <li>Masquerading은 eBPF Masquerading 프로그램을 실행하는 장치에서만 작동합니다.</li>
+  <li>이는 출력 장치가 프로그램을 실행하는 경우 Pod에서 외부주소로 전송된 패킷이 Masquerading(출력장치 IPv4 주소로) 된다는 것을 의미합니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent  <span class="nt">--</span> cilium status | <span class="nb">grep </span>Masquerading
+<span class="c"># =&gt; Masquerading:            BPF   [eth0, eth1]   172.20.0.0/16  [IPv4: Enabled, IPv6: Disabled]</span>
+</code></pre></div>    </div>
+  </li>
+  <li>지정되지 않는 경우, 프로그램은 BPF NodePort 장치 감지를 사용하여 자동으로 감지됩니다.</li>
+  <li>이를 수동으로 변경하려면 <code class="language-plaintext highlighter-rouge">devices</code> helm 옵션을 사용하세요.</li>
+  <li>eBPF 기반 Masquerading은 TCP, UDP 및 ICMP 프로토콜을 지원합니다.</li>
+  <li>기본적으로 <code class="language-plaintext highlighter-rouge">ipv4-native-routing-cidr</code> 범위를 벗어난 IP 주소를 향하는 모든 패킷을 Masquerade하지만, 다른 클러스터 노드의 Node IP로 향하는 패킷은 제외됩니다.
+eBPF Masquerading이 활성화되면 pod에서 클러스터 노드의 External IP로의 트래픽도 Masquerading 되지 않습니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>cilium config view  | <span class="nb">grep </span>ipv4-native-routing-cidr
+<span class="c"># =&gt; ipv4-native-routing-cidr                          172.20.0.0/16</span>
+  
+<span class="c"># 노드 IP로 통신 시 확인</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 icmp <span class="nt">-nn</span>
+<span class="c"># =&gt; 23:58:58.175157 IP 172.20.1.80 &gt; 192.168.10.101: ICMP echo request, id 31, seq 1, length 64</span>
+<span class="c">#    23:58:58.175918 IP 192.168.10.101 &gt; 172.20.1.80: ICMP echo reply, id 31, seq 1, length 64</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 Node IP로의 패킷은 Masquerading 되지 않고 Pod IP가 사용됨을 알 수 있습니다.&lt;/span&gt;</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> ping 192.168.10.101
+<span class="c"># =&gt; PING 192.168.10.101 (192.168.10.101) 56(84) bytes of data.</span>
+<span class="c">#    64 bytes from 192.168.10.101: icmp_seq=1 ttl=63 time=0.888 ms</span>
+<span class="c">#    ...</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="iptables-기반-masquerading">iptables 기반 Masquerading</h3>
+
+<ul>
+  <li>이 모드는 모든 커널버전에서 작동할 수 있는 레거시 구현입니다.</li>
+  <li>Cilium 네트워크 장치가 아닌 기본 네트워크 장치에서 iptables를 사용하여 masquerading을 수행합니다.</li>
+  <li>masquerading이 사용되는 네트워크 장치를 제한하고 싶을 경우 <code class="language-plaintext highlighter-rouge">egress-masquerade-interfaces: eth0</code> 옵션을 사용합니다.</li>
+  <li>대상 네트워크 CIDR에 따라 다른 소스 주소를 사용하는 고급 구성을 위해서는 <code class="language-plaintext highlighter-rouge">enable-masquerade-to-route-source: "true"</code>를 사용하여, 메인 network interface의 주소대신 소스 주소들을 사용할 수도 있습니다.</li>
+</ul>
+
+<h3 id="masquerading-실습">Masquerading 실습</h3>
+
+<ul>
+  <li>실습 환경 구성
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_16.png" alt="img.png" loading="lazy" width="1879" height="650">
+    <ul>
+      <li>
+<strong>router</strong> : 사내망 10.10.0.0/16 대역 통신과 연결, k8s에 join 되지 않은 web 서버, loop1/loop2 dump 인터페이스를 배치</li>
+    </ul>
+  </li>
+  <li>현재 상태 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 현재 설정 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent  <span class="nt">--</span> cilium status | <span class="nb">grep </span>Masquerading
+<span class="c"># =&gt; Masquerading:            BPF   [eth0, eth1]   172.20.0.0/16  [IPv4: Enabled, IPv6: Disabled]</span>
+<span class="c">#</span>
+<span class="nv">$ </span>cilium config view  | <span class="nb">grep </span>ipv4-native-routing-cidr
+<span class="c"># =&gt; ipv4-native-routing-cidr                          172.20.0.0/16</span>
+
+<span class="c"># iptables 확인</span>
+<span class="nv">$ </span>iptables-save | <span class="nb">grep</span> <span class="nt">-v</span> KUBE | iptables-restore
+<span class="nv">$ </span>iptables-save
+
+<span class="nv">$ </span>sshpass <span class="nt">-p</span> <span class="s1">'vagrant'</span> ssh vagrant@k8s-w1 <span class="s2">"sudo iptables-save | grep -v KUBE | sudo iptables-restore"</span>
+<span class="nv">$ </span>sshpass <span class="nt">-p</span> <span class="s1">'vagrant'</span> ssh vagrant@k8s-w1 <span class="nb">sudo </span>iptables-save
+
+<span class="c"># 통신 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl <span class="nt">-s</span> webpod | <span class="nb">grep </span>Hostname
+<span class="c"># =&gt; Hostname: webpod-bb8b9557f-7rn8t</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl <span class="nt">-s</span> webpod | <span class="nb">grep </span>Hostname
+<span class="c"># =&gt; Hostname: webpod-bb8b9557f-9tzvj</span>
+</code></pre></div></div>
+
+<ul>
+  <li>router eth1 192.168.10.200 통신 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 터미널 2개 사용</span>
+<span class="o">[</span>k8s-ctr] <span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 icmp <span class="nt">-nn</span> <span class="c"># 혹은 hubble observe -f --pod curl-pod</span>
+<span class="o">[</span>router] <span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 icmp <span class="nt">-nn</span>
+
+<span class="c"># router eth1 192.168.10.200 로 ping &gt;&gt; IP 확인해보자!</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> ping 192.168.10.101
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-ctr 쪽에만 패킷이 캡쳐됨&lt;/span&gt;</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> ping 192.168.10.200
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-ctr 및 router 모두 패킷이 캡쳐됨&lt;/span&gt;</span>
+
+<span class="c"># k8s-ctr 패킷 캡쳐 결과</span>
+<span class="c"># =&gt; 00:45:19.552476 IP 192.168.10.100 &gt; 192.168.10.200: ICMP echo request, id 73, seq 1, length 64</span>
+<span class="c">#    00:45:19.553044 IP 192.168.10.200 &gt; 192.168.10.100: ICMP echo reply, id 73, seq 1, length 64</span>
+<span class="c">#    ...</span>
+
+<span class="c"># router 패킷 캡쳐 결과</span>
+<span class="c"># =&gt; 00:45:19.494633 IP 192.168.10.100 &gt; 192.168.10.200: ICMP echo request, id 73, seq 1, length 64</span>
+<span class="c">#    00:45:19.494758 IP 192.168.10.200 &gt; 192.168.10.100: ICMP echo reply, id 73, seq 1, length 64</span>
+<span class="c">#    ...</span>
+
+<span class="nt">---</span>
+<span class="c"># 터미널 2개 사용</span>
+<span class="o">[</span>k8s-ctr] <span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 tcp port 80 <span class="nt">-nnq</span> <span class="c"># 혹은 hubble observe -f --pod curl-pod</span>
+<span class="o">[</span>router] <span class="nv">$ </span>tcpdump <span class="nt">-i</span> eth1 tcp port 80 <span class="nt">-nnq</span>
+
+<span class="c"># router eth1 192.168.10.200 로 curl &gt;&gt; IP 확인해보자!</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl <span class="nt">-s</span> webpod
+<span class="c"># =&gt; Hostname: webpod-bb8b9557f-9tzvj</span>
+<span class="c">#    IP: 127.0.0.1</span>
+<span class="c">#    IP: ::1</span>
+<span class="c">#    IP: 172.20.1.31</span>
+<span class="c">#    IP: fe80::6857:8fff:fe68:c5d5</span>
+<span class="c">#    RemoteAddr: 172.20.1.80:56614</span>
+<span class="c">#    GET / HTTP/1.1</span>
+<span class="c">#    Host: webpod</span>
+<span class="c">#    User-Agent: curl/8.14.1</span>
+<span class="c">#    Accept: */*</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-ctr 노드에 있는 webpod에 통신할때만 k8s-ctr에 캡쳐됨&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 router에는 캡쳐되지 않음&lt;/span&gt;</span>
+
+<span class="c"># k8s-ctr 패킷 캡쳐 결과</span>
+<span class="c"># =&gt; 00:58:25.714438 IP 172.20.1.80.58682 &gt; 172.20.0.130.80: tcp 70</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 IP는 Pod CIDR임&lt;/span&gt;</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl <span class="nt">-s</span> webpod
+<span class="c"># =&gt; Hostname: webpod-bb8b9557f-7rn8t</span>
+<span class="c">#    IP: 172.20.0.130</span>
+<span class="c">#    RemoteAddr: 172.20.1.80:60086</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-1 노드에 있는 webpod에 통신할때는 패킷 캡쳐 되지않음&lt;/span&gt;</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl <span class="nt">-s</span> 192.168.10.200
+<span class="c"># =&gt; &lt;h1&gt;Web Server : router&lt;/h1&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 k8s-ctr와 router 모두에 캡쳐됨&lt;/span&gt;</span>
+
+<span class="c"># k8s-ctr 패킷 캡쳐 결과</span>
+<span class="c"># =&gt; 01:01:34.458560 IP 192.168.10.100.45668 &gt; 192.168.10.200.80: tcp 78</span>
+<span class="c">#    ...</span>
+<span class="c"># router 패킷 캡쳐 결과</span>
+<span class="c"># =&gt; 01:01:34.501812 IP 192.168.10.100.45668 &gt; 192.168.10.200.80: tcp 78</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 클러스터 바깥의 서버인 Router와는 Node IP로 통신하고 있음&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<h3 id="ip-masq-agent-설정">ip-masq-agent 설정</h3>
+
+<p><a href="https://github.com/kubernetes-sigs/ip-masq-agent">Docs</a></p>
+
+<ul>
+  <li>eBPF 기반 ip-masq-agent는 설정파일을 통해 <code class="language-plaintext highlighter-rouge">nonMasqueradeCIDRs</code>, <code class="language-plaintext highlighter-rouge">masqLinkLocal</code>, <code class="language-plaintext highlighter-rouge">masqLinkLocalIPv6</code> 옵션을 지원합니다.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">nonMasqueradeCIDRs</code>는 masquerading을 수행하지 않을 CIDR 범위를 지정합니다.</li>
+  <li>해당 설정이 없는 경우 agent는 다음의 masquerading 제외 CIDR을 사용합니다.
+    <div class="language-sql highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="mi">10</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">8</span>
+<span class="mi">172</span><span class="p">.</span><span class="mi">16</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">12</span>
+<span class="mi">192</span><span class="p">.</span><span class="mi">168</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">16</span>
+<span class="mi">100</span><span class="p">.</span><span class="mi">64</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">10</span>
+<span class="mi">192</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span>
+<span class="mi">192</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">2</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span>
+<span class="mi">192</span><span class="p">.</span><span class="mi">88</span><span class="p">.</span><span class="mi">99</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span>
+<span class="mi">198</span><span class="p">.</span><span class="mi">18</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">15</span>
+<span class="mi">198</span><span class="p">.</span><span class="mi">51</span><span class="p">.</span><span class="mi">100</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span>
+<span class="mi">203</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">113</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span>
+<span class="mi">240</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">4</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+<code class="language-plaintext highlighter-rouge">masqLinkLocal</code>이 false이거나 지정되어있지 않으면 <code class="language-plaintext highlighter-rouge">169.254.0.0/16</code> 또한 masquerading 제외 CIDR로 사용됩니다.</li>
+  <li>ipMasqAgent 설정
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 아래 설정값은 cilium 데몬셋 자동 재시작됨</span>
+<span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+  <span class="nt">--set</span> ipMasqAgent.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> ipMasqAgent.config.nonMasqueradeCIDRs<span class="o">=</span><span class="s1">'{10.10.1.0/24,10.10.2.0/24}'</span>
+  
+<span class="nv">$ </span>cilium hubble port-forward&amp;
+<span class="c"># =&gt; ℹ️   Hubble Relay is available at 127.0.0.1:4245</span>
+  
+<span class="c"># ip-masq-agent configmap 생성 확인</span>
+<span class="nv">$ </span>kubectl get cm <span class="nt">-n</span> kube-system ip-masq-agent <span class="nt">-o</span> yaml | yq
+<span class="c"># =&gt; ...</span>
+<span class="c">#        "config": "{\"nonMasqueradeCIDRs\":[\"10.10.1.0/24\",\"10.10.2.0/24\"]}"</span>
+<span class="c">#    ...</span>
+<span class="c">#        "name": "ip-masq-agent",</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kc describe cm <span class="nt">-n</span> kube-system ip-masq-agent 
+<span class="c"># =&gt; Data</span>
+<span class="c">#    ====</span>
+<span class="c">#    config:</span>
+<span class="c">#    ----</span>
+<span class="c">#    {"nonMasqueradeCIDRs":["10.10.1.0/24","10.10.2.0/24"]}</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>k9s 
+  
+<span class="c">#</span>
+<span class="nv">$ </span>cilium config view  | <span class="nb">grep</span> <span class="nt">-i</span> ip-masq
+<span class="c"># =&gt; enable-ip-masq-agent                              true</span>
+  
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system <span class="nb">exec </span>ds/cilium <span class="nt">-c</span> cilium-agent <span class="nt">--</span> cilium-dbg bpf ipmasq list
+<span class="c"># =&gt; IP PREFIX/ADDRESS</span>
+<span class="c">#    10.10.1.0/24</span>
+<span class="c">#    10.10.2.0/24</span>
+<span class="c">#    169.254.0.0/16</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr>
+
+<h2 id="coredns-nodelocaldns">CoreDNS, NodeLocalDNS</h2>
+
+<h3 id="coredns">CoreDNS</h3>
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_17.png" alt="img.png" class="image-center" loading="lazy" width="404" height="125"></p>
+
+<ul>
+  <li>CoreDNS 소개 - <a href="https://kubernetes.io/ko/docs/tasks/administer-cluster/dns-custom-nameservers/">Docs</a> , <a href="https://coredns.io/manual/toc/">Home</a> , <a href="https://coredns.io/plugins/">Plugins</a> , <a href="https://www.youtube.com/watch?v=W3f5Ks0j2Q8">Youtube</a>
+    <ul>
+      <li>CoreDNS는 Kubernetes 클러스터의 DNS 서버로, 클러스터 내에서 서비스와 파드의 이름을 IP 주소로 변환하는 역할을 합니다.</li>
+      <li>CoreDNS는 BIND, Knot, PowerDNS와 같은 전통적인 DNS 서버와는 다르게 
+대부분의 기능을 플러그인화 하여 유연하게 확장할 수 있습니다.</li>
+    </ul>
+  </li>
+  <li>CoreDNS 설정 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 파드의 DNS 설정 정보 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> <span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># =&gt; search default.svc.cluster.local svc.cluster.local cluster.local</span>
+<span class="c">#    nameserver 10.96.0.10</span>
+<span class="c">#    options ndots:5</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span><span class="nb">cat</span> /var/lib/kubelet/config.yaml | <span class="nb">grep </span>cluster <span class="nt">-A1</span>
+<span class="c"># =&gt; clusterDNS:</span>
+<span class="c">#    - 10.96.0.10</span>
+<span class="c">#    clusterDomain: cluster.local</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get svc,ep <span class="nt">-n</span> kube-system kube-dns
+<span class="c"># =&gt; NAME               TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE</span>
+<span class="c">#    service/kube-dns   ClusterIP   10.96.0.10   &lt;none&gt;        53/UDP,53/TCP,9153/TCP   24h</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                 ENDPOINTS                                                   AGE</span>
+<span class="c">#    endpoints/kube-dns   172.20.0.56:53,172.20.1.113:53,172.20.0.56:53 + 3 more...   24h</span>
+
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns
+<span class="c"># =&gt; NAME                       READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    coredns-674b8bbfcf-58c7n   1/1     Running   0          4h17m</span>
+<span class="c">#    coredns-674b8bbfcf-tg9ll   1/1     Running   0          4h17m</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kc describe pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns
+<span class="c"># =&gt; ...</span>
+<span class="c">#     config-volume:</span>
+<span class="c">#        Type:      ConfigMap (a volume populated by a ConfigMap)</span>
+<span class="c">#        Name:      coredns</span>
+<span class="c">#        Optional:  false</span>
+<span class="c">#    ...</span>
+
+<span class="nv">$ </span>kc describe cm <span class="nt">-n</span> kube-system coredns
+<span class="c"># =&gt; ...</span>
+<span class="c">#    Corefile:</span>
+<span class="c">#    ----</span>
+<span class="c">#    .:53 {              # 모든 도메인 요청을 53포트에서 수신</span>
+<span class="c">#        errors          # DNS 응답 중 에러가 발생할 경우 로그 출력</span>
+<span class="c">#        health {        # health 엔드포인트를 제공하여 상태 확인 가능</span>
+<span class="c">#           lameduck 5s  # 종료 시 5초간 lameduck 모드로 트래픽을 점차 줄이며 종료</span>
+<span class="c">#        }</span>
+<span class="c">#        ready           # ready 엔드포인트 제공, 8181 포트의 HTTP 엔드포인트가, 모든 플러그인이 준비되었다는 신호를 보내면 200 OK 를 반환</span>
+<span class="c">#        kubernetes cluster.local in-addr.arpa ip6.arpa {    # Kubernetes DNS 플러그인 설정(클러스터 내부 도메인 처리), cluster.local: 클러스터 도메인</span>
+<span class="c">#           pods insecure                         # 파드 IP로 DNS 조회 허용 (보안 없음)</span>
+<span class="c">#           fallthrough in-addr.arpa ip6.arpa     #  해당 도메인에서 결과 없으면 다음 플러그인으로 전달</span>
+<span class="c">#           ttl 30                                #  캐시 타임 (30초)</span>
+<span class="c">#        }</span>
+<span class="c">#        prometheus :9153 # Prometheus metrics 수집 가능</span>
+<span class="c">#        forward . /etc/resolv.conf {             # CoreDNS가 모르는 도메인은 지정된 업스트림(보통 외부 DNS)으로 전달, .: 모든 쿼리</span>
+<span class="c">#           max_concurrent 1000                   # 병렬 포워딩 최대 1000개</span>
+<span class="c">#        }</span>
+<span class="c">#        cache 30 {                        # DNS 응답 캐시 기능, 기본 캐시 TTL 30초</span>
+<span class="c">#           disable success cluster.local  # 성공 응답 캐시 안 함 (cluster.local 도메인)</span>
+<span class="c">#           disable denial cluster.local   # NXDOMAIN 응답도 캐시 안 함</span>
+<span class="c">#        } </span>
+<span class="c">#        loop         # 간단한 전달 루프(loop)를 감지하고, 루프가 발견되면 CoreDNS 프로세스를 중단(halt).</span>
+<span class="c">#        reload       # Corefile 이 변경되었을 때 자동으로 재적용, 컨피그맵 설정을 변경한 후에 변경 사항이 적용되기 위하여 약 2분정도 소요.</span>
+<span class="c">#        loadbalance  # 응답에 대하여 A, AAAA, MX 레코드의 순서를 무작위로 선정하는 라운드-로빈 DNS 로드밸런서.</span>
+<span class="c">#    }</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span><span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># =&gt; nameserver 127.0.0.53</span>
+<span class="c">#    options edns0 trust-ad</span>
+<span class="c">#    search .</span>
+
+<span class="nv">$ </span>resolvectl 
+<span class="c"># =&gt; Link 2 (eth0)</span>
+<span class="c">#        Current Scopes: DNS</span>
+<span class="c">#             Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported</span>
+<span class="c">#    Current DNS Server: 10.0.2.3</span>
+<span class="c">#           DNS Servers: 10.0.2.3</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>(참고) forward 플러그인 - <a href="https://coredns.io/plugins/forward/">Docs</a></p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 활용 1 : '.consul.local' 도메인을 관리하는 도메인 서버가 존재 시, coredns 에서 해당 도메인 서버로 질의 설정 시</span>
+consul.local:53 <span class="o">{</span>
+    errors
+    cache 30
+    forward <span class="nb">.</span> 10.150.0.1
+<span class="o">}</span>
+  
+<span class="c"># 활용 2 : 모든 비 클러스터의 DNS 조회가 172.16.0.1 의 특정 네임서버 사용 시, /etc/resolv.conf 대신 forward 를 네임서버로 지정</span>
+forward <span class="nb">.</span>  172.16.0.1
+  
+<span class="c"># 위 1,2 포함한 설정 예시</span>
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 <span class="o">{</span>
+        errors
+        health
+        kubernetes cluster.local <span class="k">in</span><span class="nt">-addr</span>.arpa ip6.arpa <span class="o">{</span>
+           pods insecure
+           fallthrough <span class="k">in</span><span class="nt">-addr</span>.arpa ip6.arpa
+        <span class="o">}</span>
+        prometheus :9153
+        forward <span class="nb">.</span> 172.16.0.1  <span class="c"># 활용 2</span>
+        cache 30
+        loop
+        reload
+        loadbalance
+    <span class="o">}</span>
+    consul.local:53 <span class="o">{</span>         <span class="c"># 활용 1</span>
+        errors
+        cache 30
+        forward <span class="nb">.</span> 10.150.0.1
+    <span class="o">}</span>  
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>파드에서 DNS 질의 확인 - <a href="https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/">Docs</a> , <a href="https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/">DNS for Services and Pods</a> , <a href="https://kubernetes.io/docs/tasks/administer-cluster/dns-horizontal-autoscaling/">Autoscale the DNS Service in a Cluster</a></p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 모니터링1</span>
+<span class="nv">$ </span>cilium hubble port-forward&amp;
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--port</span> 53
+<span class="nv">$ </span>hubble observe <span class="nt">-f</span> <span class="nt">--port</span> 53 <span class="nt">--protocol</span> UDP
+
+<span class="c"># 모니터링2</span>
+<span class="nv">$ </span>tcpdump <span class="nt">-i</span> any udp port 53 <span class="nt">-nn</span>
+
+<span class="c"># 파드 IP 확인</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                     READY   STATUS    RESTARTS   AGE     IP             NODE      NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    curl-pod                 1/1     Running   0          3h55m   172.20.1.80    k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    webpod-bb8b9557f-7rn8t   1/1     Running   0          3h55m   172.20.0.130   k8s-w1    &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    webpod-bb8b9557f-9tzvj   1/1     Running   0          3h55m   172.20.1.31    k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                       READY   STATUS    RESTARTS   AGE     IP             NODE      NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    coredns-674b8bbfcf-58c7n   1/1     Running   0          4h29m   172.20.1.113   k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    coredns-674b8bbfcf-tg9ll   1/1     Running   0          4h29m   172.20.0.56    k8s-w1    &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> <span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># =&gt; search default.svc.cluster.local svc.cluster.local cluster.local</span>
+<span class="c">#    nameserver 10.96.0.10</span>
+<span class="c">#    options ndots:5</span>
+
+<span class="c"># 실습 편리를 위해 coredns 파드를 1개로 축소</span>
+<span class="nv">$ </span>kubectl scale deployment <span class="nt">-n</span> kube-system coredns <span class="nt">--replicas</span> 1
+<span class="c"># =&gt; deployment.apps/coredns scaled</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                       READY   STATUS    RESTARTS   AGE     IP            NODE     NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    coredns-674b8bbfcf-tg9ll   1/1     Running   0          4h29m   172.20.0.56   k8s-w1   &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl kube-dns.kube-system.svc:9153/metrics | <span class="nb">grep </span>coredns_cache_ | <span class="nb">grep</span> <span class="nt">-v</span> ^#
+<span class="c"># =&gt; coredns_cache_entries{server="dns://:53",type="denial",view="",zones="."} 1</span>
+<span class="c">#    coredns_cache_entries{server="dns://:53",type="success",view="",zones="."} 0</span>
+<span class="c">#    coredns_cache_misses_total{server="dns://:53",view="",zones="."} 46</span>
+<span class="c">#    coredns_cache_requests_total{server="dns://:53",view="",zones="."} 46</span>
+
+<span class="c"># 도메인 질의</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup webpod
+<span class="c"># =&gt; Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    Name:   webpod.default.svc.cluster.local</span>
+<span class="c">#    Address: 10.96.194.47</span>
+
+<span class="c"># tcpdump로 DNS 질의 패킷 확인</span>
+<span class="c"># =&gt; 01:27:05.029100 lxc9dcdf61704e7 In  IP 172.20.1.80.41316 &gt; 172.20.0.56&lt;span style="color: green;"&gt;.53&lt;/span&gt;: 62435+ &lt;span style="color: green;"&gt;A? webpod.default.svc.cluster.local.&lt;/span&gt; (50)</span>
+<span class="c">#    01:27:05.029378 eth1  Out IP 172.20.1.80.41316 &gt; 172.20.0.56.53: 62435+ A? webpod.default.svc.cluster.local. (50)</span>
+<span class="c">#    01:27:05.032936 eth1  In  IP 172.20.0.56.53 &gt; 172.20.1.80.41316: 62435*- &lt;span style="color: green;"&gt;1/0/0 A 10.96.194.47&lt;/span&gt; (98)</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup <span class="nt">-debug</span> webpod
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup <span class="nt">-debug</span> google.com
+<span class="c"># =&gt; Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    ------------</span>
+<span class="c">#        QUESTIONS:</span>
+<span class="c">#            google.com.default.svc.cluster.local, type = A, class = IN</span>
+<span class="c">#        ...</span>
+<span class="c">#    ------------</span>
+<span class="c">#    ** server can't find google.com.default.svc.cluster.local: NXDOMAIN</span>
+<span class="c">#    ;; Got recursion not available from 10.96.0.10</span>
+<span class="c">#    Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    ------------</span>
+<span class="c">#        QUESTIONS:</span>
+<span class="c">#            google.com.svc.cluster.local, type = A, class = IN</span>
+<span class="c">#        ...</span>
+<span class="c">#    ------------</span>
+<span class="c">#    ** server can't find google.com.svc.cluster.local: NXDOMAIN</span>
+<span class="c">#    ;; Got recursion not available from 10.96.0.10</span>
+<span class="c">#    Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    ------------</span>
+<span class="c">#        QUESTIONS:</span>
+<span class="c">#            google.com.cluster.local, type = A, class = IN</span>
+<span class="c">#        ...</span>
+<span class="c">#    ------------</span>
+<span class="c">#    ** server can't find google.com.cluster.local: NXDOMAIN</span>
+<span class="c">#    Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    ------------</span>
+<span class="c">#        QUESTIONS:</span>
+<span class="c">#            google.com, type = A, class = IN</span>
+<span class="c">#        ANSWERS:</span>
+<span class="c">#        -&gt;  google.com</span>
+<span class="c">#            internet address = 142.250.206.238</span>
+<span class="c">#            ttl = 30</span>
+<span class="c">#        AUTHORITY RECORDS:</span>
+<span class="c">#        ADDITIONAL RECORDS:</span>
+<span class="c">#    ------------</span>
+<span class="c">#    Non-authoritative answer:</span>
+<span class="c">#    Name:   google.com</span>
+<span class="c">#    Address: 142.250.206.238</span>
+<span class="c">#    ------------</span>
+<span class="c">#        QUESTIONS:</span>
+<span class="c">#            google.com, type = AAAA, class = IN</span>
+<span class="c">#        ANSWERS:</span>
+<span class="c">#        -&gt;  google.com</span>
+<span class="c">#            has AAAA address 2404:6800:400a:804::200e</span>
+<span class="c">#            ttl = 30</span>
+<span class="c">#        AUTHORITY RECORDS:</span>
+<span class="c">#        ADDITIONAL RECORDS:</span>
+<span class="c">#    ------------</span>
+<span class="c">#    Name:   google.com</span>
+<span class="c">#    Address: 2404:6800:400a:804::200e</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 클러스터 외부의 도메인을 질의할때는 클러스터 내부의 search 도메인들을 먼저&lt;/span&gt; </span>
+<span class="c"># &lt;span style="color: green;"&gt;확인하고, 없으면 외부 DNS 서버로 질의하여 응답을 받는 것을 알 수 있습니다.&lt;/span&gt;</span>
+
+<span class="c"># tcpdump로 DNS 질의 패킷 확인</span>
+<span class="c"># =&gt; 01:33:33.852442 lxc9dcdf61704e7 In  IP 172.20.1.80.58442 &gt; 172.20.0.56.53: 52842+ &lt;span style="color: green;"&gt;A? google.com.default.svc.cluster.local.&lt;/span&gt; (54)</span>
+<span class="c">#    01:33:33.852610 eth1  Out IP 172.20.1.80.58442 &gt; 172.20.0.56.53: 52842+ A? google.com.default.svc.cluster.local. (54)</span>
+<span class="c">#    01:33:33.855947 eth1  In  IP 172.20.0.56.53 &gt; 172.20.1.80.58442: 52842 NXDomain*- 0/1/0 (147)</span>
+<span class="c">#    01:33:33.861141 lxc9dcdf61704e7 In  IP 172.20.1.80.36323 &gt; 172.20.0.56.53: 10644+ &lt;span style="color: green;"&gt;A? google.com.svc.cluster.local.&lt;/span&gt; (46)</span>
+<span class="c">#    01:33:33.861515 eth1  Out IP 172.20.1.80.36323 &gt; 172.20.0.56.53: 10644+ A? google.com.svc.cluster.local. (46)</span>
+<span class="c">#    01:33:33.862582 eth1  In  IP 172.20.0.56.53 &gt; 172.20.1.80.36323: 10644 NXDomain*- 0/1/0 (139)</span>
+<span class="c">#    01:33:33.868623 lxc9dcdf61704e7 In  IP 172.20.1.80.48326 &gt; 172.20.0.56.53: 52392+ &lt;span style="color: green;"&gt;A? google.com.cluster.local.&lt;/span&gt; (42)</span>
+<span class="c">#    01:33:33.868857 eth1  Out IP 172.20.1.80.48326 &gt; 172.20.0.56.53: 52392+ A? google.com.cluster.local. (42)</span>
+<span class="c">#    01:33:33.870240 eth1  In  IP 172.20.0.56.53 &gt; 172.20.1.80.48326: 52392 NXDomain*- 0/1/0 (135)</span>
+<span class="c">#    01:33:33.874341 lxc9dcdf61704e7 In  IP 172.20.1.80.50810 &gt; 172.20.0.56.53: 16999+ &lt;span style="color: green;"&gt;A? google.com.&lt;/span&gt; (28)</span>
+<span class="c">#    01:33:33.874556 eth1  Out IP 172.20.1.80.50810 &gt; 172.20.0.56.53: 16999+ A? google.com. (28)</span>
+<span class="c">#    01:33:33.928831 eth1  In  IP 172.20.0.56.53 &gt; 172.20.1.80.50810: 16999 &lt;span style="color: green;"&gt;1/0/0 A 142.250.206.238&lt;/span&gt; (54)</span>
+
+<span class="c"># coredns 로깅, 디버깅 활성화</span>
+<span class="c"># k9s → configmap → coredns 선택 → E(edit) → 아래처럼 log, debug 입력 후 빠져나오기</span>
+<span class="nt">---</span>
+    .:53 <span class="o">{</span>
+        log
+        debug
+        errors
+<span class="nt">---</span>
+
+<span class="c"># 로그 모니터링 3</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-f</span>
+
+<span class="c"># 도메인 질의</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup webpod
+<span class="c"># =&gt; ;; Got recursion not available from 10.96.0.10</span>
+<span class="c">#    Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    Name:   webpod.default.svc.cluster.local</span>
+<span class="c">#    Address: 10.96.194.47</span>
+<span class="c">#    ;; Got recursion not available from 10.96.0.10</span>
+
+<span class="c"># coredns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.80:46753 - 59201 "A IN webpod.default.svc.cluster.local. udp 50 false 512" NOERROR qr,aa,rd 98 0.000500084s</span>
+<span class="c">#    [INFO] 172.20.1.80:39996 - 54949 "AAAA IN webpod.default.svc.cluster.local. udp 50 false 512" NOERROR qr,aa,rd 143 0.000554333s</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup google.com
+<span class="c"># =&gt; Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    Non-authoritative answer:</span>
+<span class="c">#    Name:   google.com</span>
+<span class="c">#    Address: 142.250.206.238</span>
+<span class="c">#    Name:   google.com</span>
+<span class="c">#    Address: 2404:6800:400a:804::200e</span>
+
+<span class="c"># coredns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.80:43389 - 1366 "A IN google.com.default.svc.cluster.local. udp 54 false 512" NXDOMAIN qr,aa,rd 147 0.001736458s</span>
+<span class="c">#    [INFO] 172.20.1.80:34460 - 17323 "A IN google.com.svc.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.000483917s</span>
+<span class="c">#    [INFO] 172.20.1.80:40469 - 26458 "A IN google.com.cluster.local. udp 42 false 512" NXDOMAIN qr,aa,rd 135 0.000331334s</span>
+<span class="c">#    [INFO] 172.20.1.80:56627 - 19160 "A IN google.com. udp 28 false 512" NOERROR qr,rd,ra 54 0.054453541s</span>
+<span class="c">#    [INFO] 172.20.1.80:48324 - 36047 "AAAA IN google.com. udp 28 false 512" NOERROR qr,rd,ra 66 0.044442084s</span>
+
+<span class="c"># CoreDNS가 prometheus 플러그인을 사용하고 있다면, 메트릭 포트(:9153)를 통해 캐시 관련 정보를 수집.</span>
+<span class="c">## coredns_cache_entries 현재 캐시에 저장된 엔트리(항목) 수 : type: success 또는 denial (정상 응답 or NXDOMAIN 등)</span>
+<span class="c">## coredns_cache_hits_total	캐시 조회 성공 횟수</span>
+<span class="c">## coredns_cache_misses_total	캐시 미스 횟수</span>
+<span class="c">## coredns_cache_requests_total	캐시 관련 요청 횟수의 총합</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> curl kube-dns.kube-system.svc:9153/metrics | <span class="nb">grep </span>coredns_cache_ | <span class="nb">grep</span> <span class="nt">-v</span> ^#
+<span class="c"># =&gt; coredns_cache_entries{server="dns://:53",type="denial",view="",zones="."} 1</span>
+<span class="c">#    coredns_cache_entries{server="dns://:53",type="success",view="",zones="."} 2</span>
+<span class="c">#    coredns_cache_hits_total{server="dns://:53",type="success",view="",zones="."} 4</span>
+<span class="c">#    coredns_cache_misses_total{server="dns://:53",view="",zones="."} 116</span>
+<span class="c">#    coredns_cache_requests_total{server="dns://:53",view="",zones="."} 120</span>
+</code></pre></div></div>
+
+<h3 id="nodelocaldns">NodeLocalDNS</h3>
+
+<p><a href="https://popappend.tistory.com/142">소개 블로그</a></p>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_18.png" alt="img.png" class="image-center" loading="lazy" width="601" height="501"></p>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">NodeLocal DNSCache</code>는 클러스터 노드에서 DNS 캐싱 에이전트를 DaemonSet으로 실행하여 클러스터 DNS 성능을 향상시킵니다.</li>
+  <li>오늘날의 아키텍처에서 ‘<code class="language-plaintext highlighter-rouge">ClusterFirst</code>’ DNS 모드의 Pods는 DNS 쿼리를 위해 kube-dns 서비스 IP에 도달합니다.</li>
+  <li>이는 kube-proxy에 의해 추가된 <strong>iptables</strong> 규칙을 통해 kube-dns/CoreDNS 엔드포인트로 변환됩니다.</li>
+  <li>이 새로운 아키텍처를 통해 Pods는 동일한 노드에서 실행되는 DNS 캐싱 에이전트에 도달하여 iptables DNAT 규칙과 연결 추적을 피할 수 있습니다.</li>
+  <li>로컬 캐싱 에이전트는 클러스터 호스트 이름(기본적으로 “cluster.local” 접미사)의 캐시 누락에 대해 kube-dns 서비스에 쿼리합니다.</li>
+  <li>현재 DNS 아키텍처에서는 로컬 kube-dns/CoreDNS 인스턴스가 없는 경우 DNS QPS가 가장 높은 포드가 다른 노드에 도달해야 할 수도 있습니다. 로컬 캐시를 사용하면 이러한 시나리오에서 지연 시간을 개선하는 데 도움이 됩니다.</li>
+  <li>iptables DNAT 및 연결 추적을 건너뛰면 <a href="https://github.com/kubernetes/kubernetes/issues/56903">연결 추적 레이스</a>를 줄이고 UDP DNS 항목이 연결 추적 테이블을 채우는 것을 방지하는 데 도움이 됩니다.</li>
+  <li>로컬 캐싱 에이전트에서 kube-dns 서비스로의 연결은 TCP로 업그레이드할 수 있습니다. TCP 연결 트랙 항목은 시간 초과를 해야 하는 UDP 항목과 달리 연결 종료 시 제거됩니다(기본값 <code class="language-plaintext highlighter-rouge">nf_conntrack_udp_timeout</code>은 30초)</li>
+  <li>DNS 쿼리를 UDP에서 TCP로 업그레이드하면 삭제된 UDP 패킷과 DNS 타임아웃으로 인한 테일 지연 시간이 보통 최대 30초(3회 재시도 + 10초 타임아웃)까지 줄어듭니다. 노드로컬 캐시가 UDP DNS 쿼리를 듣기 때문에 애플리케이션을 변경할 필요가 없습니다.</li>
+  <li>노드 수준에서 DNS 요청에 대한 메트릭 및 가시성.</li>
+  <li>
+    <p>네거티브 캐싱을 다시 활성화하여 kube-dns 서비스에 대한 쿼리 수를 줄일 수 있습니다.</p>
+  </li>
+  <li>NodeLocal DNSCache 설치 방법 - <a href="https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/#configuration">Docs</a>
+    <ul>
+      <li>설치시 NodeLocal DNSCache의 로컬 Listening IP 주소는 클러스터의 기존 IP와 충돌하지 않는 모든 주소일 수 있습니다.</li>
+      <li>예를들어 IPv4의 링크 로컬 범위인 <code class="language-plaintext highlighter-rouge">169.254.0.0/16</code>을 사용하거나, IPv6의 <code class="language-plaintext highlighter-rouge">fd00::/8</code> 범위를 사용하는것이 좋습니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-LO</span> https://raw.githubusercontent.com/kubernetes/kubernetes/refs/heads/master/cluster/addons/dns/nodelocaldns/nodelocaldns.yaml
+
+<span class="c"># 다음 값들은 적절한 값으로 대체 합니다.</span>
+<span class="nv">$ kubedns</span><span class="o">=</span><span class="sb">`</span>kubectl get svc kube-dns <span class="nt">-n</span> kube-system <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.clusterIP<span class="o">}</span><span class="sb">`</span> <span class="c"># coredns 의 ClusterIP</span>
+<span class="c"># $ domain=&lt;cluster-domain&gt; # 보통 기본값 cluster.local 사용</span>
+<span class="nv">$ domain</span><span class="o">=</span>cluster.local
+<span class="c"># $ localdns=&lt;node-local-address&gt; # local listen IP address chosen for NodeLocal DNSCache</span>
+<span class="nv">$ localdns</span><span class="o">=</span>169.254.20.10
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$kubedns</span> <span class="nv">$domain</span> <span class="nv">$localdns</span>
+<span class="c"># =&gt; 10.96.0.10 cluster.local 169.254.1.2</span>
+
+<span class="c"># case 1) kube-proxy가 IPTABLES 모드인 경우</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/__PILLAR__LOCAL__DNS__/</span><span class="nv">$localdns</span><span class="s2">/g; s/__PILLAR__DNS__DOMAIN__/</span><span class="nv">$domain</span><span class="s2">/g; s/__PILLAR__DNS__SERVER__/</span><span class="nv">$kubedns</span><span class="s2">/g"</span> nodelocaldns.yaml
+<span class="c"># 이 모드에서는 node-local-dns 포드가 kube-dns 서비스 IP와 &lt;node-local-address&gt;를 모두 수신하므로, 포드는 IP 주소 중 하나를 사용하여 DNS 레코드를 조회할 수 있습니다.</span>
+
+<span class="c"># case 2) kube-proxy가 IPVS 모드인 경우</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/__PILLAR__LOCAL__DNS__/</span><span class="nv">$localdns</span><span class="s2">/g; s/__PILLAR__DNS__DOMAIN__/</span><span class="nv">$domain</span><span class="s2">/g; s/,__PILLAR__DNS__SERVER__//g; s/__PILLAR__CLUSTER__DNS__/</span><span class="nv">$kubedns</span><span class="s2">/g"</span> nodelocaldns.yaml
+<span class="c"># - 이 모드에서는`node-local-dns` 포드가 **&lt;node-local-address&gt;**에서만 청취합니다.</span>
+<span class="c"># - IPVS 로드 밸런싱에 사용되는 인터페이스가 이미 이 주소를 사용하고 있기 때문에 `node-local-dns` 인터페이스는 kube-dns 클러스터 IP를 바인딩할 수 없습니다.</span>
+<span class="c"># - `__PILLAR__UPSTREAM__SERVERS__`는 `node-local-dns` 포드에 의해 채워집니다.</span>
+
+<span class="nv">$ </span>kubectl create <span class="nt">-f</span> nodelocaldns.yaml
+</code></pre></div></div>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">node-local-dns</code> 포드가 활성화되면 각 클러스터 노드의 <code class="language-plaintext highlighter-rouge">kube-system</code> 네임스페이스에서 실행됩니다.</li>
+  <li>이 포드는 캐시 모드에서 CoreDNS를 실행하므로 서로 다른 플러그인이 노출하는 모든 CoreDNS 메트릭을 노드 단위로 사용할 수 있습니다.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">kubectl delete -f &lt;manifest&gt;</code>를 사용하여 DaemonSet을 제거하여 비활성화할 수 있습니다. 변경한 내용을 kubetle 설정으로 되돌려야 합니다.</li>
+  <li>kube-dns의 ConfigMap에 지정된 StubDomains 과 upstream servers이 node-local-dns에 의해 사용됩니다.</li>
+  <li>iptables 모드일때와 ipvs 모드일때의 차이
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_20.png" alt="img.png" class="image-center" loading="lazy" width="1221" height="591">
+<em class="image-caption">iptables 모드일때</em>
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_21.png" alt="img_1.png" class="image-center" loading="lazy" width="1218" height="589">
+<em class="image-caption">ipvs 모드일때</em>
+    <ul>
+      <li>iptables 모드일 때와 ipvs 모드일 때의 차이점은, ipvs 모드에서는 Pod에서 Domain Resolve 요청을 CoreDNS Service의 ClusterIP인 10.96.0.10 IP 주소가 아니라 NodeLocal DNSCache의 CoreDNS가 설정한 Local Address IP인 169.254.25.10 IP 주소로 전송한다는 점입니다.</li>
+      <li>따라서 Kubernetes Cluster가 ipvs 모드 kube-proxy를 사용하고 있다면 NodeLocal DNSCache 기법 적용 유무를 변경할 수 없습니다. ipvs 모드에서는 매번 kubelet의 Pod DNS Server 주소를 변경하고 kublet을 재시작해야 합니다. 또한 Pod들도 재시작하여 Pod가 이용하는 DNS Server의 주소가 변경되도록 해야 합니다.</li>
+      <li>Kubernetes Cluster가 ipvs kube-proxy 모드를 사용하면 ipvs가 iptables의 NOTRACK Rule 을 무시하고 Loadbalancing 하기 때문입니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="nodelocal-dnscache-설치-및-확인">NodeLocal DNSCache 설치 및 확인</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># iptables 확인</span>
+<span class="nv">$ </span>iptables-save | <span class="nb">tee </span>before.txt
+
+<span class="c">#</span>
+<span class="nv">$ </span>wget https://github.com/kubernetes/kubernetes/raw/master/cluster/addons/dns/nodelocaldns/nodelocaldns.yaml
+<span class="c"># =&gt; 2025-08-03 02:19:25 (534 KB/s) - ‘nodelocaldns.yaml’ saved [5377/5377]</span>
+
+<span class="c"># kubedns 는 coredns 서비스의 ClusterIP를 변수 지정</span>
+<span class="nv">$ kubedns</span><span class="o">=</span><span class="sb">`</span>kubectl get svc kube-dns <span class="nt">-n</span> kube-system <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.clusterIP<span class="o">}</span><span class="sb">`</span>
+<span class="nv">$ domain</span><span class="o">=</span><span class="s1">'cluster.local'</span>    <span class="c">## default 값</span>
+<span class="nv">$ localdns</span><span class="o">=</span><span class="s1">'169.254.20.10'</span>  <span class="c">## default 값</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$kubedns</span> <span class="nv">$domain</span> <span class="nv">$localdns</span>
+<span class="c"># =&gt; 10.96.0.10 cluster.local 169.254.20.10</span>
+
+<span class="c"># iptables 모드 사용 중으로 아래 명령어 수행</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/__PILLAR__LOCAL__DNS__/</span><span class="nv">$localdns</span><span class="s2">/g; s/__PILLAR__DNS__DOMAIN__/</span><span class="nv">$domain</span><span class="s2">/g; s/__PILLAR__DNS__SERVER__/</span><span class="nv">$kubedns</span><span class="s2">/g"</span> nodelocaldns.yaml
+
+<span class="c"># nodelocaldns 설치</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> nodelocaldns.yaml
+<span class="c"># =&gt; serviceaccount/node-local-dns created</span>
+<span class="c">#    service/kube-dns-upstream created</span>
+<span class="c">#    configmap/node-local-dns created</span>
+<span class="c">#    daemonset.apps/node-local-dns created</span>
+<span class="c">#    service/node-local-dns created</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-n</span> kube-system <span class="nt">-l</span> k8s-app<span class="o">=</span>node-local-dns <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                   READY   STATUS              RESTARTS   AGE   IP               NODE      NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    node-local-dns-6gzpj   0/1     ContainerCreating   0          10s   192.168.10.100   k8s-ctr   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    node-local-dns-c2846   0/1     ContainerCreating   0          10s   192.168.10.101   k8s-w1    &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl edit cm <span class="nt">-n</span> kube-system node-local-dns <span class="c"># 'cluster.local' 과 '.:53' 에 log, debug 추가</span>
+<span class="c"># =&gt; configmap/node-local-dns edited</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds node-local-dns
+<span class="c"># =&gt; daemonset.apps/node-local-dns restarted</span>
+
+<span class="nv">$ </span>kubectl describe cm <span class="nt">-n</span> kube-system node-local-dns
+<span class="c"># =&gt; cluster.local:53 {</span>
+<span class="c">#        log</span>
+<span class="c">#        debug</span>
+<span class="c">#        errors</span>
+<span class="c">#        cache {</span>
+<span class="c">#                success 9984 30</span>
+<span class="c">#                denial 9984 5</span>
+<span class="c">#        }</span>
+<span class="c">#        reload</span>
+<span class="c">#        loop</span>
+<span class="c">#        bind 169.254.20.10 10.96.0.10</span>
+<span class="c">#        forward . __PILLAR__CLUSTER__DNS__ {</span>
+<span class="c">#                force_tcp</span>
+<span class="c">#        }</span>
+<span class="c">#        prometheus :9253</span>
+<span class="c">#        health 169.254.20.10:8080</span>
+<span class="c">#        }</span>
+<span class="c">#    ...</span>
+<span class="c">#    .:53 {</span>
+<span class="c">#        log</span>
+<span class="c">#        debug</span>
+<span class="c">#        errors</span>
+<span class="c">#        cache 30</span>
+<span class="c">#        reload</span>
+<span class="c">#        loop</span>
+<span class="c">#        bind 169.254.20.10 10.96.0.10</span>
+<span class="c">#        forward . __PILLAR__UPSTREAM__SERVERS__</span>
+<span class="c">#        prometheus :9253</span>
+<span class="c">#        }</span>
+
+<span class="c"># iptables 확인 : 규칙 업데이트까지 다소 시간 소요!</span>
+<span class="nv">$ </span>iptables-save | <span class="nb">tee </span>after.txt
+<span class="nv">$ </span>diff before.txt after.txt
+
+<span class="c">##</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> filter <span class="nt">-S</span> | <span class="nb">grep</span> <span class="nt">-i</span> dns
+<span class="c"># =&gt; -A INPUT -d 10.96.0.10/32 -p udp -m udp --dport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A INPUT -d 10.96.0.10/32 -p tcp -m tcp --dport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A INPUT -d 169.254.20.10/32 -p udp -m udp --dport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A INPUT -d 169.254.20.10/32 -p tcp -m tcp --dport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A OUTPUT -s 10.96.0.10/32 -p udp -m udp --sport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A OUTPUT -s 10.96.0.10/32 -p tcp -m tcp --sport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A OUTPUT -s 169.254.20.10/32 -p udp -m udp --sport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+<span class="c">#    -A OUTPUT -s 169.254.20.10/32 -p tcp -m tcp --sport 53 -m comment --comment "NodeLocal DNS Cache: allow DNS traffic" -j ACCEPT</span>
+
+<span class="c">##</span>
+<span class="nv">$ </span>iptables <span class="nt">-t</span> raw <span class="nt">-S</span> | <span class="nb">grep</span> <span class="nt">-i</span> dns
+<span class="c"># =&gt; -A PREROUTING -d 10.96.0.10/32 -p udp -m udp --dport 53 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    -A PREROUTING -d 10.96.0.10/32 -p tcp -m tcp --dport 53 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    -A PREROUTING -d 169.254.20.10/32 -p udp -m udp --dport 53 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    -A PREROUTING -d 169.254.20.10/32 -p tcp -m tcp --dport 53 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    -A OUTPUT -s 10.96.0.10/32 -p tcp -m tcp --sport 8080 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    -A OUTPUT -d 10.96.0.10/32 -p tcp -m tcp --dport 8080 -m comment --comment "NodeLocal DNS Cache: skip conntrack" -j NOTRACK</span>
+<span class="c">#    ...</span>
+
+<span class="c"># logs : </span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-f</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>node-local-dns <span class="nt">-f</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> <span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># =&gt; search default.svc.cluster.local svc.cluster.local cluster.local</span>
+<span class="c">#    nameserver 10.96.0.10</span>
+<span class="c">#    options ndots:5</span>
+
+<span class="c"># </span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup webpod
+<span class="c"># kube-dns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.80:57227 - 46178 "A IN webpod.default.svc.cluster.local. udp 50 false 512" NOERROR qr,aa,rd 98 0.000729042s</span>
+<span class="c">#    [INFO] 172.20.1.80:49087 - 7946 "AAAA IN webpod.default.svc.cluster.local. udp 50 false 512" NOERROR qr,aa,rd 143 0.000557625s</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup google.com
+<span class="c"># kube-dns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.80:52008 - 19063 "A IN google.com.default.svc.cluster.local. udp 54 false 512" NXDOMAIN qr,aa,rd 147 0.000802417s</span>
+<span class="c">#    [INFO] 172.20.1.80:53056 - 1029 "A IN google.com.svc.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.000377583s</span>
+<span class="c">#    [INFO] 172.20.1.80:40165 - 2061 "A IN google.com.cluster.local. udp 42 false 512" NXDOMAIN qr,aa,rd 135 0.000287959s</span>
+<span class="c">#    [INFO] 172.20.1.80:42852 - 42332 "A IN google.com. udp 28 false 512" NOERROR qr,aa,rd,ra 54 0.000450083s</span>
+<span class="c">#    [INFO] 172.20.1.80:52047 - 947 "AAAA IN google.com. udp 28 false 512" NOERROR qr,aa,rd,ra 66 0.000662125s</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 로그가 kube-dns 쪽에만 쌓입니다.&lt;/span&gt;</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl delete pod curl-pod
+
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-pod
+  labels:
+    app: curl
+spec:
+  containers:
+  - name: curl
+    image: nicolaka/netshoot
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+  terminationGracePeriodSeconds: 0
+</span><span class="no">EOF
+</span><span class="c"># =&gt; pod/curl-pod created</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> <span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># =&gt; search default.svc.cluster.local svc.cluster.local cluster.local</span>
+<span class="c">#    nameserver 10.96.0.10</span>
+<span class="c">#    options ndots:5</span>
+
+<span class="c"># 로그 확인 시 현재 nodelocaldns 미활용! </span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-f</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>node-local-dns <span class="nt">-f</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup webpod
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup google.com
+</code></pre></div></div>
+
+<ul>
+  <li>위의 예제에서는 아직 NodeLocal DNSCache를 사용하지 않고 있습니다.</li>
+</ul>
+
+<h3 id="cilium-local-redirect-policy">Cilium Local Redirect Policy</h3>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">--set localRedirectPolicy=true</code> 해서 Local Redirect Policy를 활성화하면, Cilium은 NodeLocal DNSCache를 사용하여 DNS 요청을 처리합니다. <a href="https://docs.cilium.io/en/stable/network/kubernetes/local-redirect-policy/">Docs</a>
+</li>
+  <li>IP 주소와 Port/Protocol tuple 또는 <strong>Kubernetes Service</strong> 로 향하는 포드 <strong>트래픽</strong>을 eBPF를 사용하여 노드 내 <strong>백엔드 포드로 로컬로 리디렉션</strong>할 수 있도록 하는 Cilium의 로컬 리디렉션 정책을 구성하는 방법을 설명합니다.</li>
+  <li>백엔드 포드의 네임스페이스는 정책의 네임스페이스와 일치해야 합니다.</li>
+  <li>CiliumLocalRedirectPolicy는 CustomResourceDefinition으로 구성되어 있습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">localRedirectPolicy</span><span class="o">=</span><span class="nb">true</span>
+
+<span class="nv">$ </span>kubectl rollout restart deploy cilium-operator <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; deployment.apps/cilium-operator restarted</span>
+<span class="nv">$ </span>kubectl rollout restart ds cilium <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; daemonset.apps/cilium restarted</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>wget https://raw.githubusercontent.com/cilium/cilium/1.17.6/examples/kubernetes-local-redirect/node-local-dns.yaml
+
+<span class="nv">$ kubedns</span><span class="o">=</span><span class="si">$(</span>kubectl get svc kube-dns <span class="nt">-n</span> kube-system <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">={</span>.spec.clusterIP<span class="o">}</span><span class="si">)</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s2">"s/__PILLAR__DNS__SERVER__/</span><span class="nv">$kubedns</span><span class="s2">/g;"</span> node-local-dns.yaml
+<span class="nv">$ </span>vi <span class="nt">-d</span> nodelocaldns.yaml node-local-dns.yaml
+</code></pre></div></div>
+
+<ul>
+  <li>nodelocaldns.yaml과 node-local-dns.yaml의 diff 결과 
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_22.png" alt="img.png" loading="lazy" width="1987" height="1322">
+<img src="/assets/2025/cilium/w3/20250803_cilium_w3_23.png" alt="img_1.png" loading="lazy" width="1984" height="819">
+</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">## before</span>
+<span class="c"># args: [ "-localip", "169.254.20.10,10.96.0.10", "-conf", "/etc/Corefile", "-upstreamsvc", "kube-dns-upstream" ]</span>
+
+<span class="c">## after</span>
+<span class="c"># args: [ "-localip", "169.254.20.10,10.96.0.10", "-conf", "/etc/Corefile", "-upstreamsvc", "kube-dns-upstream", "-skipteardown=true", "-setupinterface=false", "-setupiptables=false" ]</span>
+
+
+<span class="c"># 배포</span>
+<span class="c"># Modify Node-local DNS cache’s deployment yaml to pass these additional arguments to node-cache: </span>
+<span class="c">## -skipteardown=true, -setupinterface=false, and -setupiptables=false.</span>
+
+<span class="c"># Modify Node-local DNS cache’s deployment yaml to put it in non-host namespace by setting hostNetwork: false for the daemonset.</span>
+<span class="c"># In the Corefile, bind to 0.0.0.0 instead of the static IP.</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> node-local-dns.yaml
+<span class="c"># =&gt; serviceaccount/node-local-dns configured</span>
+<span class="c">#    service/kube-dns-upstream configured</span>
+<span class="c">#    configmap/node-local-dns configured</span>
+<span class="c">#    daemonset.apps/node-local-dns configured</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl edit cm <span class="nt">-n</span> kube-system node-local-dns <span class="c"># log, debug 추가</span>
+<span class="c"># =&gt; configmap/node-local-dns edited</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds node-local-dns
+<span class="c"># =&gt; daemonset.apps/node-local-dns restarted</span>
+
+<span class="nv">$ </span>kubectl describe cm <span class="nt">-n</span> kube-system node-local-dns
+<span class="c"># =&gt; ...</span>
+<span class="c">#    cluster.local:53 {</span>
+<span class="c">#        log</span>
+<span class="c">#        debug</span>
+<span class="c">#        errors</span>
+<span class="c">#        cache {</span>
+<span class="c">#                success 9984 30</span>
+<span class="c">#                denial 9984 5</span>
+<span class="c">#        }</span>
+<span class="c">#        reload</span>
+<span class="c">#        loop</span>
+<span class="c">#        bind 0.0.0.0</span>
+<span class="c">#        forward . __PILLAR__CLUSTER__DNS__ {</span>
+<span class="c">#                force_tcp</span>
+<span class="c">#        }</span>
+<span class="c">#        prometheus :9253</span>
+<span class="c">#        health</span>
+<span class="c">#        }</span>
+<span class="c">#    ...</span>
+<span class="c">#    .:53 {</span>
+<span class="c">#        log</span>
+<span class="c">#        debug</span>
+<span class="c">#        errors</span>
+<span class="c">#        cache 30</span>
+<span class="c">#        reload</span>
+<span class="c">#        loop</span>
+<span class="c">#        bind 0.0.0.0</span>
+<span class="c">#        forward . __PILLAR__UPSTREAM__SERVERS__</span>
+<span class="c">#        prometheus :9253</span>
+<span class="c">#        }</span>
+<span class="c">#    ...</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>wget https://raw.githubusercontent.com/cilium/cilium/1.17.6/examples/kubernetes-local-redirect/node-local-dns-lrp.yaml
+<span class="nv">$ </span><span class="nb">cat </span>node-local-dns-lrp.yaml
+<span class="c"># =&gt; apiVersion: "cilium.io/v2"</span>
+<span class="c">#    kind: CiliumLocalRedirectPolicy</span>
+<span class="c">#    metadata:</span>
+<span class="c">#      name: "nodelocaldns"</span>
+<span class="c">#      namespace: kube-system</span>
+<span class="c">#    spec:</span>
+<span class="c">#      redirectFrontend:</span>
+<span class="c">#        serviceMatcher:</span>
+<span class="c">#          serviceName: kube-dns</span>
+<span class="c">#          namespace: kube-system</span>
+<span class="c">#      redirectBackend:</span>
+<span class="c">#        localEndpointSelector:</span>
+<span class="c">#          matchLabels:</span>
+<span class="c">#            k8s-app: node-local-dns</span>
+<span class="c">#        toPorts:</span>
+<span class="c">#          - port: "53"</span>
+<span class="c">#            name: dns</span>
+<span class="c">#            protocol: UDP</span>
+<span class="c">#          - port: "53"</span>
+<span class="c">#            name: dns-tcp</span>
+<span class="c">#            protocol: TCP</span>
+        
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/cilium/cilium/1.17.6/examples/kubernetes-local-redirect/node-local-dns-lrp.yaml
+<span class="c"># =&gt; ciliumlocalredirectpolicy.cilium.io/nodelocaldns created</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get CiliumLocalRedirectPolicy <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE     NAME           AGE</span>
+<span class="c">#    kube-system   nodelocaldns   8s</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent <span class="nt">--</span> cilium-dbg lrp list
+<span class="c"># =&gt; LRP namespace   LRP name       FrontendType                Matching Service</span>
+<span class="c">#    kube-system     nodelocaldns   clusterIP + all svc ports   kube-system/kube-dns</span>
+
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent <span class="nt">--</span> cilium-dbg service list | <span class="nb">grep </span>LocalRedirect
+<span class="c"># =&gt; 16   10.96.0.10:53/UDP       LocalRedirect   1 =&gt; 172.20.0.73:53/UDP (active)</span>
+<span class="c">#    17   10.96.0.10:53/TCP       LocalRedirect   1 =&gt; 172.20.0.73:53/TCP (active)</span>
+
+<span class="c"># logs</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>kube-dns <span class="nt">-f</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>node-local-dns <span class="nt">-f</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup www.google.com
+<span class="c"># =&gt; Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    Non-authoritative answer:</span>
+<span class="c">#    Name:   www.google.com</span>
+<span class="c">#    Address: 142.250.206.228</span>
+<span class="c">#    Name:   www.google.com</span>
+<span class="c">#    Address: 2404:6800:400a:804::2004</span>
+
+<span class="c"># kube-dns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.178:55860 - 32731 "A IN www.google.com.default.svc.cluster.local. tcp 58 false 65535" NXDOMAIN qr,aa,rd 151 0.002254584s</span>
+<span class="c">#    [INFO] 172.20.1.178:55860 - 50477 "A IN www.google.com.svc.cluster.local. tcp 50 false 65535" NXDOMAIN qr,aa,rd 143 0.000426625s</span>
+<span class="c">#    [INFO] 172.20.1.178:55860 - 42463 "A IN www.google.com.cluster.local. tcp 46 false 65535" NXDOMAIN qr,aa,rd 139 0.000225583s</span>
+
+<span class="c"># node-local-dns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.20:52275 - 32731 "A IN www.google.com.default.svc.cluster.local. udp 58 false 512" NXDOMAIN qr,aa,rd 151 0.009171834s</span>
+<span class="c">#    [INFO] 172.20.1.20:60077 - 50477 "A IN www.google.com.svc.cluster.local. udp 50 false 512" NXDOMAIN qr,aa,rd 143 0.001657537s</span>
+<span class="c">#    [INFO] 172.20.1.20:48089 - 42463 "A IN www.google.com.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.001401951s</span>
+<span class="c">#    [INFO] 172.20.1.20:58721 - 18703 "A IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 62 0.046337824s</span>
+<span class="c">#    [INFO] 172.20.1.20:42914 - 43270 "AAAA IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 74 0.042382055s</span>
+
+<span class="c"># 한번더 dns 조회</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> curl-pod <span class="nt">--</span> nslookup www.google.com
+<span class="c"># =&gt; Server:         10.96.0.10</span>
+<span class="c">#    Address:        10.96.0.10#53</span>
+<span class="c">#    </span>
+<span class="c">#    Non-authoritative answer:</span>
+<span class="c">#    Name:   www.google.com</span>
+<span class="c">#    Address: 142.250.206.228</span>
+<span class="c">#    Name:   www.google.com</span>
+<span class="c">#    Address: 2404:6800:400a:804::2004</span>
+
+<span class="c"># kube-dns 로그 확인</span>
+<span class="c"># =&gt; (로그 없음)</span>
+
+<span class="c"># node-local-dns 로그 확인</span>
+<span class="c"># =&gt; [INFO] 172.20.1.20:52275 - 32731 "A IN www.google.com.default.svc.cluster.local. udp 58 false 512" NXDOMAIN qr,aa,rd 151 0.009171834s</span>
+<span class="c">#    [INFO] 172.20.1.20:60077 - 50477 "A IN www.google.com.svc.cluster.local. udp 50 false 512" NXDOMAIN qr,aa,rd 143 0.001657537s</span>
+<span class="c">#    [INFO] 172.20.1.20:48089 - 42463 "A IN www.google.com.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.001401951s</span>
+<span class="c">#    [INFO] 172.20.1.20:58721 - 18703 "A IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 62 0.046337824s</span>
+<span class="c">#    [INFO] 172.20.1.20:42914 - 43270 "AAAA IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 74 0.042382055s</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 연속 조회시 node-local-dns에 캐시가 되어서 kube-dns의 조회가 줄어듬을 확인할 수 있습니다.&lt;/span&gt;</span>
+
+<span class="c"># nodelocaldns 에 캐시된 정보로 바로 질의 응답 확인!</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system logs <span class="nt">-l</span> k8s-app<span class="o">=</span>node-local-dns <span class="nt">-f</span>
+<span class="c"># =&gt; [INFO] 172.20.1.20:52275 - 32731 "A IN www.google.com.default.svc.cluster.local. udp 58 false 512" NXDOMAIN qr,aa,rd 151 0.009171834s</span>
+<span class="c">#    [INFO] 172.20.1.20:60077 - 50477 "A IN www.google.com.svc.cluster.local. udp 50 false 512" NXDOMAIN qr,aa,rd 143 0.001657537s</span>
+<span class="c">#    [INFO] 172.20.1.20:48089 - 42463 "A IN www.google.com.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.001401951s</span>
+<span class="c">#    [INFO] 172.20.1.20:58721 - 18703 "A IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 62 0.046337824s</span>
+<span class="c">#    [INFO] 172.20.1.20:42914 - 43270 "AAAA IN www.google.com. udp 32 false 512" NOERROR qr,rd,ra 74 0.042382055s</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w3/20250803_cilium_w3_24.png" alt="img.png" class="image-center" loading="lazy" width="427" height="383"></p>
+
+<hr>
+
+<h2 id="마치며">마치며</h2>
+
+<p>이번 포스트에서는 노드의 파드 들간 통신과 외부와의 통신, DNS 요청을 처리하는 방법에 대해 알아보았습니다.
+네트워크는 볼때마다 어려운것 같습니다. <img class="emoji" title=":sweat_smile:" alt=":sweat_smile:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f605.png" height="20" width="20" loading="lazy"> 
+하지만 조금씩 이해가 되고, 익숙해지는 것 같습니다. 한걸음 한걸음 나아가고 있는것이 느껴집니다.</p>
+
+<p>다양한 주제에 걸쳐 배웠는데, 모든 파트에서 수 많은 사람들이 조금이라도 네트워크를 효율적으로 하기위해서
+애쓴 흔적들을 볼 수 있었습니다. 그런 분들이 있어서 지금 이렇게 인터넷을 사용하고 클라우드를 이용할 수 있으니
+한번도 뵌적은 없지만 그분들에게 감사의 마음을 전합니다. <img class="emoji" title=":pray:" alt=":pray:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f64f.png" height="20" width="20" loading="lazy"></p>
+
+<hr>
+
+<h2 id="부록">부록</h2>
+
+<h3 id="k9s-주요-단축키">K9s 주요 단축키</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th><strong>Action</strong></th>
+      <th><strong>Command</strong></th>
+      <th><strong>Comment</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Show active keyboard mnemonics and help</td>
+      <td><code class="language-plaintext highlighter-rouge">?</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Show all available resource alias</td>
+      <td><code class="language-plaintext highlighter-rouge">ctrl-a</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To bail out of K9s</td>
+      <td>
+<code class="language-plaintext highlighter-rouge">:quit</code> <code class="language-plaintext highlighter-rouge">:q</code> <code class="language-plaintext highlighter-rouge">ctrl-c</code>
+</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To go up/back to the previous view</td>
+      <td><code class="language-plaintext highlighter-rouge">esc</code></td>
+      <td>If you have crumbs on, this will go to the previous one</td>
+    </tr>
+    <tr>
+      <td>View a Kubernetes resource using singular/plural or short-name</td>
+      <td><code class="language-plaintext highlighter-rouge">:pod</code></td>
+      <td>accepts singular, plural, short-name or alias ie pod or pods</td>
+    </tr>
+    <tr>
+      <td>View a Kubernetes resource in a given namespace</td>
+      <td><code class="language-plaintext highlighter-rouge">:pod ns-x</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>View filtered pods (New v0.30.0!)</td>
+      <td><code class="language-plaintext highlighter-rouge">:pod /fred</code></td>
+      <td>View all pods filtered by fred</td>
+    </tr>
+    <tr>
+      <td>View labeled pods (New v0.30.0!)</td>
+      <td><code class="language-plaintext highlighter-rouge">:pod app=fred,env=dev</code></td>
+      <td>View all pods with labels matching app=fred and env=dev</td>
+    </tr>
+    <tr>
+      <td>View pods in a given context (New v0.30.0!)</td>
+      <td><code class="language-plaintext highlighter-rouge">:pod @ctx1</code></td>
+      <td>View all pods in context ctx1. Switches out your current k9s context!</td>
+    </tr>
+    <tr>
+      <td>Filter out a resource view given a filter</td>
+      <td><code class="language-plaintext highlighter-rouge">/filter</code></td>
+      <td>Regex2 supported ie <code class="language-plaintext highlighter-rouge">fred</code>
+</td>
+    </tr>
+    <tr>
+      <td>Inverse regex filter</td>
+      <td><code class="language-plaintext highlighter-rouge">/! filter</code></td>
+      <td>Keep everything that <em>doesn’t</em> match.</td>
+    </tr>
+    <tr>
+      <td>Filter resource view by labels</td>
+      <td><code class="language-plaintext highlighter-rouge">/-l label-selector</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Fuzzy find a resource given a filter</td>
+      <td><code class="language-plaintext highlighter-rouge">/-f filter</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Bails out of view/command/filter mode</td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;esc&gt;</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Key mapping to describe, view, edit, view logs,…</td>
+      <td>
+<code class="language-plaintext highlighter-rouge">d</code>, <code class="language-plaintext highlighter-rouge">v</code>, <code class="language-plaintext highlighter-rouge">e</code>, <code class="language-plaintext highlighter-rouge">l</code>,…</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To view and switch to another Kubernetes context (Pod view)</td>
+      <td><code class="language-plaintext highlighter-rouge">:ctx</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To view and switch directly to another Kubernetes context (Last used view)</td>
+      <td><code class="language-plaintext highlighter-rouge">:ctx context-name</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To view and switch to another Kubernetes namespace</td>
+      <td><code class="language-plaintext highlighter-rouge">:ns</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To switch back to the last active command (like how “cd -“ works)</td>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
+      <td>Navigation that adds breadcrumbs to the bottom are not commands</td>
+    </tr>
+    <tr>
+      <td>To go back and forward through the command history</td>
+      <td>back: <code class="language-plaintext highlighter-rouge">[</code>, forward: <code class="language-plaintext highlighter-rouge">]</code>
+</td>
+      <td>Same as above</td>
+    </tr>
+    <tr>
+      <td>To view all saved resources</td>
+      <td>
+<code class="language-plaintext highlighter-rouge">:screendump</code> or <code class="language-plaintext highlighter-rouge">:sd</code>
+</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To delete a resource (TAB and ENTER to confirm)</td>
+      <td><code class="language-plaintext highlighter-rouge">ctrl-d</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>To kill a resource (no confirmation dialog, equivalent to kubectl delete –now)</td>
+      <td><code class="language-plaintext highlighter-rouge">ctrl-k</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Launch pulses view</td>
+      <td>
+<code class="language-plaintext highlighter-rouge">:pulses</code> or <code class="language-plaintext highlighter-rouge">:pu</code>
+</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Launch XRay view</td>
+      <td><code class="language-plaintext highlighter-rouge">:xray RESOURCE [NAMESPACE]</code></td>
+      <td>RESOURCE can be one of po, <strong>svc</strong>, dp, rs, sts, ds, NAMESPACE is optional</td>
+    </tr>
+    <tr>
+      <td>Launch Popeye view</td>
+      <td>
+<code class="language-plaintext highlighter-rouge">:popeye</code> or <code class="language-plaintext highlighter-rouge">:pop</code>
+</td>
+      <td>See <a href="https://github.com/derailed/k9s#popeye">popeye</a>
+</td>
+    </tr>
+  </tbody>
+</table>
+
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#%EC%8B%A4%EC%8A%B5-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1">실습 환경 구성</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC-%ED%8C%8C%EC%9D%BC">실습환경 배포 파일</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC-%EB%B0%8F-%EB%B6%84%EC%84%9D-%ED%88%B4-%EC%84%A4%EC%B9%98">실습환경 배포 및 분석 툴 설치</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#ipam">IPAM</a>
+<ul>
+<li class="toc-entry toc-h3">
+<a href="#kubernetes-host-scope">Kubernetes Host Scope</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EC%83%98%ED%94%8C-%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EB%B0%8F-%ED%99%95%EC%9D%B8">샘플 애플리케이션 배포 및 확인</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#cilium-cluster-scope">[Cilium] Cluster Scope</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#ipam-%EB%AA%A8%EB%93%9C%EB%A5%BC-cluster-scope%EB%A1%9C-%EB%B3%80%EA%B2%BD">IPAM 모드를 Cluster Scope로 변경</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#cilium-cni-chaining-aws-vpc-cni-plugin">[Cilium CNI Chaining] AWS VPC CNI plugin</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#routing">Routing</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#method-1-encapsulation-vxlan-geneve">Method 1. Encapsulation (VXLAN, GENEVE)</a></li>
+<li class="toc-entry toc-h3"><a href="#method-2-native-routing">Method 2. Native Routing</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#masquerading">Masquerading</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#masquerading-%EC%86%8C%EA%B0%9C">Masquerading 소개</a></li>
+<li class="toc-entry toc-h3"><a href="#ebpf-%EA%B8%B0%EB%B0%98-masquerading">eBPF 기반 Masquerading</a></li>
+<li class="toc-entry toc-h3"><a href="#iptables-%EA%B8%B0%EB%B0%98-masquerading">iptables 기반 Masquerading</a></li>
+<li class="toc-entry toc-h3"><a href="#masquerading-%EC%8B%A4%EC%8A%B5">Masquerading 실습</a></li>
+<li class="toc-entry toc-h3"><a href="#ip-masq-agent-%EC%84%A4%EC%A0%95">ip-masq-agent 설정</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#coredns-nodelocaldns">CoreDNS, NodeLocalDNS</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#coredns">CoreDNS</a></li>
+<li class="toc-entry toc-h3"><a href="#nodelocaldns">NodeLocalDNS</a></li>
+<li class="toc-entry toc-h3"><a href="#nodelocal-dnscache-%EC%84%A4%EC%B9%98-%EB%B0%8F-%ED%99%95%EC%9D%B8">NodeLocal DNSCache 설치 및 확인</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-local-redirect-policy">Cilium Local Redirect Policy</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#%EB%B6%80%EB%A1%9D">부록</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#k9s-%EC%A3%BC%EC%9A%94-%EB%8B%A8%EC%B6%95%ED%82%A4">K9s 주요 단축키</a></li>
+</ul>
+</li>
+</ul>
+  </div>
+<a class="u-url" href="/posts/2025-08-03-Cilium-Week3/" hidden></a>
+</article>
+
+
+
+<div class="PageNavigation">
+  
+  <a class="prev" href="/posts/2025-07-27-Cilium-Week2/">« [Cilium] (Observability) Hubble, Prometheus, Grafana</a>
+  
+  
+</div>
+
+<div id="disqus_thread"></div>
+<script>
+var disqus_config = function () {
+this.page.url = "https://sweetlittlebird.github.io/posts/2025-08-03-Cilium-Week3/";
+this.page.identifier = "/posts/Cilium - Week3";
+};
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+</noscript>
+      </div>
+
+<!--      <div class="adsbygoogle-side">-->
+<!--        &lt;!&ndash; ad_side &ndash;&gt;-->
+<!--        <ins class="adsbygoogle "-->
+<!--             style="display: block"-->
+<!--             data-ad-client="ca-pub-6564723532026864"-->
+<!--             data-ad-slot="1339398797"-->
+<!--             data-ad-format="auto"-->
+<!--             data-full-width-responsive="true"></ins>-->
+<!--      </div>-->
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Sweet Little Bird</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Sweet Little Bird</li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>공부 기록과 개발 이야기를 담은 블로그입니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+
+    
+    <script async src="/assets/dist/app.min.js"></script>
+    
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6564723532026864" crossorigin="anonymous"></script>
+    <!--<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>-->
+  </body>
+
+</html>
