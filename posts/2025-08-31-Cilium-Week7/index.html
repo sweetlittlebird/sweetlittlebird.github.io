@@ -1,0 +1,2643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>[Cilium] K8S/Cilium Performance | Sweet Little Bird</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="[Cilium] K8S/Cilium Performance">
+<meta property="og:locale" content="ko">
+<meta name="description" content="이번 포스트에서는 Cilium의 performance와 그의 기반이 되는 K8S의 performance에 대해 실습을 통하여 알아보도록 하겠습니다.">
+<meta property="og:description" content="이번 포스트에서는 Cilium의 performance와 그의 기반이 되는 K8S의 performance에 대해 실습을 통하여 알아보도록 하겠습니다.">
+<link rel="canonical" href="https://sweetlittlebird.github.io/posts/2025-08-31-Cilium-Week7/">
+<meta property="og:url" content="https://sweetlittlebird.github.io/posts/2025-08-31-Cilium-Week7/">
+<meta property="og:site_name" content="Sweet Little Bird">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2025-08-31T00:10:18+09:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="[Cilium] K8S/Cilium Performance">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-08-31T00:10:18+09:00","datePublished":"2025-08-31T00:10:18+09:00","description":"이번 포스트에서는 Cilium의 performance와 그의 기반이 되는 K8S의 performance에 대해 실습을 통하여 알아보도록 하겠습니다.","headline":"[Cilium] K8S/Cilium Performance","mainEntityOfPage":{"@type":"WebPage","@id":"https://sweetlittlebird.github.io/posts/2025-08-31-Cilium-Week7/"},"url":"https://sweetlittlebird.github.io/posts/2025-08-31-Cilium-Week7/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/dist/photoswipe.min.css">
+  <link rel="stylesheet" href="/assets/dist/main.min.css">
+  <link rel="stylesheet" href="/assets/dist/main_dark.min.css" media="(prefers-color-scheme: dark)">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/pretendard.css" integrity="sha512-NzqTHTrO48HsIamogmIaVhTXoSgRF24Cn+ynrNYrFuKrY0AdDbmcNieiOHsQARS/r0Gax9VwV3/rVMHs3ipUlg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!--  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&display=swap" rel="stylesheet">-->
+  <link href="https://fonts.googleapis.com/css2?family=Elsie+Swash+Caps:wght@400;900&amp;family=Milonga&amp;display=swap" rel="stylesheet">
+
+  <link rel="shortcut icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon/favicon.ico" type="image/x-icon">
+<link type="application/atom+xml" rel="alternate" href="https://sweetlittlebird.github.io/feed.xml" title="Sweet Little Bird">
+</head>
+<body class="body--contents">
+<header class="site-header" role="banner">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">Sweet Little Bird</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+<a class="page-link" href="/about/">소개</a><a class="page-link" href="/posts/">글 목록</a>
+</div>
+      </nav>
+</div>
+  
+  <span id="scroll-indicator"></span>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">[Cilium] K8S/Cilium Performance</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-08-31T00:10:18+09:00" itemprop="datePublished">2025년 08월 31일에 작성
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <div class="table-of-content">
+      <header>목차</header>
+      <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#k8s-performance">K8S Performance</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1">실습 환경 구성</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC">실습환경 배포</a></li>
+<li class="toc-entry toc-h3">
+<a href="#kube-burner">Kube-burner</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-1--%EB%94%94%ED%94%8C%EB%A1%9C%EC%9D%B4%EB%A8%BC%ED%8A%B8-1%EA%B0%9C%ED%8C%8C%EB%93%9C-1%EA%B0%9C-%EC%83%9D%EC%84%B1--%EC%82%AD%EC%A0%9C-jobiterations-qps-burst-%EC%9D%98%EB%AF%B8-%ED%99%95%EC%9D%B8">시나리오 1 : 디플로이먼트 1개(파드 1개) 생성 → 삭제, jobIterations qps burst 의미 확인</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-2--%EB%85%B8%EB%93%9C-1%EB%8C%80%EC%97%90-%EC%B5%9C%EB%8C%80-%ED%8C%8C%EB%93%9C150%EA%B0%9C-%EB%B0%B0%ED%8F%AC-%EC%8B%9C%EB%8F%84-1">시나리오 2 : 노드 1대에 최대 파드(150개) 배포 시도 1</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-3--%EB%85%B8%EB%93%9C-1%EB%8C%80%EC%97%90-%EC%B5%9C%EB%8C%80-%ED%8C%8C%EB%93%9C300%EA%B0%9C-%EB%B0%B0%ED%8F%AC-%EC%8B%9C%EB%8F%84-2">시나리오 3 : 노드 1대에 최대 파드(300개) 배포 시도 2</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#k8s-performance--tuning">K8S Performance &amp; Tuning</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EB%8C%80%EA%B7%9C%EB%AA%A8-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EA%B3%A0%EB%A0%A4%EC%82%AC%ED%95%AD">대규모 클러스터 고려사항</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-4-api-intensive---%ED%8C%8C%EB%93%9C%EB%A5%BC-%EC%83%9D%EC%84%B1configmap-secret-%ED%9B%84-%EC%82%AD%EC%A0%9C">시나리오 4. api-intensive - 파드를 생성(configmap, secret) 후 삭제</a></li>
+<li class="toc-entry toc-h4"><a href="#kubernetes-api-%EC%84%B1%EB%8A%A5-%EB%A9%94%ED%8A%B8%EB%A6%AD--%EC%98%88%EC%A0%9C%EC%99%80-best-practice---blog">Kubernetes API 성능 메트릭 : 예제와 Best Practice - Blog</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#cilium-performance">Cilium Performance</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EC%A4%80%EB%B9%84">실습환경 준비</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%BF%A0%EB%B2%84%EB%84%A4%ED%8B%B0%EC%8A%A4-%ED%99%98%EA%B2%BD%EC%97%90%EC%84%9C-%EC%86%8D%EB%8F%84-%EC%B8%A1%EC%A0%95-%ED%85%8C%EC%8A%A4%ED%8A%B8">쿠버네티스 환경에서 속도 측정 테스트</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-%EC%A0%91%EC%86%8D-%EB%B0%8F-%EC%84%B1%EB%8A%A5-%ED%85%8C%EC%8A%A4%ED%8A%B8">Cilium 접속 및 성능 테스트</a></li>
+<li class="toc-entry toc-h3">
+<a href="#cilium-performance--tuning">Cilium Performance &amp; Tuning</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#deep-dive-into-cilium-resilient-architecture--apievent-%EC%99%80-cilium-agentstatedb-%EC%99%80-bpf-%EB%8F%99%EC%9E%91">Deep Dive Into Cilium Resilient Architecture : API(Event) 와 Cilium-Agent(StateDB) 와 BPF 동작</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#kubernetes-perf-tests">Kubernetes perf-tests</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-tuning-guide">Cilium Tuning Guide</a></li>
+<li class="toc-entry toc-h3"><a href="#kubeshark">Kubeshark</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+    </div>
+    <h2 id="들어가며">들어가며</h2>
+
+<p>이번 포스트에서는 Cilium의 performance와 그의 기반이 되는 K8S의 performance에 대해 실습을 통하여 알아보도록 하겠습니다.</p>
+
+<hr>
+
+<h2 id="k8s-performance">K8S Performance</h2>
+
+<h3 id="실습-환경-구성">실습 환경 구성</h3>
+
+<ul>
+  <li>이번 실습에서는 kind를 사용해서 Kubernetes 클러스터를 구성하고 성능 평가를 위해 다음의 요소들을 설치합니다.
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">kube-ops-view</code> : 클러스터 상태 시각화 도구
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_1.png" alt="img.png" loading="lazy" width="848" height="530">
+</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">metrics-server</code> : 클러스터 리소스 사용량 수집</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">kube-prometheus-stack</code> : Prometheus와 Grafana를 포함한 모니터링 스택</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="실습환경-배포">실습환경 배포</h3>
+
+<ul>
+  <li>Kind를 사용하여 클러스터를 설치하고 metrics-server를 설치합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Prometheus Target connection refused bind-address 설정 : kube-controller-manager , kube-scheduler , etcd , kube-proxy</span>
+<span class="nv">$ </span>kind create cluster <span class="nt">--name</span> myk8s <span class="nt">--image</span> kindest/node:v1.33.2 <span class="nt">--config</span> - <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30000
+    hostPort: 30000
+  - containerPort: 30001
+    hostPort: 30001
+  - containerPort: 30002
+    hostPort: 30002
+  - containerPort: 30003
+    hostPort: 30003
+  kubeadmConfigPatches: # Prometheus Target connection refused bind-address 설정
+  - |
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        bind-address: 0.0.0.0
+    etcd:
+      local:
+        extraArgs:
+          listen-metrics-urls: http://0.0.0.0:2381
+    scheduler:
+      extraArgs:
+        bind-address: 0.0.0.0
+  - |
+    kind: KubeProxyConfiguration
+    metricsBindAddress: 0.0.0.0
+</span><span class="no">EOF
+</span><span class="c"># =&gt; Creating cluster "myk8s" ...</span>
+<span class="c">#     ✓ Ensuring node image (kindest/node:v1.33.2) 🖼</span>
+<span class="c">#     ✓ Preparing nodes 📦</span>
+<span class="c">#     ✓ Writing configuration 📜</span>
+<span class="c">#     ✓ Starting control-plane 🕹️</span>
+<span class="c">#     ✓ Installing CNI 🔌</span>
+<span class="c">#     ✓ Installing StorageClass 💾</span>
+<span class="c">#    Set kubectl context to "kind-myk8s"</span>
+<span class="c">#    You can now use your cluster with:</span>
+<span class="c">#    </span>
+<span class="c">#    kubectl cluster-info --context kind-myk8s</span>
+<span class="c">#    </span>
+<span class="c">#    Have a question, bug, or feature request? Let us know! https://kind.sigs.k8s.io/#community 🙂</span>
+
+<span class="c"># kube-ops-view 설치</span>
+<span class="nv">$ </span>helm repo add geek-cookbook https://geek-cookbook.github.io/charts/
+<span class="nv">$ </span>helm <span class="nb">install </span>kube-ops-view geek-cookbook/kube-ops-view <span class="nt">--version</span> 1.2.2 <span class="nt">--set</span> service.main.type<span class="o">=</span>NodePort,service.main.ports.http.nodePort<span class="o">=</span>30003 <span class="nt">--set</span> env.TZ<span class="o">=</span><span class="s2">"Asia/Seoul"</span> <span class="nt">--namespace</span> kube-system
+<span class="c"># =&gt; NAME: kube-ops-view</span>
+<span class="c">#    LAST DEPLOYED: Sat Aug 30 00:04:30 2025</span>
+<span class="c">#    NAMESPACE: kube-system</span>
+<span class="c">#    STATUS: deployed</span>
+<span class="c">#    REVISION: 1</span>
+<span class="c">#    TEST SUITE: None</span>
+<span class="c">#    NOTES:</span>
+<span class="c">#    1. Get the application URL by running these commands:</span>
+<span class="c">#      export NODE_PORT=$(kubectl get --namespace kube-system -o jsonpath="{.spec.ports[0].nodePort}" services kube-ops-view)</span>
+<span class="c">#      export NODE_IP=$(kubectl get nodes --namespace kube-system -o jsonpath="{.items[0].status.addresses[0].address}")</span>
+<span class="c">#      echo http://$NODE_IP:$NODE_PORT</span>
+<span class="nv">$ </span>open <span class="s2">"http://localhost:30003/#scale=1.5"</span>
+<span class="nv">$ </span>open <span class="s2">"http://localhost:30003/#scale=2"</span>
+
+<span class="c"># metrics-server</span>
+<span class="nv">$ </span>helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+<span class="nv">$ </span>helm upgrade <span class="nt">--install</span> metrics-server metrics-server/metrics-server <span class="nt">--set</span> <span class="s1">'args[0]=--kubelet-insecure-tls'</span> <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; Release "metrics-server" does not exist. Installing it now.</span>
+<span class="c">#    NAME: metrics-server</span>
+<span class="c">#    ...</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl top node
+<span class="c"># =&gt; NAME                  CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)</span>
+<span class="c">#    myk8s-control-plane   328m         4%       913Mi           18%</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'cpu'</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                          CPU(cores)   MEMORY(bytes)</span>
+<span class="c">#    kube-system          kube-apiserver-myk8s-control-plane            78m          194Mi</span>
+<span class="c">#    kube-system          etcd-myk8s-control-plane                      45m          28Mi</span>
+<span class="c">#    kube-system          kube-ops-view-6658c477d4-vntvq                36m          83Mi</span>
+<span class="c">#    kube-system          kube-controller-manager-myk8s-control-plane   33m          48Mi</span>
+<span class="c">#    kube-system          kube-scheduler-myk8s-control-plane            16m          20Mi</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'memory'</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                          CPU(cores)   MEMORY(bytes)</span>
+<span class="c">#    kube-system          kube-apiserver-myk8s-control-plane            72m          197Mi</span>
+<span class="c">#    kube-system          kube-ops-view-6658c477d4-vntvq                35m          83Mi</span>
+<span class="c">#    kube-system          kube-controller-manager-myk8s-control-plane   33m          48Mi</span>
+<span class="c">#    kube-system          etcd-myk8s-control-plane                      43m          28Mi</span>
+<span class="c">#    kube-system          kube-scheduler-myk8s-control-plane            16m          21Mi</span>
+<span class="c">#    ...</span>
+</code></pre></div></div>
+
+<ul>
+  <li>이어서 kube-prometheus-stack를 설치합니다. - <a href="https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack">Link</a>
+</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 파라미터 파일 생성</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOT</span><span class="sh"> &gt; monitor-values.yaml
+prometheus:
+  prometheusSpec:
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+  service:
+    type: NodePort
+    nodePort: 30001
+
+grafana:
+  defaultDashboardsTimezone: Asia/Seoul
+  adminPassword: prom-operator
+  service:
+    type: NodePort
+    nodePort: 30002
+
+alertmanager:
+  enabled: false
+defaultRules:
+  create: false
+prometheus-windows-exporter:
+  prometheus:
+    monitor:
+      enabled: false
+</span><span class="no">EOT
+</span><span class="nv">$ </span><span class="nb">cat </span>monitor-values.yaml
+
+<span class="nv">$ </span>helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+<span class="nv">$ </span>helm repo update
+
+<span class="c"># 배포</span>
+<span class="nv">$ </span>helm <span class="nb">install </span>kube-prometheus-stack prometheus-community/kube-prometheus-stack <span class="nt">--version</span> 75.15.1 <span class="se">\</span>
+  <span class="nt">-f</span> monitor-values.yaml <span class="nt">--create-namespace</span> <span class="nt">--namespace</span> monitoring
+<span class="c"># =&gt; NAME: kube-prometheus-stack</span>
+<span class="c">#    ...</span>
+<span class="c">#    kube-prometheus-stack has been installed. Check its status by running:</span>
+<span class="c">#      kubectl --namespace monitoring get pods -l "release=kube-prometheus-stack"</span>
+<span class="c">#    </span>
+<span class="c">#    Get Grafana 'admin' user password by running:</span>
+<span class="c">#    </span>
+<span class="c">#      kubectl --namespace monitoring get secrets kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo</span>
+<span class="c">#    </span>
+<span class="c">#    Access Grafana local instance:</span>
+<span class="c">#    </span>
+<span class="c">#      export POD_NAME=$(kubectl --namespace monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack" -oname)</span>
+<span class="c">#      kubectl --namespace monitoring port-forward $POD_NAME 3000</span>
+
+<span class="c"># 웹 접속 실행</span>
+<span class="nv">$ </span>open http://127.0.0.1:30001 <span class="c"># macOS prometheus 웹 접속</span>
+<span class="nv">$ </span>open http://127.0.0.1:30002 <span class="c"># macOS grafana 웹 접속 ( admin , prom-operator )</span>
+</code></pre></div></div>
+
+<ul>
+  <li>grafana에 접속 후 대시보드를 추가 합니다.
+    <ul>
+      <li>K8S new <strong>15661</strong> : JSON 다운로드 후 업로드 - <a href="https://grafana.com/grafana/dashboards/15661-k8s-dashboard-en-20250125/">Link</a>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_3.png" alt="img.png" loading="lazy" width="1436" height="954">
+</li>
+      <li>K8S API old <strong>12006</strong> - <a href="https://grafana.com/grafana/dashboards/12006-kubernetes-apiserver/">Link</a>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_4.png" alt="img_1.png" loading="lazy" width="1436" height="954">
+</li>
+      <li>대시보드 추가 방법
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_2.png" alt="img.png" loading="lazy" width="760" height="538">
+        <ul>
+          <li>(1) 우측 상단의 <code class="language-plaintext highlighter-rouge">+</code> 클릭</li>
+          <li>(2) Import dashboard 클릭</li>
+          <li>아래의 방법 중 하나로 대시보드 추가
+            <ul>
+              <li>(3) 다운로드한 json 파일을 업로드 하거나</li>
+              <li>(4) 대시보드 ID (15661 또는 12006) 입력 후 Load 클릭 하거나</li>
+              <li>(5) json 파일 내용 붙여넣기</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="kube-burner">Kube-burner</h3>
+
+<ul>
+  <li>이번 실습에서는 Kube-burner(v1.17.3)를 사용하여 부하를 생성합니다. - <a href="https://github.com/kube-burner/kube-burner">Github</a> , <a href="https://kube-burner.github.io/kube-burner/v1.17.1/">Home</a> , <a href="https://github.com/kube-burner/kube-burner/tree/main/examples">examples</a>
+    <ul>
+      <li>Kube-burner는 공식 라이브러리인 <a href="https://github.com/kubernetes/client-go">client-go</a>를 사용하여 작성된 Golang 기반의 바이너리 애플리케이션입니다.</li>
+      <li>Kube-burner는 다음과 같은 기능을 제공합니다.
+        <ul>
+          <li>대량의 Kubernetes 리소스 생성 및 삭제, 읽기, 패치</li>
+          <li>Prometheus 메트릭 수집 및 인덱싱</li>
+          <li>성능 측정</li>
+          <li>경고 알림</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="kube-burner-설치">Kube-burner 설치</h5>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>git clone https://github.com/kube-burner/kube-burner.git
+<span class="nv">$ </span><span class="nb">cd </span>kube-burner
+
+<span class="c"># 바이너리 설치(추천) : mac M1</span>
+<span class="nv">$ </span>curl <span class="nt">-LO</span> https://github.com/kube-burner/kube-burner/releases/download/v1.17.3/kube-burner-V1.17.3-darwin-arm64.tar.gz <span class="c"># mac M</span>
+<span class="nv">$ </span><span class="nb">tar</span> <span class="nt">-xvf</span> kube-burner-V1.17.3-darwin-arm64.tar.gz
+
+<span class="nv">$ </span>curl <span class="nt">-LO</span> https://github.com/kube-burner/kube-burner/releases/download/v1.17.3/kube-burner-V1.17.3-linux-x86_64.tar.gz <span class="c"># Windows</span>
+<span class="nv">$ </span><span class="nb">tar</span> <span class="nt">-xvf</span> kube-burner-V1.17.3-linux-x86_64.tar.gz
+
+<span class="nv">$ </span><span class="nb">sudo cp </span>kube-burner /usr/local/bin
+
+<span class="nv">$ </span>kube-burner <span class="nt">-h</span>
+<span class="c"># =&gt; Kube-burner 🔥</span>
+<span class="c">#    </span>
+<span class="c">#    Tool aimed at stressing a kubernetes cluster by creating or deleting lots of objects.</span>
+<span class="c">#    </span>
+<span class="c">#    Usage:</span>
+<span class="c">#      kube-burner [command]</span>
+<span class="c">#    </span>
+<span class="c">#    Available Commands:</span>
+<span class="c">#      check-alerts Evaluate alerts for the given time range</span>
+<span class="c">#      completion   Generates completion scripts for bash shell</span>
+<span class="c">#      destroy      Destroy old namespaces labeled with the given UUID.</span>
+<span class="c">#      health-check Check for Health Status of the cluster</span>
+<span class="c">#      help         Help about any command</span>
+<span class="c">#      import       Import metrics tarball</span>
+<span class="c">#      index        Index kube-burner metrics</span>
+<span class="c">#      init         Launch benchmark</span>
+<span class="c">#      measure      Take measurements for a given set of resources without running workload</span>
+<span class="c">#      version      Print the version number of kube-burner</span>
+<span class="c">#    </span>
+<span class="c">#    Flags:</span>
+<span class="c">#      -h, --help               help for kube-burner</span>
+<span class="c">#          --log-level string   Allowed values: debug, info, warn, error, fatal (default &amp;quot;info&amp;quot;)</span>
+<span class="c">#    </span>
+<span class="c">#    Use &amp;quot;kube-burner [command] --help&amp;quot; for more information about a command.</span>
+
+<span class="c"># 버전 확인 : 혹은 go run cmd/kube-burner/kube-burner.go -h</span>
+<span class="nv">$ </span>kube-burner version
+<span class="c"># =&gt; Version: 1.17.3</span>
+</code></pre></div></div>
+
+<h4 id="시나리오-1--디플로이먼트-1개파드-1개-생성--삭제-jobiterations-qps-burst-의미-확인">시나리오 1 : 디플로이먼트 1개(파드 1개) 생성 → 삭제, jobIterations qps burst 의미 확인</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> &gt; s1-config.yaml
+global:
+  measurements:
+    - name: none
+
+jobs:
+  - name: create-deployments
+    jobType: create
+    jobIterations: 1  # How many times to execute the job , 해당 job을 5번 반복 실행
+    qps: 1            # Limit object creation queries per second , 	초당 최대 요청 수 (평균 속도 제한) - qps: 10이면 초당 10개 요청
+    burst: 1          # Maximum burst for throttle , 순간적으로 처리 가능한 요청 최대치 (버퍼) - burst: 20이면 한순간에 최대 20개까지 처리 가능
+    namespace: kube-burner-test
+    namespaceLabels: {kube-burner-job: delete-me}
+    waitWhenFinished: true # false
+    verifyObjects: false
+    preLoadImages: true # false
+    preLoadPeriod: 30s # default 1m
+    objects:
+      - objectTemplate: s1-deployment.yaml
+        replicas: 1
+</span><span class="no">EOF
+
+</span><span class="c">#</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> &gt; s1-deployment.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-{{ .Iteration}}-{{.Replica}}
+  labels:
+    app: test-{{ .Iteration }}-{{.Replica}}
+    kube-burner-job: delete-me
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-{{ .Iteration}}-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: test-{{ .Iteration}}-{{.Replica}}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+</span><span class="no">EOF
+
+
+</span><span class="c"># 모니터링 : 터미널, kube-ops-view</span>
+<span class="nv">$ </span>watch <span class="nt">-d</span> kubectl get ns,pod <span class="nt">-A</span>
+
+
+<span class="c"># 부하 발생 실행 Launch benchmark</span>
+<span class="nv">$ </span>kube-burner init <span class="nt">-h</span>
+<span class="nv">$ </span>kube-burner init <span class="nt">-c</span> s1-config.yaml <span class="nt">--log-level</span> debug
+<span class="c"># &lt;span style="color: green;"&gt;👉 s1-deployment.yaml을 1개 배포하여 초당 1번 호출합니다.&lt;/span&gt;</span>
+<span class="c"># =&gt; time="2025-08-30 10:35:54" level=info msg="🔥 Starting kube-burner (1.17.3@917540ff45a89386bb25de45af9b96c9fc360e93) with UUID 8c6382d0-f8b2-4a9d-834b-878f9524a05d" file="job.go:91"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=warning msg="Measurement [none] is not supported" file="factory.go:101"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=debug msg="job.MaxWaitTimeout is zero in create-deployments, override by timeout: 4h0m0s" file="job.go:361"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="QPS: 1" file="job.go:371"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="Burst: 1" file="job.go:378"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=debug msg="Preparing create job: create-deployments" file="create.go:46"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=debug msg="Rendering template: s1-deployment.yaml" file="create.go:52"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="Job create-deployments: 1 iterations with 1 Deployment replicas" file="create.go:84"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="Pre-load: images from job create-deployments" file="pre_load.go:73"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=debug msg="Created namespace: preload-kube-burner" file="namespaces.go:55"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="Pre-load: Creating DaemonSet using images [nginx:alpine] in namespace preload-kube-burner" file="pre_load.go:195"</span>
+<span class="c">#    time="2025-08-30 10:35:54" level=info msg="Pre-load: Sleeping for 30s" file="pre_load.go:86"</span>
+<span class="c">#    time="2025-08-30 10:36:24" level=info msg="Deleting 1 namespaces with label: kube-burner-preload=true" file="namespaces.go:67"</span>
+<span class="c">#    time="2025-08-30 10:36:24" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:25" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:26" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:27" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:28" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:29" level=debug msg="Waiting for 1 namespaces labeled with kube-burner-preload=true to be deleted" file="namespaces.go:90"</span>
+<span class="c">#    time="2025-08-30 10:36:30" level=info msg="Triggering job: create-deployments" file="job.go:122"</span>
+<span class="c">#    time="2025-08-30 10:36:30" level=info msg="0/1 iterations completed" file="create.go:119"</span>
+<span class="c">#    time="2025-08-30 10:36:30" level=debug msg="Creating object replicas from iteration 0" file="create.go:122"</span>
+<span class="c">#    time="2025-08-30 10:36:31" level=info msg="Namespace kube-burner-test-0 already exists" file="namespaces.go:44"</span>
+<span class="c">#    time="2025-08-30 10:36:32" level=error msg="Deployment/deployment-0-1 in namespace kube-burner-test-0 already exists" file="create.go:269"</span>
+<span class="c">#    time="2025-08-30 10:36:32" level=info msg="Waiting up to 4h0m0s for actions to be completed" file="create.go:169"</span>
+<span class="c">#    time="2025-08-30 10:36:33" level=info msg="Actions in namespace kube-burner-test-0 completed" file="waiters.go:74"</span>
+<span class="c">#    time="2025-08-30 10:36:33" level=info msg="Job create-deployments took 3s" file="job.go:191"</span>
+<span class="c">#    time="2025-08-30 10:36:33" level=info msg="Finished execution with UUID: 8c6382d0-f8b2-4a9d-834b-878f9524a05d" file="job.go:264"</span>
+<span class="c">#    time="2025-08-30 10:36:33" level=info msg="👋 Exiting kube-burner 8c6382d0-f8b2-4a9d-834b-878f9524a05d" file="kube-burner.go:90"</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get deploy <span class="nt">-A</span> <span class="nt">-l</span> kube-burner-job<span class="o">=</span>delete-me
+<span class="c"># =&gt; NAMESPACE            NAME             READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    kube-burner-test-0   deployment-0-1   1/1     1            1           4m16s</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> <span class="nt">-l</span> kube-burner-job<span class="o">=</span>delete-me
+<span class="c"># =&gt; NAMESPACE            NAME                              READY   STATUS    RESTARTS   AGE</span>
+<span class="c">#    kube-burner-test-0   deployment-0-1-5f748ffd78-mlf64   1/1     Running   0          4m22s</span>
+<span class="nv">$ </span>kubectl get ns <span class="nt">-l</span> kube-burner-job<span class="o">=</span>delete-me
+<span class="c"># =&gt; NAME                 STATUS   AGE</span>
+<span class="c">#    kube-burner-test-0   Active   4m46s</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span><span class="nb">ls </span>kube-burner-<span class="k">*</span>.log
+<span class="c"># =&gt; kube-burner-8c6382d0-f8b2-4a9d-834b-878f9524a05d.log</span>
+<span class="nv">$ </span><span class="nb">cat </span>kube-burner-<span class="k">*</span>.log
+<span class="c"># &lt;span style="color: green;"&gt;👉 위의 실행시의 로그가 똑같이 나옴&lt;/span&gt;</span>
+
+<span class="c"># 삭제!</span>
+<span class="c">## deployment 는 s1-deployment.yaml 에 metadata.labels 에 추가한 labels 로 지정</span>
+<span class="c">## namespace 는 config.yaml 에 job.name 값을 labels 로 지정</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> &gt; s1-config-delete.yaml
+# global:
+#   measurements:
+#     - name: none
+
+jobs:
+  - name: delete-deployments-namespace
+    qps: 500
+    burst: 500
+    namespace: kube-burner-test
+    jobType: delete
+    waitWhenFinished: true
+    objects:
+    - kind: Deployment
+      labelSelector: {kube-burner-job: delete-me}
+      apiVersion: apps/v1
+    - kind: Namespace
+      labelSelector: {kube-burner-job: delete-me}
+</span><span class="no">EOF
+
+</span><span class="c">#</span>
+<span class="nv">$ </span>kube-burner init <span class="nt">-c</span> s1-config-delete.yaml <span class="nt">--log-level</span> debug
+<span class="c"># &lt;span style="color: green;"&gt;👉 kube-burner 성능 테스트관련 namespace, deployment 등이 삭제됩니다.&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config.yaml --log-level debug</code></li>
+  <li>
+<code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config-delete.yaml --log-level debug</code>
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">preLoadImages: false</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지
+        <ul>
+          <li>
+<strong>결과 :</strong> 이미지를 로딩하는 시간을 30초 가지고 있어서 대기가 걸렸었는데, 바로 실행됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">waitWhenFinished: false</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드가 잘 배포 되었는지 확인하지 않고 바로 종료됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 5</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지 <em>⇒ s1-deployment.yaml 파일 확인</em>
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 5개 배포합니다. 이때 objects.replicas가 1이므로 replicas는 1개로 고정되고, deployment가 5개 생성됩니다.
+            <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get deploy <span class="nt">-A</span> <span class="nt">-l</span> kube-burner-job<span class="o">=</span>delete-me
+<span class="c"># =&gt; NAMESPACE            NAME             READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    kube-burner-test-0   deployment-0-1   1/1     1            1           36s</span>
+<span class="c">#    kube-burner-test-1   deployment-1-1   1/1     1            1           35s</span>
+<span class="c">#    kube-burner-test-2   deployment-2-1   1/1     1            1           34s</span>
+<span class="c">#    kube-burner-test-3   deployment-3-1   1/1     1            1           33s</span>
+<span class="c">#    kube-burner-test-4   deployment-4-1   1/1     1            1           32s</span>
+</code></pre></div>            </div>
+          </li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">objects.replicas: 2</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지 <em>⇒ s1-deployment.yaml 파일 확인</em>
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 5 x 2 = 10개 배포합니다. 이때 objects.replicas가 2이지만 s1-deployment.yaml에 replicas가 1로 고정되어 있어서 replicas는 1개로 고정되고, deployment가 10개 생성됩니다.
+            <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get deploy <span class="nt">-A</span> <span class="nt">-l</span> kube-burner-job<span class="o">=</span>delete-me
+<span class="c"># =&gt; NAMESPACE            NAME             READY   UP-TO-DATE   AVAILABLE   AGE</span>
+<span class="c">#    kube-burner-test-0   deployment-0-1   1/1     1            1           45s</span>
+<span class="c">#    kube-burner-test-0   deployment-0-2   1/1     1            1           46s</span>
+<span class="c">#    kube-burner-test-1   deployment-1-1   1/1     1            1           43s</span>
+<span class="c">#    kube-burner-test-1   deployment-1-2   1/1     1            1           44s</span>
+<span class="c">#    kube-burner-test-2   deployment-2-1   1/1     1            1           41s</span>
+<span class="c">#    kube-burner-test-2   deployment-2-2   1/1     1            1           42s</span>
+<span class="c">#    kube-burner-test-3   deployment-3-1   1/1     1            1           39s</span>
+<span class="c">#    kube-burner-test-3   deployment-3-2   1/1     1            1           40s</span>
+<span class="c">#    kube-burner-test-4   deployment-4-1   1/1     1            1           37s</span>
+<span class="c">#    kube-burner-test-4   deployment-4-2   1/1     1            1           38s</span>
+</code></pre></div>            </div>
+          </li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 10</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지 <em>⇒ qps: 1 의미 파악 해보기</em>
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 10 x 2 = 20개 배포합니다. QPS가 1이므로 초당 1개씩 배포됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">qps: 10, burst:10</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제, 설정값은 유지 <em>⇒ qps: 10 의미 파악 해보기</em>
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 10 x 2 = 20개 배포합니다. QPS가 10이므로 초당 10개씩 배포됩니다.</li>
+          <li>
+<strong>결과 :</strong> QPS는 초당 (생성) 쿼리로 10이면 초당 10개의 생성 요청을 보낼 수 있는것입니다. 20개이면 2초만에 배포가 완료됩니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>qps 와 burst 동작 파악해보기
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 10, qps: 1, burst:10</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 1</code> 변경 후 실행 → 동작 확인 후 리소스 삭제
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 10개 배포합니다. QPS가 1이지만 burst가 10이므로 순간적으로 10개까지 배포가 가능합니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 100, qps: 1, burst:100</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 1</code> 변경 후 실행 → 동작 확인 후 리소스 삭제
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 100개 배포합니다. QPS가 1이지만 burst가 100이므로 순간적으로 100개까지 배포가 가능합니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 10, qps: 1, burst:20</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 2</code> 변경 후 실행 → 동작 확인 후 리소스 삭제</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 10, qps: 1, burst:10</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 2</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 20개 배포합니다. QPS가 1이지만 burst가 10이므로 순간적으로 10개까지 배포가 가능합니다. 10개까지는 바로 배포되지만 11개 부터는 초당 1개씩 배포됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 20, qps: 2, burst:20</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 2</code> 변경 후 실행 → 차이점 확인 후 리소스 삭제
+        <ul>
+          <li>
+<strong>결과 :</strong> 테스트 파드를 40개 배포합니다. QPS가 2이지만 burst가 20이므로 순간적으로 20개까지 배포가 가능합니다. 20개까지는 바로 배포되지만 21개 부터는 초당 2개씩 배포됩니다.</li>
+        </ul>
+      </li>
+      <li>👉 즉, qps는 초당 몇 회의 쿼리를 보내느냐, burst는 순간적으로 몇 회의 쿼리를 보낼 수 있느냐 입니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_5.png" alt="img.png" class="image-center" loading="lazy" width="642" height="401">
+<em class="image-caption">kube-burner로 pod 가 배포되는 화면</em></p>
+
+<h4 id="시나리오-2--노드-1대에-최대-파드150개-배포-시도-1">시나리오 2 : 노드 1대에 최대 파드(150개) 배포 시도 1</h4>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config.yaml --log-level debug</code></li>
+  <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: 100, qps: 300, burst: 300</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 1</code> 변경 후 실행 <em>→ 모든 파드가 배포 되는지 확인</em>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_6.png" alt="img.png" class="image-center" loading="lazy" width="686" height="490">
+<em class="image-caption">6개의 파드가 Pending 상태로 남아있는 화면</em>
+</li>
+  <li>
+    <p><strong>문제 원인 파악</strong>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_7.png" alt="img.png" class="image-center" loading="lazy" width="1003" height="283">
+<em class="image-caption">K8S NEW 대시보드 : Nodes with Pod 패널</em></p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  <span class="c">#</span>
+  <span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'1/1     Running'</span>
+  <span class="c"># =&gt; NAMESPACE             NAME                                                        READY   STATUS    RESTARTS       AGE</span>
+  <span class="c">#    kube-burner-test-94   deployment-94-1-66c9bd7f46-llbsr                            0/1     Pending   0              3m46s</span>
+  <span class="c">#    kube-burner-test-95   deployment-95-1-6877f5c69b-kzdwj                            0/1     Pending   0              3m46s</span>
+  <span class="c">#    kube-burner-test-96   deployment-96-1-65468866f4-2lpcw                            0/1     Pending   0              3m46s</span>
+  <span class="c">#    kube-burner-test-97   deployment-97-1-58646bddc6-d5shq                            0/1     Pending   0              3m46s</span>
+  <span class="c">#    kube-burner-test-98   deployment-98-1-5c4c86c794-25fzm                            0/1     Pending   0              3m46s</span>
+  <span class="c">#    kube-burner-test-99   deployment-99-1-567ddbffb4-6qqwc                            0/1     Pending   0              3m45s</span>
+  <span class="c">#    monitoring            kube-prometheus-stack-grafana-7d9c86798d-wcp44              3/3     Running   3 (121m ago)   11h</span>
+  <span class="c">#    monitoring            prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   2 (121m ago)   11h</span>
+      
+  <span class="nv">$ </span>kubectl describe pod <span class="nt">-n</span> kube-burner-test-99 | <span class="nb">grep </span>Events: <span class="nt">-A5</span>
+  <span class="c"># =&gt; Events:</span>
+  <span class="c">#      Type     Reason            Age    From               Message</span>
+  <span class="c">#      ----     ------            ----   ----               -------</span>
+  <span class="c">#      Warning  FailedScheduling  4m23s  default-scheduler  0/1 nodes are available: 1 &lt;span style="color: green;"&gt;Too many pods&lt;/span&gt;. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.</span>
+  <span class="c"># &lt;span style="color: green;"&gt;👉 파드가 너무 많아서 스케줄링이 안된다는 메시지를 확인할 수 있습니다.&lt;/span&gt;</span>
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>kubectl describe node
+  <span class="c"># =&gt; ...</span>
+  <span class="c">#    Capacity:</span>
+  <span class="c">#      cpu:                7</span>
+  <span class="c">#      ephemeral-storage:  61255492Ki</span>
+  <span class="c">#      hugepages-1Gi:      0</span>
+  <span class="c">#      hugepages-2Mi:      0</span>
+  <span class="c">#      hugepages-32Mi:     0</span>
+  <span class="c">#      hugepages-64Ki:     0</span>
+  <span class="c">#      memory:             5035968Ki</span>
+  <span class="c">#      pods:               &lt;span style="color: green;"&gt;110&lt;/span&gt;</span>
+  <span class="c">#    Allocatable:</span>
+  <span class="c">#      cpu:                7</span>
+  <span class="c">#      ephemeral-storage:  61255492Ki</span>
+  <span class="c">#      hugepages-1Gi:      0</span>
+  <span class="c">#      hugepages-2Mi:      0</span>
+  <span class="c">#      hugepages-32Mi:     0</span>
+  <span class="c">#      hugepages-64Ki:     0</span>
+  <span class="c">#      memory:             5035968Ki</span>
+  <span class="c">#      pods:               &lt;span style="color: green;"&gt;110&lt;/span&gt;</span>
+  <span class="c"># &lt;span style="color: green;"&gt;👉 할당할 수 있는 파드 수가 110개 까지인데 현재 파드수가 116개로 초과되어 초과된 6개 만큼의 파드가 Pending 상태가 되었음을 알 수 있습니다.&lt;/span&gt;</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>해결</p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  <span class="c"># maxPods 항목 없으면 기본값 110개</span>
+  <span class="nv">$ </span>kubectl get cm <span class="nt">-n</span> kube-system kubelet-config <span class="nt">-o</span> yaml | <span class="nb">grep </span>maxPods
+  <span class="c"># =&gt; (없음)</span>
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> myk8s-control-plane bash
+  <span class="nt">----------------------------------------</span>
+  <span class="nv">$ </span><span class="nb">cat</span> /var/lib/kubelet/config.yaml
+      
+  <span class="nv">$ </span>apt update <span class="o">&amp;&amp;</span> apt <span class="nb">install </span>vim <span class="nt">-y</span>
+  <span class="nv">$ </span>vim /var/lib/kubelet/config.yaml
+  <span class="c"># maxPods: 150 추가</span>
+      
+  <span class="nv">$ </span>systemctl restart kubelet
+  <span class="nv">$ </span>systemctl status kubelet
+  <span class="c"># =&gt; ● kubelet.service - kubelet: The Kubernetes Node Agent                                                                                                                                  Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; preset: enabled)</span>
+  <span class="c">#        Drop-In: /etc/systemd/system/kubelet.service.d                                                                                                                                              └─10-kubeadm.conf, 11-kind.conf</span>
+  <span class="c">#         Active: active (running) since Sat 2025-08-30 02:28:12 UTC; 7s ago                                                                                                                   Docs: http://kubernetes.io/docs/    </span>
+  <span class="nv">$ </span><span class="nb">exit</span>
+  <span class="nt">----------------------------------------</span>
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>kubectl describe node
+  <span class="c"># =&gt; ...</span>
+  <span class="c">#    Capacity:</span>
+  <span class="c">#      cpu:                7</span>
+  <span class="c">#      ephemeral-storage:  61255492Ki</span>
+  <span class="c">#      hugepages-1Gi:      0</span>
+  <span class="c">#      hugepages-2Mi:      0</span>
+  <span class="c">#      hugepages-32Mi:     0</span>
+  <span class="c">#      hugepages-64Ki:     0</span>
+  <span class="c">#      memory:             5035968Ki</span>
+  <span class="c">#      pods:               &lt;span style="color: green;"&gt;150&lt;/span&gt;</span>
+  <span class="c">#    Allocatable:</span>
+  <span class="c">#      cpu:                7</span>
+  <span class="c">#      ephemeral-storage:  61255492Ki</span>
+  <span class="c">#      hugepages-1Gi:      0</span>
+  <span class="c">#      hugepages-2Mi:      0</span>
+  <span class="c">#      hugepages-32Mi:     0</span>
+  <span class="c">#      hugepages-64Ki:     0</span>
+  <span class="c">#      memory:             5035968Ki</span>
+  <span class="c">#      pods:               &lt;span style="color: green;"&gt;150&lt;/span&gt;</span>
+</code></pre></div>    </div>
+    <p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_8.png" alt="img.png" loading="lazy" width="994" height="272"></p>
+    <ul>
+      <li>파드 한도가 150개로 늘었고 모든 파드가 배포되었습니다.</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config-delete.yaml --log-level debug</code>로 리소스 삭제</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="시나리오-3--노드-1대에-최대-파드300개-배포-시도-2">시나리오 3 : 노드 1대에 최대 파드(300개) 배포 시도 2</h4>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config.yaml --log-level debug</code></strong></li>
+  <li>
+<code class="language-plaintext highlighter-rouge">jobIterations: **300**, qps: 300, burst: 300</code> <code class="language-plaintext highlighter-rouge">objects.replicas: 1</code> 변경 후 실행 <em>→ 모든 파드가 배포 되는지 확인</em>
+</li>
+  <li>
+    <p><strong>문제 원인 파악</strong></p>
+
+    <p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_9.png" alt="img.png" class="image-center" loading="lazy" width="722" height="243">
+<em class="image-caption">K8S NEW 대시보드 : Pod Number and nodes 패널</em></p>
+
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl get pod <span class="nt">-A</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'1/1     Running'</span>
+<span class="c"># =&gt; NAMESPACE              NAME                                                        READY   STATUS    RESTARTS       AGE</span>
+<span class="c">#    kube-burner-test-134   deployment-134-1-7b94c5f676-z8ptw                           0/1     Pending   0              4m53s</span>
+<span class="c">#    kube-burner-test-135   deployment-135-1-57d5cd6644-xlt7r                           0/1     Pending   0              4m53s</span>
+<span class="c">#    kube-burner-test-136   deployment-136-1-7bd85d5684-vhdl6                           0/1     Pending   0              4m53s</span>
+<span class="c">#    kube-burner-test-137   deployment-137-1-5f5b964756-jc8tk                           0/1     Pending   0              4m53s</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 167개 가량의 파드가 pending 상태입니다.&lt;/span&gt;</span>
+    
+<span class="c"># maxPods: 400 상향</span>
+<span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> myk8s-control-plane bash
+<span class="nt">----------------------------------------</span>
+<span class="nv">$ </span><span class="nb">cat</span> /var/lib/kubelet/config.yaml
+    
+<span class="nv">$ </span>apt update <span class="o">&amp;&amp;</span> apt <span class="nb">install </span>vim <span class="nt">-y</span>
+<span class="nv">$ </span>vim /var/lib/kubelet/config.yaml
+<span class="c"># maxPods: 400 추가</span>
+    
+<span class="nv">$ </span>systemctl restart kubelet
+<span class="nv">$ </span>systemctl status kubelet
+<span class="nv">$ </span><span class="nb">exit</span>
+<span class="nt">----------------------------------------</span>
+    
+<span class="c"># </span>
+<span class="nv">$ </span>kubectl describe pod <span class="nt">-n</span> kube-burner-test-250 | <span class="nb">grep </span>Events: <span class="nt">-A5</span>
+<span class="c"># =&gt; Events:</span>
+<span class="c">#      Type     Reason            Age    From               Message</span>
+<span class="c">#      ----     ------            ----   ----               -------</span>
+<span class="c">#      Warning  FailedScheduling  6m33s  default-scheduler  0/1 nodes are available: 1 Too many pods. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.</span>
+<span class="c">#      Warning  FailedScheduling  72s    default-scheduler  0/1 nodes are available: 1 Too many pods. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.</span>
+<span class="c">#      Normal   Scheduled         15s    default-scheduler  Successfully assigned kube-burner-test-250/deployment-250-1-6789d5b4bd-hmhjh to myk8s-control-plane</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 배포가 잘 되었습니다.&lt;/span&gt;</span>
+    
+<span class="nv">$ </span>kubectl describe pod <span class="nt">-n</span> kube-burner-test-299 | <span class="nb">grep </span>Events: <span class="nt">-A5</span>
+<span class="c"># =&gt; Events:</span>
+<span class="c">#      Type     Reason            Age   From               Message</span>
+<span class="c">#      ----     ------            ----  ----               -------</span>
+<span class="c">#      Warning  FailedScheduling  7m1s  default-scheduler  0/1 nodes are available: 1 Too many pods. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.</span>
+<span class="c">#      Warning  FailedScheduling  108s  default-scheduler  0/1 nodes are available: 1 Too many pods. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod.</span>
+<span class="c">#      Normal   Scheduled         52s   default-scheduler  Successfully assigned kube-burner-test-299/deployment-299-1-b7c8c4d9b-g7gwc to myk8s-control-plane</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 모든 파드가 배포가 잘 되었습니다.&lt;/span&gt; </span>
+</code></pre></div>    </div>
+
+    <ul>
+      <li><strong><code class="language-plaintext highlighter-rouge">kube-burner init -c s1-config-delete.yaml --log-level debug</code></strong></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="k8s-performance--tuning">K8S Performance &amp; Tuning</h3>
+
+<h4 id="대규모-클러스터-고려사항">대규모 클러스터 고려사항</h4>
+
+<h5 id="개요-k8s-공식-문서">개요 (<a href="https://kubernetes.io/docs/setup/best-practices/cluster-large/">K8S 공식 문서</a>)</h5>
+<ul>
+  <li>
+<strong>최대 규모 (v1.33 기준)</strong>
+    <ul>
+      <li>노드: 최대 5,000개</li>
+      <li>노드당 파드: 110개 이하</li>
+      <li>파드: 최대 150,000개</li>
+      <li>컨테이너: 최대 300,000개</li>
+    </ul>
+  </li>
+  <li>
+<strong>컨트롤 플레인 설계</strong>
+    <ul>
+      <li>장애 영역(failure zone)마다 분산 배치</li>
+      <li>로드밸런서를 통해 일부 장애에도 API 호출 정상 유지
+<img src="../../../assets/2025/cilium/w7/20250831_cilium_w7_10.svg" alt="20250831_cilium_w7_10.svg" class="image-center" loading="lazy">
+<em class="image-caption"><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/</a></em>
+</li>
+    </ul>
+  </li>
+  <li>
+<strong>etcd 스토리지 분리</strong>
+    <ul>
+      <li>이벤트 객체 전용 etcd 사용 권장</li>
+      <li>메인 etcd 부하 완화 및 성능 향상
+<img src="../../../assets/2025/cilium/w7/20250831_cilium_w7_11.svg" alt="20250831_cilium_w7_11.svg" class="image-center" loading="lazy">
+</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="control-plane-구성-요소와-특징">Control Plane 구성 요소와 특징</h5>
+<ul>
+  <li>참고 : 쓰기만 했던 개발자가 궁금해서 찾아본 쿠버네티스 내부 1편 - <a href="https://tech.kakaopay.com/post/jack-k8s-internals-part-1/">Link</a>, 2편* - <a href="https://tech.kakaopay.com/post/jack-k8s-internals-part-2/">Link</a>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_12.png" alt="img.png" class="image-center" loading="lazy" width="790" height="525">
+<em class="image-caption">출처 : <a href="https://tech.kakaopay.com/post/jack-k8s-internals-part-2/">쓰기만 했던 개발자가 궁금해서 찾아본 쿠버네티스 내부</a></em>
+</li>
+  <li>참고 : K8S Controlplane 죽이기 👍🏻 - <a href="https://iwanhae.tistory.com/m/2">Blog</a>
+</li>
+  <li>K8S 핵심 구성요소
+    <ul>
+      <li>
+<strong>kube-apiserver</strong>
+        <ul>
+          <li>RESTful API 서버</li>
+          <li>클라이언트와 통신 (<code class="language-plaintext highlighter-rouge">kubectl</code>, <code class="language-plaintext highlighter-rouge">kubelet</code> 등)</li>
+        </ul>
+      </li>
+      <li>
+<strong>etcd</strong>
+        <ul>
+          <li>분산 Key-Value DB</li>
+          <li>RAFT 합의 기반으로 안정적 동작</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>장점</strong>
+    <ul>
+      <li>데이터 손상/일관성 문제 거의 없음</li>
+      <li>안정성 우선 설계</li>
+    </ul>
+  </li>
+  <li>
+<strong>단점</strong>
+    <ul>
+      <li>대규모 환경에서 성능 저하
+        <ul>
+          <li>파드가 100개일때 파드 조회시 0.031초, 파드가 10000개일때 2초 소요로 파드가 많아질 수록 급격히 성능이 저하됩니다.</li>
+          <li>요청시 받아지는 용량도 100개일때 0.45MB, 10000개일때 44.4MB로 급격히 증가합니다.</li>
+        </ul>
+      </li>
+      <li>요청당 메모리 소비량이 큼</li>
+      <li>파드 수가 많을수록 응답 지연, 응답 크기 폭증</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="문제-발생-예시">문제 발생 예시</h5>
+<ul>
+  <li>
+<strong>리소스 과다사용 사례</strong>
+    <ul>
+      <li>Airflow, Kubeflow 등 → Pod가 자동 삭제되지 않고 누적</li>
+      <li>수천 개 이상 쌓이면 조회 요청 시 부하 급증</li>
+    </ul>
+  </li>
+  <li>
+<strong>동시 요청 과다</strong>
+    <ul>
+      <li>kubelet, kube-proxy, CNI 에이전트 등 노드 기반 컨트롤러</li>
+      <li>네트워크 끊김/재연결 시 대량의 List 요청 발생</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">spec.nodeName</code> 등에 인덱스 부재 → etcd 전체 스캔 발생</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="해결-방법">해결 방법</h5>
+<ul>
+  <li>
+<strong>API 관점</strong>
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">limit</code> / <code class="language-plaintext highlighter-rouge">continue</code> 활용 → 한번에 최대 500개씩 조회</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">resourceVersion=0</code> 활용 → apiserver 캐시 활용, etcd 부하 완화</li>
+      <li>API Priority and Fairness(APF) → 특정 요청만 Rate Limit 적용</li>
+    </ul>
+  </li>
+  <li>
+<strong>운영 관점</strong>
+    <ul>
+      <li>불필요한 Pod, 이벤트 리소스 주기적 정리</li>
+      <li>CronJob, Job 등 단발성 워크로드 Pod 자동 삭제 설정</li>
+      <li>이벤트 전용 etcd 사용하여 메인 클러스터 부하 분산</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="openai-사례">OpenAI 사례</h5>
+<ul>
+  <li>
+<strong>2500 노드 (2018)</strong>
+    <ul>
+      <li>500노드 이후 kubectl timeout 발생</li>
+      <li>etcd 네트워크 스토리지 → 로컬 SSD로 변경 → 지연 200µs 감소</li>
+      <li>Fluentd, Datadog 기본 설정 → 과도한 API 호출 원인 → 수정 후 안정화</li>
+      <li>이벤트 저장소를 메인 etcd와 분리 → 성능 개선</li>
+    </ul>
+  </li>
+  <li>
+<strong>7500 노드 (2021)</strong>
+    <ul>
+      <li>API 서버, etcd 각각 전용 서버(dedicated)에서 실행</li>
+      <li>API 서버 5대, etcd 5대 → 부하 분산 및 장애 대비</li>
+      <li>노드 변경 시 Endpoints Watch 트래픽 1GB/s 발생</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">EndpointSlice</code> 기능으로 부하 1/1000 수준으로 감소</li>
+      <li>API 서버 메모리 사용량: 서버당 70GB 이상 힙 메모리</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="시나리오-4-api-intensive---파드를-생성configmap-secret-후-삭제">시나리오 4. api-intensive - 파드를 생성(configmap, secret) 후 삭제</h4>
+
+<ul>
+  <li>이번에는 kube-apiserver가 파드를 생성할때 secret과 configmap을 마운트하고, 삭제하는 동작의 부하를 발생시켜보겠습니다.</li>
+  <li>QPS/Burst를 클러스터 크기에 맞게 조절할 필요가 있습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>tree examples/workloads/api-intensive
+<span class="c"># =&gt; examples/workloads/api-intensive</span>
+<span class="c">#    ├── api-intensive.yml</span>
+<span class="c">#    └── templates</span>
+<span class="c">#        ├── configmap.yaml</span>
+<span class="c">#        ├── deployment_patch_add_label.json</span>
+<span class="c">#        ├── deployment_patch_add_label.yaml</span>
+<span class="c">#        ├── deployment_patch_add_pod_2.yaml</span>
+<span class="c">#        ├── deployment.yaml</span>
+<span class="c">#        ├── secret.yaml</span>
+<span class="c">#        └── service.yaml</span>
+
+<span class="nv">$ </span><span class="nb">cd </span>examples/workloads/api-intensive
+
+<span class="c">#</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> &gt; api-intensive-100.yml
+jobs:
+  - name: api-intensive
+    jobIterations: 100
+    qps: 100
+    burst: 100
+    namespacedIterations: true
+    namespace: api-intensive
+    podWait: false
+    cleanup: true
+    waitWhenFinished: true
+    preLoadImages: false # true
+    objects:
+      - objectTemplate: templates/deployment.yaml
+        replicas: 1
+      - objectTemplate: templates/configmap.yaml
+        replicas: 1
+      - objectTemplate: templates/secret.yaml
+        replicas: 1
+      - objectTemplate: templates/service.yaml
+        replicas: 1
+
+  - name: api-intensive-patch
+    jobType: patch
+    jobIterations: 10
+    qps: 100
+    burst: 100
+    objects:
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_label.json
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/json-patch+json"
+        apiVersion: apps/v1
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_pod_2.yaml
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/apply-patch+yaml"
+        apiVersion: apps/v1
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_label.yaml
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/strategic-merge-patch+json"
+        apiVersion: apps/v1
+
+  - name: api-intensive-remove
+    qps: 500
+    burst: 500
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Deployment
+        labelSelector: {kube-burner-job: api-intensive}
+        apiVersion: apps/v1
+
+  - name: ensure-pods-removal
+    qps: 100
+    burst: 100
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Pod
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-services
+    qps: 100
+    burst: 100
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Service
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-configmaps-secrets
+    qps: 100
+    burst: 100
+    jobType: delete
+    objects:
+      - kind: ConfigMap
+        labelSelector: {kube-burner-job: api-intensive}
+      - kind: Secret
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-namespace
+    qps: 100
+    burst: 100
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Namespace
+        labelSelector: {kube-burner-job: api-intensive}
+</span><span class="no">EOF
+
+</span><span class="c"># 수행</span>
+<span class="nv">$ </span>kube-burner init <span class="nt">-c</span> api-intensive-100.yml <span class="nt">--log-level</span> debug
+<span class="c"># =&gt; ...</span>
+<span class="c">#    time="2025-08-30 12:29:33" level=debug msg="Removing Pod/api-intensive-1-7f8b8bf658-kbtsg from namespace api-intensive-76" file="delete.go:55"</span>
+<span class="c">#    time="2025-08-30 12:29:33" level=debug msg="Removing Pod/api-intensive-1-85bd5f8658-sfvmt from namespace api-intensive-76" file="delete.go:55"</span>
+<span class="c">#    time="2025-08-30 12:29:33" level=debug msg="Removing Pod/api-intensive-1-68c7855c5-b7qx9 from namespace api-intensive-66" file="delete.go:55"</span>
+<span class="c">#    time="2025-08-30 12:29:34" level=debug msg="Waiting for 206 pods labeled with kube-burner-job=api-intensive to be deleted" file="delete.go:79"</span>
+<span class="c">#    time="2025-08-30 12:29:36" level=debug msg="Waiting for 219 pods labeled with kube-burner-job=api-intensive to be deleted" file="delete.go:79"</span>
+<span class="c">#    time="2025-08-30 12:29:38" level=debug msg="Waiting for 233 pods labeled with kube-burner-job=api-intensive to be deleted" file="delete.go:79"</span>
+<span class="c">#    time="2025-08-30 12:29:40" level=debug msg="Waiting for 251 pods labeled with kube-burner-job=api-intensive to be deleted" file="delete.go:79"</span>
+<span class="c">#    ...</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 kube-apiserver에 요청이 쌓이면서 굉장히 느려집니다.&lt;/span&gt;</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 웨이팅도 걸립니다.&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_15.png" alt="img_1.png" class="image-center" loading="lazy" width="1007" height="814">
+<em class="image-caption">kube-burner로 apiserver 요청이 급증하면서 apiserver와 etcd 지연 급격히 증가</em></p>
+
+<ul>
+  <li>이번에는 QPS/Burst를 500으로 늘려서 다시 수행해보겠습니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh"> &gt; api-intensive-500.yml
+jobs:
+  - name: api-intensive
+    jobIterations: 100
+    qps: 500
+    burst: 500
+    namespacedIterations: true
+    namespace: api-intensive
+    podWait: false
+    cleanup: true
+    waitWhenFinished: true
+    preLoadImages: false # true
+    objects:
+      - objectTemplate: templates/deployment.yaml
+        replicas: 1
+      - objectTemplate: templates/configmap.yaml
+        replicas: 1
+      - objectTemplate: templates/secret.yaml
+        replicas: 1
+      - objectTemplate: templates/service.yaml
+        replicas: 1
+
+  - name: api-intensive-patch
+    jobType: patch
+    jobIterations: 10
+    qps: 500
+    burst: 500
+    objects:
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_label.json
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/json-patch+json"
+        apiVersion: apps/v1
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_pod_2.yaml
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/apply-patch+yaml"
+        apiVersion: apps/v1
+      - kind: Deployment
+        objectTemplate: templates/deployment_patch_add_label.yaml
+        labelSelector: {kube-burner-job: api-intensive}
+        patchType: "application/strategic-merge-patch+json"
+        apiVersion: apps/v1
+
+  - name: api-intensive-remove
+    qps: 500
+    burst: 500
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Deployment
+        labelSelector: {kube-burner-job: api-intensive}
+        apiVersion: apps/v1
+
+  - name: ensure-pods-removal
+    qps: 500
+    burst: 500
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Pod
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-services
+    qps: 500
+    burst: 500
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Service
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-configmaps-secrets
+    qps: 500
+    burst: 500
+    jobType: delete
+    objects:
+      - kind: ConfigMap
+        labelSelector: {kube-burner-job: api-intensive}
+      - kind: Secret
+        labelSelector: {kube-burner-job: api-intensive}
+
+  - name: remove-namespace
+    qps: 500
+    burst: 500
+    jobType: delete
+    waitForDeletion: true
+    objects:
+      - kind: Namespace
+        labelSelector: {kube-burner-job: api-intensive}
+</span><span class="no">EOF
+
+</span><span class="c"># 수행</span>
+<span class="nv">$ </span>kube-burner init <span class="nt">-c</span> api-intensive-500.yml <span class="nt">--log-level</span> debug
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_16.png" alt="img.png" loading="lazy" width="1008" height="803"></p>
+
+<h4 id="kubernetes-api-성능-메트릭--예제와-best-practice---blog">Kubernetes API 성능 메트릭 : 예제와 Best Practice - <a href="https://www.redhat.com/en/blog/kubernetes-api-performance-metrics-examples-and-best-practices">Blog</a>
+</h4>
+
+<ul>
+  <li>Kubernetes에서 일반적인 애플리케이션 워크로드 배포 과정
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_14.png" alt="img.png" class="image-center" loading="lazy" width="1170" height="593">
+    <ul>
+      <li>사용자는 REST API나 명령줄을 사용하여 배포를 생성합니다.</li>
+      <li>API Server (<a href="https://kubernetes.io/docs/reference/generated/kube-apiserver/">kube-apiserver</a>)가 Deployment 명세서를 etcd에 기록합니다.</li>
+      <li>DeploymentController는 새로운 Deployments를 watches하여 이벤트를 생성하고 Deployment Spec에 맞춰 조정하고 ReplicaSet 매니페스트를 생성한 다음 이를 API 서버에 게시하고 ReplicaSet 사양을 etcd에 기록합니다.</li>
+      <li>ReplicaSet 컨트롤러는 ReplicaSet 생성 이벤트를 감시하고 새 Pod 매니페스트를 생성합니다. 매니페스트를 API 서버에 게시하고 Pod 사양을 etcd에 기록합니다.</li>
+      <li>스케쥴러는 파드 생성 이벤트를 감시하고 바인딩되지 않은 파드를 감지합니다. 파드를 스케줄링하고 파드의 노드 바인딩을 업데이트합니다.</li>
+      <li>노드에서 실행되는 Kubelet은 새로운 Pod 스케줄링을 감지하고 컨테이너 런타임(예: cri-o)을 사용하여 이를 실행합니다.</li>
+      <li>Kubelet은 컨테이너 런타임을 통해 Pod 상태를 검색하여 API 서버에 업데이트합니다.</li>
+    </ul>
+  </li>
+  <li>API 성능 관련 주요 메트릭
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">apiserver_request_total</code> : API 서버에 대한 총 요청 수</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">rate(apiserver_request_total{job="apiserver"}[5m])</code> : 지난 5분 동안의 API 서버 요청 초당 평균 증가율</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">irate(apiserver_request_total{job="apiserver"}[5m])</code> : 지난 5분 동안의 API 서버 요청 초당 순간 증가율</li>
+      <li>실습 (Prometheus에서 실습)
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 연습1 : 라벨(label) 과 값(value) 확인</span>
+apiserver_request_total
+rate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">)</span>
+irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">)</span>
+    
+<span class="c"># 연습2</span>
+<span class="nb">sum </span>by<span class="o">(</span>code<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">))</span> <span class="c"># code로 grouping</span>
+<span class="nb">sum </span>by<span class="o">(</span>verb<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">))</span> <span class="c"># verb로 grouping</span>
+<span class="nb">sum </span>by<span class="o">(</span>resource<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">))</span> <span class="c"># resource로 grouping</span>
+<span class="nb">sum </span>by<span class="o">(</span>resource, code, verb<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">))</span> <span class="c"># resource, code, verb로 grouping</span>
+    
+<span class="c"># 연습3 : resource 값 없는 것 제외</span>
+topk<span class="o">(</span>3, <span class="nb">sum </span>by<span class="o">(</span>resource<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">job</span><span class="o">=</span><span class="s2">"apiserver"</span><span class="o">}[</span>5m]<span class="o">)))</span>
+topk<span class="o">(</span>3, <span class="nb">sum </span>by<span class="o">(</span>resource<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">resource</span><span class="o">=</span>~<span class="s2">".+"</span><span class="o">}[</span>5m]<span class="o">)))</span>
+    
+<span class="c"># 연습3 : 4xx, 5xx 응답 코드만 필터링</span>
+<span class="nb">sum </span>by<span class="o">(</span>code<span class="o">)</span> <span class="o">(</span>rate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">code</span><span class="o">=</span>~<span class="s2">"[45].."</span><span class="o">}[</span>1m]<span class="o">))</span>
+    
+<span class="c"># 최종</span>
+<span class="nb">sum </span>by<span class="o">(</span>resource, code, verb<span class="o">)</span> <span class="o">(</span>rate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">resource</span><span class="o">=</span>~<span class="s2">".+"</span><span class="o">}[</span>5m]<span class="o">))</span>
+or
+<span class="nb">sum </span>by<span class="o">(</span>resource, code, verb<span class="o">)</span> <span class="o">(</span>irate<span class="o">(</span>apiserver_request_total<span class="o">{</span><span class="nv">resource</span><span class="o">=</span>~<span class="s2">".+"</span><span class="o">}[</span>5m]<span class="o">))</span>
+</code></pre></div>        </div>
+        <p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_17.png" alt="img.png" loading="lazy" width="1392" height="878"></p>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>[Tuning] API 서버 flag</strong> : max-requests-inflight (기본값 400) , max-mutating-requests-inflight (기본값 200) - <a href="https://aws.github.io/aws-eks-best-practices/ko/scalability/docs/control-plane/">Docs</a>, <a href="https://docs.ocha.ng/kubernetes/apf">APF</a>
+    <ul>
+      <li>API 서버는 <code class="language-plaintext highlighter-rouge">--max-requests-inflight</code> query-type(get,list,watch…)및 <code class="language-plaintext highlighter-rouge">--max-mutating-requests-inflight</code> mutating-type(create,update,delete…) 플래그로 지정된 값을 합산하여 허용할 수 있는 총 진행 중인 요청 수를 구성합니다.</li>
+      <li>AWS EKS는 이러한 플래그에 대해 기본값인 400개 및 200개 요청을 사용하므로 주어진 시간에 총 600개의 요청을 전달할 수 있습니다.</li>
+      <li>APF는 이러한 600개의 요청을 다양한 요청 유형으로 나누는 방법을 지정합니다.</li>
+      <li>AWS EKS 컨트롤 플레인은 각 클러스터에 최소 2개의 API 서버가 등록되어 있어 가용성이 높습니다.</li>
+      <li>
+        <p>이렇게 하면 클러스터 전체의 총 진행 중인 요청 수가 1200개로 늘어납니다.</p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system kube-apiserver-myk8s-control-plane <span class="nt">--</span> kube-apiserver <span class="nt">-h</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#          --max-mutating-requests-inflight int                                                                </span>
+<span class="c">#                    This and --max-requests-inflight are summed to determine the server's total concurrency limit (which</span>
+<span class="c">#                    must be positive) if --enable-priority-and-fairness is true. Otherwise, this flag limits the maximum</span>
+<span class="c">#                    number of mutating requests in flight, or a zero value disables the limit completely. (default 200)</span>
+<span class="c">#          --max-requests-inflight int                                                                                </span>
+<span class="c">#                    This and --max-mutating-requests-inflight are summed to determine the server's total concurrency</span>
+<span class="c">#                    limit (which must be positive) if --enable-priority-and-fairness is true. Otherwise, this flag</span>
+<span class="c">#                    limits the maximum number of non-mutating requests in flight, or a zero value disables the limit</span>
+<span class="c">#                    completely. (default 400)</span>
+<span class="c">#          --min-request-timeout int                                                                                  </span>
+<span class="c">#                    An optional field indicating the minimum number of seconds a handler must keep a request open before</span>
+<span class="c">#                    timing it out. Currently only honored by the watch request handler, which picks a randomized value</span>
+<span class="c">#                    above this number as the connection timeout, to spread out load. (default 1800)</span>
+<span class="c">#          --request-timeout duration                                                                                 </span>
+<span class="c">#                    An optional field indicating the duration a handler must keep a request open before timing it out.</span>
+<span class="c">#                    This is the default request timeout for requests but may be overridden by flags such as</span>
+<span class="c">#                    --min-request-timeout for specific types of requests. (default 1m0s)</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">--max-requests-inflight</code> <strong>클러스터 상태 조회</strong>
+        <ul>
+          <li>설명 : API 서버가 동시에 처리할 수 있는 non-mutating 요청(GET, LIST, WATCH 등)의 최대 수를 제한합니다.</li>
+          <li>동작 : 요청이 들어오면 큐에 넣고, 현재 inflight 수가 최대값을 넘으면 429 Too Many Requests를 반환하게 됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">--max-mutating-requests-inflight</code> <strong>클러스터 상태 변경</strong>
+        <ul>
+          <li>설명 : API 서버가 동시에 처리할 수 있는 mutating 요청(POST, PUT, PATCH, DELETE)의 최대 수를 제한합니다.</li>
+          <li>동작 : Mutating 요청은 클러스터 상태를 변경하기 때문에, 너무 많으면 <strong>etcd I/O와 API 서버 내부 lock</strong>에 부하 → 서버 전체 성능 저하 ⇒ 요청이 최대값을 넘어가면 역시 429 반환하게 됩니다.</li>
+        </ul>
+      </li>
+      <li>
+<code class="language-plaintext highlighter-rouge">PriorityAndFairness(P&amp;F)</code> : API 서버가 요청을 PriorityLevel에 따라 큐잉하며, 각 PriorityLevel별 할당 큐 존재합니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_18.png" alt="img.png" loading="lazy" width="1408" height="1434">
+</li>
+    </ul>
+  </li>
+  <li>
+<strong>[Tuning] CoreDNS :</strong> Multi Socket Plugin 소개 - <a href="https://www.youtube.com/watch?v=W3f5Ks0j2Q8">Youtube</a>
+    <ul>
+      <li>
+<strong>CoreDNS</strong> : DNS와 Service Discovery를 담당 - <a href="https://coredns.io/">Docs</a>
+        <ul>
+          <li>Go 언어로 작성된 유연한 DNS 서버입니다.</li>
+          <li>경량화, 빠름, 확장성 좋으며 서비스 디스커버리에 중점두고 개발되었습니다.</li>
+          <li>플러그인 기반의 아키텍처로 쉽게 확장 가능합니다.</li>
+          <li>Kubernetes의 기본 DNS 서버로 사용됩니다.</li>
+          <li>DNS, DNS over TLS, DNS over gRPC를 지원합니다.</li>
+        </ul>
+      </li>
+      <li>
+<strong>MultiSocket</strong> 👍🏻 : 수직 확장성을 향상시킵니다. - <a href="https://coredns.io/plugins/multisocket/">Docs</a>
+        <ul>
+          <li>MultiSocket을 사용하면 하나의 포트에서 여러 서버를 시작할 수 있습니다.</li>
+          <li>SO_REUSEPORT 소켓 옵션을 사용하면 동일한 주소와 포트에서 여러 청취 소켓을 열 수 있습니다. 이 경우 커널은 소켓 간에 들어오는 연결을 분산합니다.</li>
+          <li>기존 CoreDNS 기본 설정 환경에서 CPU가 많아져도 QPS가 늘어나지 않습니다.. → <strong>2 CPU 경우 40k qps</strong>
+</li>
+          <li>이 옵션을 활성화하면 여러 서버를 시작할 수 있어 CPU 코어가 많은 환경에서 CoreDNS의 처리량이 증가합니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_19.png" alt="img.png" class="image-center" loading="lazy" width="444" height="306">
+<em class="image-caption">기존의 CoreDNS 처리 구조</em>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_20.png" alt="img_1.png" class="image-center" loading="lazy" width="436" height="296">
+<em class="image-caption">Multi Socket이 적용되어 여러 서버가 작동 중인 CoreDNS</em>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_21.png" alt="img_2.png" class="image-center" loading="lazy" width="733" height="403">
+<em class="image-caption">Multi Socket 적용 전후 비교 (1 Socket이 적용전임)</em>
+</li>
+          <li>위의 그래프에서 보듯이 Multi Socket을 CPU 코어수에 맞게 설정하면 CPU 코어가 많아질수록 QPS가 증가하는 수직 확장성을 확인할 수 있습니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>ETCD 재시작으로 인한 장애 분석 Case</strong> : net.ipv4.tcp_timestamps , net.ipv4.tcp_wan_timestamps  - <a href="https://segmentfault.com/a/1190000043406041">Link</a>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_22.png" alt="img.png" loading="lazy" width="1098" height="616">
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_23.png" alt="img_1.png" loading="lazy" width="1098" height="377">
+    <ul>
+      <li>해당 블로그는 ETCD 재시작으로 인해 K8S 클러스터가 불안정해진 원인을 분석한 글입니다.</li>
+    </ul>
+  </li>
+  <li>대규모 클러스터 운영 관련 유튜브 링크 모음입니다. 상당한 양으로 나중에 하나씩 살펴봐야 할것 같습니다.
+    <ul>
+      <li><strong>Building Armada – Running Batch Jobs at Massive Scale on Kubernetes - Jamie Poole, G-Research - <a href="https://www.youtube.com/watch?v=B3WPxw3OUl4">Youtube</a></strong></li>
+      <li><strong>Automated Multi-Cloud Large Scale K8s Cluster Lifecycle Management - Sourav Khandelwal, Databricks - <a href="https://www.youtube.com/watch?v=9E7lenP6pFc">Youtube</a></strong></li>
+      <li><strong>An Alternative Metadata System for Large Kubernetes Clusters - Yingcai Xue &amp; Yixiang Chen, ByteDance - <a href="https://www.youtube.com/watch?v=MGOa8Nn8_S0">Youtube</a></strong></li>
+      <li>Large Scale Automated Storage with Kubernetes - Celina Ward, Software Engineer &amp; Matt Schallert, Site Reliability Engineer, Uber - <a href="https://www.youtube.com/watch?v=aDFm5KaTaOk">Youtube</a>
+</li>
+      <li><strong>Large-Scale Practice of Persistent Memory in Alibaba Cloud - Junbao Kan &amp; Qingcan Wang, Alibaba - <a href="https://www.youtube.com/watch?v=3MKbk7AS8Jw">Youtube</a></strong></li>
+      <li>Managing Large-Scale Kubernetes Clusters Effectively and Reliably - Yong Zhang &amp; Zhixian Lin - <a href="https://www.youtube.com/watch?v=yUL7NKt2hAY">Youtube</a>
+</li>
+      <li><strong>How to Stabilize a GenAI-First, Modern Data LakeHouse: Provision 20,000 Ephemeral Data Lakes/Year - <a href="https://www.youtube.com/watch?v=L02zdTo7HT0">Youtube</a></strong></li>
+      <li><strong>Scaling Kubernetes Networking to 1k, 5k, … 100k Nodes!? - Marcel Zięba, Isovalent &amp; Dorde Lapcevic, Google - <a href="https://www.youtube.com/watch?v=VWGB-NW800Y">Youtube</a></strong></li>
+      <li>Collecting Operational Metrics for a Cluster with 5,000 Namespaces - Rob Szumski &amp; Chance Zibolski, Red Hat - <a href="https://www.youtube.com/watch?v=JHmWRBWPKog">Youtube</a>
+</li>
+      <li>Scaling Kubernetes Networking Beyond 100k Endpoints - Rob Scott &amp; Minhan Xia, Google - <a href="https://www.youtube.com/watch?v=a6SfbeM06Qo">Youtube</a>
+</li>
+      <li>Per-Node Api-Server Proxy: Expand the Cluster’s Scale and Stability - Weizhou Lan &amp; Iceber Gu - <a href="https://www.youtube.com/watch?v=O7w7e2iA7lA">Youtube</a>
+</li>
+      <li>Build a High Performance Remote Storage for Prometheus with Unlimited Time Series - Yang Xiang - <a href="https://www.youtube.com/watch?v=7pQZyYEz1l4">Youtube</a>
+</li>
+      <li><strong>BGP Peering Patterns for Kubernetes Networking at Preferred Networks - Sho Shimizu &amp; Yutaro Hayakawa - <a href="https://www.youtube.com/watch?v=n7_I4zu6f_M">Youtube</a></strong></li>
+      <li>Kubernetes Performance Tuning Workshop - Anton Weiss - <a href="https://www.youtube.com/watch?v=7CObA_qY6vo">Youtube</a>
+</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="kind-클러스터-삭제">Kind 클러스터 삭제</h5>
+
+<ul>
+  <li>다음 실습을 위해 클러스터를 삭제합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kind delete cluster <span class="nt">--name</span> myk8s
+</code></pre></div></div>
+
+<hr>
+
+<h2 id="cilium-performance">Cilium Performance</h2>
+
+<h3 id="실습환경-준비">실습환경 준비</h3>
+
+<ul>
+  <li>Kind와 Cilium CNI를 사용하여 실습환경을 준비합니다.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Prometheus Target connection refused bind-address 설정 : kube-controller-manager , kube-scheduler , etcd , kube-proxy</span>
+<span class="nv">$ </span>kind create cluster <span class="nt">--name</span> myk8s <span class="nt">--image</span> kindest/node:v1.33.2 <span class="nt">--config</span> - <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30000
+    hostPort: 30000
+  - containerPort: 30001
+    hostPort: 30001
+  - containerPort: 30002
+    hostPort: 30002
+  - containerPort: 30003
+    hostPort: 30003
+  kubeadmConfigPatches: # Prometheus Target connection refused bind-address 설정
+  - |
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        bind-address: 0.0.0.0
+    etcd:
+      local:
+        extraArgs:
+          listen-metrics-urls: http://0.0.0.0:2381
+    scheduler:
+      extraArgs:
+        bind-address: 0.0.0.0
+  - |
+    kind: KubeProxyConfiguration
+    metricsBindAddress: 0.0.0.0
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+  podSubnet: "10.244.0.0/16"   # cluster-cidr
+kubeadmConfigPatches:
+- |
+  kind: ClusterConfiguration
+  controllerManager:
+    extraArgs:
+      allocate-node-cidrs: "true"
+      cluster-cidr: "10.244.0.0/16"
+      node-cidr-mask-size: "22"
+</span><span class="no">EOF
+</span><span class="c"># =&gt; Creating cluster "myk8s" ...</span>
+<span class="c">#     ✓ Ensuring node image (kindest/node:v1.33.2) 🖼</span>
+<span class="c">#     ✓ Preparing nodes 📦</span>
+<span class="c">#     ✓ Writing configuration 📜</span>
+<span class="c">#     ✓ Starting control-plane 🕹️</span>
+<span class="c">#     ✓ Installing StorageClass 💾</span>
+<span class="c">#    Set kubectl context to "kind-myk8s"</span>
+<span class="c">#    You can now use your cluster with:</span>
+<span class="c">#    </span>
+<span class="c">#    kubectl cluster-info --context kind-myk8s</span>
+
+<span class="c"># node 별 PodCIDR 확인</span>
+<span class="nv">$ </span>kubectl get nodes <span class="nt">-o</span> <span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.items[*].spec.podCIDR}'</span>
+<span class="c"># =&gt; 10.244.0.0/22</span>
+
+<span class="c"># cilium cni 설치</span>
+<span class="nv">$ </span>cilium <span class="nb">install</span> <span class="nt">--version</span> 1.18.1 <span class="nt">--set</span> ipam.mode<span class="o">=</span>kubernetes <span class="nt">--set</span> <span class="nv">ipv4NativeRoutingCIDR</span><span class="o">=</span>172.20.0.0/16 <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">routingMode</span><span class="o">=</span>native <span class="nt">--set</span> <span class="nv">autoDirectNodeRoutes</span><span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> endpointRoutes.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> <span class="nv">directRoutingSkipUnreachable</span><span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+  <span class="nt">--set</span> <span class="nv">kubeProxyReplacement</span><span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> bpf.masquerade<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+  <span class="nt">--set</span> endpointHealthChecking.enabled<span class="o">=</span><span class="nb">false</span> <span class="nt">--set</span> <span class="nv">healthChecking</span><span class="o">=</span><span class="nb">false</span> <span class="se">\</span>
+  <span class="nt">--set</span> hubble.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.relay.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.ui.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+  <span class="nt">--set</span> hubble.ui.service.type<span class="o">=</span>NodePort <span class="nt">--set</span> hubble.ui.service.nodePort<span class="o">=</span>30003 <span class="se">\</span>
+  <span class="nt">--set</span> prometheus.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> operator.prometheus.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> envoy.prometheus.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> hubble.metrics.enableOpenMetrics<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+  <span class="nt">--set</span> hubble.metrics.enabled<span class="o">=</span><span class="s2">"{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip</span><span class="se">\,</span><span class="s2">source_namespace</span><span class="se">\,</span><span class="s2">source_workload</span><span class="se">\,</span><span class="s2">destination_ip</span><span class="se">\,</span><span class="s2">destination_namespace</span><span class="se">\,</span><span class="s2">destination_workload</span><span class="se">\,</span><span class="s2">traffic_direction}"</span> <span class="se">\</span>
+  <span class="nt">--set</span> debug.enabled<span class="o">=</span><span class="nb">true</span>  <span class="c"># --dry-run-helm-values</span>
+<span class="c"># =&gt; 🔮 Auto-detected Kubernetes kind: kind</span>
+<span class="c">#    ℹ️   Using Cilium version 1.18.1</span>
+<span class="c">#    🔮 Auto-detected cluster name: kind-myk8s</span>
+<span class="c">#    ℹ️   Detecting real Kubernetes API server addr and port on Kind</span>
+<span class="c">#    🔮 Auto-detected kube-proxy has not been installed</span>
+<span class="c">#    ℹ️   Cilium will fully replace all functionalities of kube-proxy</span>
+
+<span class="c"># hubble ui</span>
+<span class="nv">$ </span>open http://127.0.0.1:30003
+
+<span class="c"># metrics-server</span>
+<span class="nv">$ </span>helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+<span class="nv">$ </span>helm upgrade <span class="nt">--install</span> metrics-server metrics-server/metrics-server <span class="nt">--set</span> <span class="s1">'args[0]=--kubelet-insecure-tls'</span> <span class="nt">-n</span> kube-system
+<span class="c"># =&gt; Release "metrics-server" does not exist. Installing it now.</span>
+<span class="c">#    NAME: metrics-server</span>
+<span class="c">#    LAST DEPLOYED: Sat Aug 30 17:13:42 2025</span>
+<span class="c">#    NAMESPACE: kube-system</span>
+<span class="c">#    STATUS: deployed</span>
+<span class="c">#    REVISION: 1</span>
+<span class="c">#    TEST SUITE: None</span>
+<span class="c">#    NOTES:</span>
+<span class="c">#    ***********************************************************************</span>
+<span class="c">#    * Metrics Server                                                      *</span>
+<span class="c">#    ***********************************************************************</span>
+<span class="c">#      Chart version: 3.13.0</span>
+<span class="c">#      App version:   0.8.0</span>
+<span class="c">#      Image tag:     registry.k8s.io/metrics-server/metrics-server:v0.8.0</span>
+<span class="c">#    ***********************************************************************</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubectl top node
+<span class="c"># =&gt; NAME                  CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)</span>
+<span class="c">#    myk8s-control-plane   496m         7%       1132Mi          23%</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'cpu'</span>
+<span class="nv">$ </span>kubectl top pod <span class="nt">-A</span> <span class="nt">--sort-by</span><span class="o">=</span><span class="s1">'memory'</span>
+</code></pre></div></div>
+
+<h5 id="prometheus--grafana-설치---docs">Prometheus &amp; Grafana 설치 - <a href="https://docs.cilium.io/en/stable/observability/grafana/">Docs</a>
+</h5>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> https://raw.githubusercontent.com/cilium/cilium/1.18.1/examples/kubernetes/addons/prometheus/monitoring-example.yaml
+
+<span class="c">#</span>
+<span class="nv">$ </span>kubectl get deploy,pod,svc,ep <span class="nt">-n</span> cilium-monitoring
+<span class="nv">$ </span>kubectl get cm <span class="nt">-n</span> cilium-monitoring
+<span class="nv">$ </span>kc describe cm <span class="nt">-n</span> cilium-monitoring prometheus
+<span class="nv">$ </span>kc describe cm <span class="nt">-n</span> cilium-monitoring grafana-config
+<span class="nv">$ </span>kubectl get svc <span class="nt">-n</span> cilium-monitoring
+
+<span class="c"># NodePort 설정</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> cilium-monitoring prometheus <span class="nt">-p</span> <span class="s1">'{"spec": {"type": "NodePort", "ports": [{"port": 9090, "targetPort": 9090, "nodePort": 30001}]}}'</span>
+<span class="c"># =&gt; service/prometheus patched</span>
+<span class="nv">$ </span>kubectl patch svc <span class="nt">-n</span> cilium-monitoring grafana <span class="nt">-p</span> <span class="s1">'{"spec": {"type": "NodePort", "ports": [{"port": 3000, "targetPort": 3000, "nodePort": 30002}]}}'</span>
+<span class="c"># =&gt; service/grafana patched</span>
+
+<span class="nv">$ </span>kubectl get svc <span class="nt">-n</span> cilium-monitoring
+<span class="c"># =&gt; NAME         TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE</span>
+<span class="c">#    grafana      NodePort   10.96.85.141   &lt;none&gt;        3000:30002/TCP   37s</span>
+<span class="c">#    prometheus   NodePort   10.96.59.105   &lt;none&gt;        9090:30001/TCP   37s</span>
+
+<span class="c"># 접속 주소 확인</span>
+<span class="nv">$ </span>open <span class="s2">"http://127.0.0.1:30001"</span>  <span class="c"># prometheus</span>
+<span class="nv">$ </span>open <span class="s2">"http://127.0.0.1:30002"</span>  <span class="c"># grafana</span>
+</code></pre></div></div>
+
+<h3 id="쿠버네티스-환경에서-속도-측정-테스트">쿠버네티스 환경에서 속도 측정 테스트</h3>
+
+<ul>
+  <li>일반적으로 성능 측정시 많이 쓰이는 <code class="language-plaintext highlighter-rouge">iperf3</code>를 사용하여 TCP/UDP 속도를 측정해보겠습니다.</li>
+  <li>배포 및 확인</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 배포</span>
+<span class="nv">$ </span><span class="nb">cat</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh"> | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iperf3-server
+spec:
+  selector:
+    matchLabels:
+      app: iperf3-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iperf3-server
+    spec:
+      containers:
+      - name: iperf3-server
+        image: networkstatic/iperf3
+        args: ["-s"]
+        ports:
+        - containerPort: 5201
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iperf3-server
+spec:
+  selector:
+    app: iperf3-server
+  ports:
+    - name: tcp-service
+      protocol: TCP
+      port: 5201
+      targetPort: 5201
+    - name: udp-service
+      protocol: UDP
+      port: 5201
+      targetPort: 5201
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iperf3-client
+spec:
+  selector:
+    matchLabels:
+      app: iperf3-client
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iperf3-client
+    spec:
+      containers:
+      - name: iperf3-client
+        image: networkstatic/iperf3
+        command: ["sleep"]
+        args: ["infinity"]
+</span><span class="no">EOF
+</span><span class="c"># =&gt; deployment.apps/iperf3-server created</span>
+<span class="c">#    service/iperf3-server created</span>
+<span class="c">#    deployment.apps/iperf3-client created</span>
+
+<span class="c"># 확인 : 서버와 클라이언트가 어떤 노드에 배포되었는지 확인</span>
+<span class="nv">$ </span>kubectl get deploy,svc,pod <span class="nt">-owide</span>
+<span class="c"># =&gt; NAME                            READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS      IMAGES                 SELECTOR</span>
+<span class="c">#    deployment.apps/iperf3-client   1/1     1            1           28s   iperf3-client   networkstatic/iperf3   app=iperf3-client</span>
+<span class="c">#    deployment.apps/iperf3-server   1/1     1            1           28s   iperf3-server   networkstatic/iperf3   app=iperf3-server</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)             AGE   SELECTOR</span>
+<span class="c">#    service/iperf3-server   ClusterIP   10.96.7.124   &lt;none&gt;        5201/TCP,5201/UDP   28s   app=iperf3-server</span>
+<span class="c">#    service/kubernetes      ClusterIP   10.96.0.1     &lt;none&gt;        443/TCP             14m   &lt;none&gt;</span>
+<span class="c">#    </span>
+<span class="c">#    NAME                                 READY   STATUS    RESTARTS   AGE   IP             NODE                  NOMINATED NODE   READINESS GATES</span>
+<span class="c">#    pod/iperf3-client-688ff6565d-267sh   1/1     Running   0          28s   10.244.2.248   myk8s-control-plane   &lt;none&gt;           &lt;none&gt;</span>
+<span class="c">#    pod/iperf3-server-5d54b669cc-k8gzf   1/1     Running   0          28s   10.244.2.101   myk8s-control-plane   &lt;none&gt;           &lt;none&gt;</span>
+
+<span class="c"># 서버 파드 로그 확인 : 기본 5201 포트 Listen</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>iperf3-server <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 1. TCP 5201, 측정시간 5초</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 클라이언트 파드에서 아래 명령 실행</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/iperf3-client <span class="nt">--</span> iperf3 <span class="nt">-c</span> iperf3-server <span class="nt">-t</span> 5
+<span class="c"># =&gt; Connecting to host iperf3-server, port 5201</span>
+<span class="c">#    [  5] local 10.244.2.248 port 42338 connected to 10.96.7.124 port 5201</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate         Retr  Cwnd</span>
+<span class="c">#    [  5]   0.00-1.00   sec  8.86 GBytes  76.1 Gbits/sec  2581    346 KBytes</span>
+<span class="c">#    [  5]   1.00-2.00   sec  8.38 GBytes  72.0 Gbits/sec  264    380 KBytes</span>
+<span class="c">#    [  5]   2.00-3.00   sec  9.39 GBytes  80.7 Gbits/sec  1054    461 KBytes</span>
+<span class="c">#    [  5]   3.00-4.00   sec  8.82 GBytes  75.7 Gbits/sec  533    769 KBytes</span>
+<span class="c">#    [  5]   4.00-5.00   sec  8.80 GBytes  75.6 Gbits/sec  199    827 KBytes</span>
+<span class="c">#    - - - - - - - - - - - - - - - - - - - - - - - - -</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate         Retr</span>
+<span class="c">#    [  5]   0.00-5.00   sec  44.2 GBytes  76.0 Gbits/sec  4631             sender</span>
+<span class="c">#    [  5]   0.00-5.00   sec  44.2 GBytes  76.0 Gbits/sec                  receiver</span>
+
+<span class="c"># 서버 파드 로그 확인 : 기본 5201 포트 Listen</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>iperf3-server <span class="nt">-f</span>
+<span class="c"># =&gt; -----------------------------------------------------------</span>
+<span class="c">#    Server listening on 5201 (test #1)</span>
+<span class="c">#    -----------------------------------------------------------</span>
+<span class="c">#    Accepted connection from 10.244.2.248, port 42336</span>
+<span class="c">#    [  5] local 10.244.2.101 port 5201 connected to 10.244.2.248 port 42338</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate</span>
+<span class="c">#    [  5]   0.00-1.00   sec  8.86 GBytes  76.1 Gbits/sec</span>
+<span class="c">#    [  5]   1.00-2.00   sec  8.37 GBytes  71.9 Gbits/sec</span>
+<span class="c">#    [  5]   2.00-3.00   sec  9.40 GBytes  80.8 Gbits/sec</span>
+<span class="c">#    [  5]   3.00-4.00   sec  8.81 GBytes  75.7 Gbits/sec</span>
+<span class="c">#    [  5]   4.00-5.00   sec  8.81 GBytes  75.6 Gbits/sec</span>
+<span class="c">#    - - - - - - - - - - - - - - - - - - - - - - - - -</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate</span>
+<span class="c">#    [  5]   0.00-5.00   sec  44.2 GBytes  76.0 Gbits/sec                  receiver</span>
+<span class="c"># &lt;span style="color: green;"&gt;👉 기본적으로 클라이언트측 로그와 서버측 로그가 동일하게 나옵니다.&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 2. UDP 사용 (-u)</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 클라이언트 파드에서 아래 명령 실행</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/iperf3-client <span class="nt">--</span> iperf3 <span class="nt">-c</span> iperf3-server <span class="nt">-u</span> <span class="nt">-b</span> 20G
+<span class="c"># =&gt; Connecting to host iperf3-server, port 5201</span>
+<span class="c">#    [  5] local 10.244.2.248 port 39637 connected to 10.96.7.124 port 5201</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate         Total Datagrams</span>
+<span class="c">#    [  5]   0.00-1.00   sec   335 MBytes  2.81 Gbits/sec  242388</span>
+<span class="c">#    [  5]   1.00-2.00   sec   338 MBytes  2.83 Gbits/sec  244711</span>
+<span class="c">#    [  5]   2.00-3.00   sec   325 MBytes  2.73 Gbits/sec  235629</span>
+<span class="c">#    [  5]   3.00-4.00   sec   327 MBytes  2.74 Gbits/sec  236618</span>
+<span class="c">#    [  5]   4.00-5.00   sec   317 MBytes  2.66 Gbits/sec  229570</span>
+<span class="c">#    [  5]   5.00-6.00   sec   330 MBytes  2.77 Gbits/sec  238981</span>
+<span class="c">#    [  5]   6.00-7.00   sec   337 MBytes  2.83 Gbits/sec  244238</span>
+<span class="c">#    [  5]   7.00-8.00   sec   334 MBytes  2.80 Gbits/sec  241738</span>
+<span class="c">#    [  5]   8.00-9.00   sec   336 MBytes  2.82 Gbits/sec  243323</span>
+<span class="c">#    [  5]   9.00-10.00  sec   331 MBytes  2.78 Gbits/sec  239984</span>
+<span class="c">#    - - - - - - - - - - - - - - - - - - - - - - - - -</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate         Jitter    Lost/Total Datagrams</span>
+<span class="c">#    [  5]   0.00-10.00  sec  3.23 GBytes  2.78 Gbits/sec  0.000 ms  0/2397180 (0%)  sender</span>
+<span class="c">#    [  5]   0.00-10.00  sec  3.22 GBytes  2.77 Gbits/sec  0.003 ms  6167/2397180 (0.26%)  receiver</span>
+
+<span class="c"># 서버 파드 로그 확인 : 기본 5201 포트 Listen</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>iperf3-server <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 3. TCP, 쌍방향 모드(-bidir)
+    <ul>
+      <li>송신(TX), 수신(RX) 모두 측정합니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 클라이언트 파드에서 아래 명령 실행</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/iperf3-client <span class="nt">--</span> iperf3 <span class="nt">-c</span> iperf3-server <span class="nt">-t</span> 5 <span class="nt">--bidir</span>
+<span class="c"># =&gt; Connecting to host iperf3-server, port 5201</span>
+<span class="c">#    [  5] local 10.244.2.248 port 49212 connected to 10.96.7.124 port 5201</span>
+<span class="c">#    [  7] local 10.244.2.248 port 49214 connected to 10.96.7.124 port 5201</span>
+<span class="c">#    [ ID][Role] Interval           Transfer     Bitrate         Retr  Cwnd</span>
+<span class="c">#    [  5][TX-C]   0.00-1.00   sec  8.04 GBytes  69.0 Gbits/sec    1   1.25 MBytes</span>
+<span class="c">#    [  7][RX-C]   0.00-1.00   sec  1.69 GBytes  14.5 Gbits/sec</span>
+<span class="c">#    [  5][TX-C]   1.00-2.00   sec  4.76 GBytes  40.9 Gbits/sec    0   1.25 MBytes</span>
+<span class="c">#    [  7][RX-C]   1.00-2.00   sec  5.13 GBytes  44.1 Gbits/sec</span>
+<span class="c">#    [  5][TX-C]   2.00-3.00   sec  4.73 GBytes  40.6 Gbits/sec    0   1.25 MBytes</span>
+<span class="c">#    [  7][RX-C]   2.00-3.00   sec  4.95 GBytes  42.5 Gbits/sec</span>
+<span class="c">#    [  5][TX-C]   3.00-4.00   sec  4.77 GBytes  41.0 Gbits/sec    0   1.25 MBytes</span>
+<span class="c">#    [  7][RX-C]   3.00-4.00   sec  5.04 GBytes  43.3 Gbits/sec</span>
+<span class="c">#    [  5][TX-C]   4.00-5.00   sec  4.73 GBytes  40.6 Gbits/sec    0   1.25 MBytes</span>
+<span class="c">#    [  7][RX-C]   4.00-5.00   sec  4.97 GBytes  42.7 Gbits/sec</span>
+<span class="c">#    - - - - - - - - - - - - - - - - - - - - - - - - -</span>
+<span class="c">#    [ ID][Role] Interval           Transfer     Bitrate         Retr</span>
+<span class="c">#    [  5][TX-C]   0.00-5.00   sec  27.0 GBytes  46.4 Gbits/sec    1             sender</span>
+<span class="c">#    [  5][TX-C]   0.00-5.00   sec  27.0 GBytes  46.4 Gbits/sec                  receiver</span>
+<span class="c">#    [  7][RX-C]   0.00-5.00   sec  21.8 GBytes  37.4 Gbits/sec    0             sender</span>
+<span class="c">#    [  7][RX-C]   0.00-5.00   sec  21.8 GBytes  37.4 Gbits/sec                  receiver</span>
+<span class="c"># &gt;&gt; Client→Server (TX): 46.4 Gbps</span>
+<span class="c"># &gt;&gt; Server→Client (RX): 37.4 Gbps</span>
+<span class="c"># &gt;&gt; Retransmit : TX=1, RX=0 → 일부 패킷 손실로 인한 재전송이 있었음</span>
+<span class="c"># &gt;&gt; 전체적으로는 37~46Gbps 수준의 대역폭이 측정됨</span>
+
+<span class="c"># 서버 파드 로그 확인 : 기본 5201 포트 Listen</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>iperf3-server <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>실습 4. TCP 다중 스트림(30개), -P(number of parallel client streams to run)</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 클라이언트 파드에서 아래 명령 실행</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> deploy/iperf3-client <span class="nt">--</span> iperf3 <span class="nt">-c</span> iperf3-server <span class="nt">-t</span> 10 <span class="nt">-P</span> 2
+<span class="c"># =&gt; ...</span>
+<span class="c">#    - - - - - - - - - - - - - - - - - - - - - - - - -</span>
+<span class="c">#    [ ID] Interval           Transfer     Bitrate         Retr</span>
+<span class="c">#    [  5]   0.00-10.00  sec  58.8 GBytes  50.5 Gbits/sec  444             sender</span>
+<span class="c">#    [  5]   0.00-10.00  sec  58.8 GBytes  50.5 Gbits/sec                  receiver</span>
+<span class="c">#    [  7]   0.00-10.00  sec  58.8 GBytes  50.5 Gbits/sec  1039             sender</span>
+<span class="c">#    [  7]   0.00-10.00  sec  58.8 GBytes  50.5 Gbits/sec                  receiver</span>
+<span class="c">#    [SUM]   0.00-10.00  sec   118 GBytes   101 Gbits/sec  1483             sender</span>
+<span class="c">#    [SUM]   0.00-10.00  sec   118 GBytes   101 Gbits/sec                  receiver</span>
+
+<span class="c"># 서버 파드 로그 확인 : 기본 5201 포트 Listen</span>
+<span class="nv">$ </span>kubectl logs <span class="nt">-l</span> <span class="nv">app</span><span class="o">=</span>iperf3-server <span class="nt">-f</span>
+</code></pre></div></div>
+
+<ul>
+  <li>삭제:  <code class="language-plaintext highlighter-rouge">kubectl delete deploy iperf3-server iperf3-client &amp;&amp; kubectl delete svc iperf3-server</code>
+</li>
+</ul>
+
+<h3 id="cilium-접속-및-성능-테스트">Cilium 접속 및 성능 테스트</h3>
+
+<ul>
+  <li><a href="https://docs.cilium.io/en/stable/contributing/testing/e2e/">관련문서</a></li>
+  <li>Cilium은 <a href="https://github.com/cilium/cilium-cli/#connectivity-check">cilium-cli connectivity tests</a>를 통해 API 레벨에서 데이터 경로 까지 
+end-to-end 테스트를 수행할 수 있습니다.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">cilium connectivity test</code> - 기능 검증 및 기능별 시나리오 테스트 (Pass, Fail)</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>cilium connectivity <span class="nt">-h</span>
+<span class="c"># =&gt; Connectivity troubleshooting</span>
+<span class="c">#    </span>
+<span class="c">#    Usage:</span>
+<span class="c">#      cilium connectivity [command]</span>
+<span class="c">#    </span>
+<span class="c">#    Available Commands:</span>
+<span class="c">#      perf        Test network performance</span>
+<span class="c">#      test        Validate connectivity in cluster</span>
+
+<span class="c"># 아래 test 실행 후 cilium-test-1 네임스페이스 접속</span>
+<span class="nv">$ </span>open http://127.0.0.1:30003/?namespace<span class="o">=</span>cilium-test-1
+
+<span class="c"># test : 테스트 항목 122개 2:59~</span>
+<span class="nv">$ </span>cilium connectivity <span class="nb">test</span> <span class="nt">--debug</span>  
+<span class="c"># =&gt; ✨ [kind-myk8s] Creating namespace cilium-test-1 for connectivity check...</span>
+<span class="c">#    ✨ [kind-myk8s] Deploying echo-same-node service...</span>
+<span class="c">#    ✨ [kind-myk8s] Deploying DNS test server configmap...</span>
+<span class="c">#    ✨ [kind-myk8s] Deploying same-node deployment...</span>
+<span class="c">#    ...테스트 환경 배포 (생략)...</span>
+<span class="c">#    🐛 [cilium-test-1] Registered connectivity tests</span>
+<span class="c">#    🐛   &lt;Test no-policies, 8 scenarios, 0 resources, expectFunc &lt;nil&gt;&gt;</span>
+<span class="c">#    🐛   &lt;Test no-policies-from-outside, 1 scenarios, 0 resources, expectFunc &lt;nil&gt;&gt;</span>
+<span class="c">#    🐛   &lt;Test no-policies-extra, 2 scenarios, 0 resources, expectFunc &lt;nil&gt;&gt;</span>
+<span class="c">#    🐛   &lt;Test allow-all-except-world, 4 scenarios, 1 resources, expectFunc &lt;nil&gt;&gt;</span>
+<span class="c">#    🐛   &lt;Test client-ingress, 1 scenarios, 1 resources, expectFunc 0x104e81740&gt;</span>
+<span class="c">#    ...</span>
+
+<span class="c"># 실습 리소스 삭제</span>
+<span class="nv">$ </span>kubectl delete ns cilium-test-1
+</code></pre></div></div>
+
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">cilium connectivity perf</code> : 성능 측정(Gbsp, Latency) - Throughput, Retransmit, Latency
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>cilium connectivity perf <span class="nt">-h</span>
+<span class="c"># =&gt; Usage:</span>
+<span class="c">#      cilium connectivity perf [flags]</span>
+<span class="c">#    </span>
+<span class="c">#    Flags:</span>
+<span class="c">#          --bandwidth                        Test pod network bandwidth manage</span>
+<span class="c">#          --crr                              Run CRR test</span>
+<span class="c">#      -d, --debug                            Show debug messages</span>
+<span class="c">#          --duration duration                Duration for the Performance test to run (default 10s)</span>
+<span class="c">#      -h, --help                             help for perf</span>
+<span class="c">#          --host-net                         Test host network (default true)</span>
+<span class="c">#          --host-to-pod                      Test host-to-pod traffic</span>
+<span class="c">#          --msg-size int                     Size of message to use in UDP test (default 1024)</span>
+<span class="c">#          --namespace-labels map             Add labels to the connectivity test namespace</span>
+<span class="c">#          --net-qos                          Test pod network Quality of Service</span>
+<span class="c">#          --node-selector-client map         Node selector for the other-node client pod</span>
+<span class="c">#          --node-selector-server map         Node selector for the server pod (and client same-node)</span>
+<span class="c">#          --other-node                       Run tests in which the client and the server are hosted on difference nodes (default true)</span>
+<span class="c">#          --performance-image string         Image path to use for performance (default "quay.io/cilium/network-perf:1751527436-c2462ae@sha256:0c491ed7ca63e6c526593b3a2d478f856410a50fbbce7fe2b64283c3015d752f")</span>
+<span class="c">#          --pod-net                          Test pod network (default true)</span>
+<span class="c">#          --pod-to-host                      Test pod-to-host traffic</span>
+<span class="c">#          --print-image-artifacts            Prints the used image artifacts</span>
+<span class="c">#          --report-dir string                Directory to save perf results in json format</span>
+<span class="c">#          --rr                               Run RR test (default true)</span>
+<span class="c">#          --same-node                        Run tests in which the client and the server are hosted on the same node (default true)</span>
+<span class="c">#          --samples int                      Number of Performance samples to capture (how many times to run each test) (default 1)</span>
+<span class="c">#          --setup-delay duration             Extra delay before starting the performance tests</span>
+<span class="c">#          --streams uint                     The parallelism of tests with multiple streams (default 4)</span>
+<span class="c">#          --test-namespace string            Namespace to perform the connectivity in (always suffixed with a sequence number to be compliant with test-concurrency param, e.g.: cilium-test-1) (default "cilium-test")</span>
+<span class="c">#          --throughput                       Run throughput test (default true)</span>
+<span class="c">#          --throughput-multi                 Run throughput test with multiple streams (default true)</span>
+<span class="c">#          --tolerations strings              Extra NoSchedule tolerations added to test pods</span>
+<span class="c">#          --udp                              Run UDP tests</span>
+<span class="c">#          --unsafe-capture-kernel-profiles   Capture kernel profiles during test execution. Warning: run on disposable nodes only, as it installs additional software and modifies their configuration</span>
+<span class="c">#    </span>
+<span class="c">#    Global Flags:</span>
+<span class="c">#          --as string                  Username to impersonate for the operation. User could be a regular user or a service account in a namespace.</span>
+<span class="c">#          --as-group stringArray       Group to impersonate for the operation, this flag can be repeated to specify multiple groups.</span>
+<span class="c">#          --context string             Kubernetes configuration context</span>
+<span class="c">#          --helm-release-name string   Helm release name (default "cilium")</span>
+<span class="c">#          --kubeconfig string          Path to the kubeconfig file</span>
+<span class="c">#      -n, --namespace string           Namespace Cilium is running in (default "kube-system")</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="cilium-performance--tuning">Cilium Performance &amp; Tuning</h3>
+
+<ul>
+  <li>다음의 Youtube 영상을 참고하여 Cilium의 성능과 튜닝에 대해서 알아봅니다.
+    <ul>
+      <li>Deep Dive Into Cilium Resilient Architecture : Map Size - Jussi Mäki &amp; Martynas Pumputis, Isovalent - <a href="https://www.youtube.com/watch?v=YX0sql_3dt8">Youtube</a>
+</li>
+    </ul>
+  </li>
+  <li>어느날 패킷 Drop이 발생하며 Service Backend가 안 보이는 현상이 발견 되었습니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_24.png" alt="img.png" class="image-center" loading="lazy" width="1158" height="673">
+<em class="image-caption">Egress Packet이 Drop되는 현상 발생시의 Cilium Drop Metric</em>
+</li>
+  <li>또한 일부 Cilium-agent가 상태저하 (Degraded) 상태가 되는 현상도 발견 되었습니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_25.png" alt="img_1.png" class="image-center" loading="lazy" width="1143" height="519">
+<em class="image-caption">상태 저하된 Cilium Agent</em>
+</li>
+  <li>BPF Map Pressure 메트릭을 확인해보니 원인이 발견되었습니다. BPF Map Pressure가 144%나 된 것입니다!
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_26.png" alt="img_2.png" loading="lazy" width="1151" height="373">
+</li>
+  <li>또한 아래의 명령을 실행하니 lb4_service_v2 Map 업데이트를 담당하는 조정자(reconciler)가 실패하고 있음을 알 수 있었습니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">--</span> cilium status <span class="nt">--verbose</span> 
+</code></pre></div>    </div>
+    <p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_27.png" alt="img.png" loading="lazy" width="818" height="166"></p>
+  </li>
+  <li>Service Map 상태정보를 확인하니 <code class="language-plaintext highlighter-rouge">Error: map is full</code> 에러를 확인 할 수 있습니다.
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># 현재는 명령 입력 방식이 변경됨</span>
+<span class="c"># $ k exec -it -n kube-system ds/cilium -- cilium statedb service4</span>
+  
+<span class="c"># 현재는 아래의 명령으로 확인할 수 있다고 하는데 확인이 필요합니다.</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">-c</span> cilium-agent <span class="nt">--</span> cilium-dbg service list
+<span class="c"># =&gt; ID   Frontend                Service Type   Backend</span>
+<span class="c">#    1    10.96.88.253:443/TCP    ClusterIP      1 =&gt; 172.20.0.2:4244/TCP (active)</span>
+<span class="c">#    2    10.96.205.94:80/TCP     ClusterIP      1 =&gt; 10.244.1.194:4245/TCP (active)</span>
+<span class="c">#    3    0.0.0.0:30003/TCP       NodePort       1 =&gt; 10.244.1.179:8081/TCP (active)</span>
+<span class="c">#    5    10.96.167.52:80/TCP     ClusterIP      1 =&gt; 10.244.1.179:8081/TCP (active)</span>
+<span class="c">#    6    10.96.0.10:53/TCP       ClusterIP      1 =&gt; 10.244.1.48:53/TCP (active)</span>
+<span class="c">#                                                2 =&gt; 10.244.2.250:53/TCP (active)</span>
+<span class="c">#    7    10.96.0.10:53/UDP       ClusterIP      1 =&gt; 10.244.1.48:53/UDP (active)</span>
+<span class="c">#                                                2 =&gt; 10.244.2.250:53/UDP (active)</span>
+<span class="c">#    8    10.96.0.10:9153/TCP     ClusterIP      1 =&gt; 10.244.1.48:9153/TCP (active)</span>
+<span class="c">#                                                2 =&gt; 10.244.2.250:9153/TCP (active)</span>
+<span class="c">#    9    10.96.0.1:443/TCP       ClusterIP      1 =&gt; 172.20.0.2:6443/TCP (active)</span>
+<span class="c">#    10   10.96.193.155:443/TCP   ClusterIP      1 =&gt; 10.244.3.24:10250/TCP (active)</span>
+<span class="c">#    11   10.96.85.141:3000/TCP   ClusterIP      1 =&gt; 10.244.2.71:3000/TCP (active)</span>
+<span class="c">#    12   10.96.59.105:9090/TCP   ClusterIP      1 =&gt; 10.244.1.36:9090/TCP (active)</span>
+<span class="c">#    13   0.0.0.0:30001/TCP       NodePort       1 =&gt; 10.244.1.36:9090/TCP (active)</span>
+<span class="c">#    15   0.0.0.0:30002/TCP       NodePort       1 =&gt; 10.244.2.71:3000/TCP (active) </span>
+</code></pre></div>    </div>
+    <p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_28.png" alt="img.png" loading="lazy" width="642" height="566"></p>
+  </li>
+  <li>해결 방안은 serivce map의 크기를 늘리거나 문제가 되는 기존 service를 삭제하는 것입니다.</li>
+  <li>해당 영상에서는 service를 삭제해서 문제를 해결 하였습니다.</li>
+  <li>이렇듯 메트릭을 잘 모니터링하고 있다면 문제를 빠르게 발견하고 해결할 수 있습니다.</li>
+</ul>
+
+<h4 id="deep-dive-into-cilium-resilient-architecture--apievent-와-cilium-agentstatedb-와-bpf-동작">Deep Dive Into Cilium Resilient Architecture : API(Event) 와 Cilium-Agent(StateDB) 와 BPF 동작</h4>
+
+<ul>
+  <li>Cilium의 장애나 성능 저하 문제를 해결하기 위해서는 Cilium의 아키텍처를 이해하는 것이 중요합니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_29.png" alt="img.png" loading="lazy" width="1171" height="626">
+</li>
+  <li>Cilium은 쿠버네티스 API 서버로부터 Service Endpoint에 대한 이벤트를 받아서 Cilium-Agent가 상태를 관리하고, 이를 BPF로 반영하는 구조로 되어 있습니다.</li>
+  <li>이를 service map으로 관리하는데 service map의 크기가 부족하면 문제가 발생할 수 있습니다. 그래서 저장소(StateDB)와 BPF Map의 크기를 적절히 설정하는 것이 중요합니다.</li>
+  <li>
+<strong>StateDB</strong>란?
+    <ul>
+      <li>In-memory Transactional 데이터 베이스로, 불가변의 데이터 구조(Immutable Data Structure)를 사용하여 동시성 문제를 해결합니다.</li>
+      <li>채널 기반 변경 알림 메커니즘을 사용하여 이벤트 기반 아키텍처를 구현합니다.</li>
+      <li>Cilium-Agent는 StateDB를 사용하여 쿠버네티스 API 서버로 부터 받은 이벤트를 처리하고, 상태를 관리합니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_30.png" alt="img.png" class="image-center w-60" loading="lazy" width="661" height="249">
+<em class="image-caption">StateDB의 자료 구조</em>
+</li>
+    </ul>
+  </li>
+  <li>
+<strong>eBPF Maps</strong> 소개 - mapDynamicSizeRatio - <a href="https://docs.cilium.io/en/stable/operations/performance/tuning/#ebpf-map-sizing">Docs</a>, <a href="https://docs.cilium.io/en/stable/network/ebpf/maps/#bpf-map-limitations">Maps-Limits</a>
+    <ul>
+      <li>모든 eBPF Map들은 최대 크기가 정해져 있습니다. 최대 크기 이상의 데이터를 저장하려고 하면 <code class="language-plaintext highlighter-rouge">map is full</code> 에러가 발생하거나 datapath의 성능 저하가 발생할 수 있습니다.</li>
+      <li>Cilium은 시스템 전체 메모리의 일정 비율을 eBPF Map에 할당합니다.</li>
+      <li>하지만 Cilium agent에 의해 사용되는 최대 용량은 고급 설정을 통해 조정할 수 있습니다. <a href="https://docs.cilium.io/en/stable/network/ebpf/maps/#bpf-map-limitations">eBPF Maps Guide</a> 를 참조하세요.</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 현재 BPF Maps 크기 확인</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">--</span> cilium status <span class="nt">--verbose</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    BPF Maps:   dynamic sizing: on (ratio: 0.002500)</span>
+<span class="c">#      Name                          Size</span>
+<span class="c">#      Auth                          524288</span>
+<span class="c">#      Non-TCP connection tracking   65536</span>
+<span class="c">#      TCP connection tracking       131072</span>
+<span class="c">#      Endpoints                     65535</span>
+<span class="c">#      IP cache                      512000</span>
+<span class="c">#      IPv4 masquerading agent       16384</span>
+<span class="c">#      IPv6 masquerading agent       16384</span>
+<span class="c">#      IPv4 fragmentation            8192</span>
+<span class="c">#      IPv4 service                  65536</span>
+<span class="c">#      IPv6 service                  65536</span>
+<span class="c">#      IPv4 service backend          65536</span>
+<span class="c">#      IPv6 service backend          65536</span>
+<span class="c">#      IPv4 service reverse NAT      65536</span>
+<span class="c">#      IPv6 service reverse NAT      65536</span>
+<span class="c">#      Metrics                       1024</span>
+<span class="c">#      Ratelimit metrics             64</span>
+<span class="c">#      NAT                           131072</span>
+<span class="c">#      Neighbor table                131072</span>
+<span class="c">#      Endpoint policy               16384</span>
+<span class="c">#      Policy stats                  65534</span>
+<span class="c">#      Session affinity              65536</span>
+<span class="c">#      Sock reverse NAT              65536</span>
+  
+<span class="c"># BPF Maps 크기의 비중 조정 (0.0025 -&gt; 0.01)</span>
+<span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--version</span> 1.18.1 <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+  <span class="nt">--set</span> bpf.distributedLRU.enabled<span class="o">=</span><span class="nb">true</span> <span class="nt">--set</span> bpf.mapDynamicSizeRatio<span class="o">=</span>0.01
+
+<span class="c"># Cilium DaemonSet 재시작</span>
+<span class="nv">$ </span>kubectl <span class="nt">-n</span> kube-system rollout restart ds/cilium
+
+<span class="c"># BPF Maps 에 많은 값들이 노드 총 메모리 비중별로 반영</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">--</span> cilium status <span class="nt">--verbose</span>
+<span class="c"># =&gt; ...</span>
+<span class="c">#    BPF Maps:   dynamic sizing: on (ratio: &lt;span style="color: green;"&gt;0.010000)&lt;/span&gt;</span>
+<span class="c">#      Name                          Size</span>
+<span class="c">#      Auth                          524288</span>
+<span class="c">#      Non-TCP connection tracking   &lt;span style="color: green;"&gt;90475&lt;/span&gt;</span>
+<span class="c">#      TCP connection tracking       &lt;span style="color: green;"&gt;180943&lt;/span&gt;</span>
+<span class="c">#      Endpoints                     65535</span>
+<span class="c">#      ...</span>
+<span class="c">#      Ratelimit metrics             64</span>
+<span class="c">#      NAT                           &lt;span style="color: green;"&gt;180943&lt;/span&gt;</span>
+<span class="c">#      Neighbor table                &lt;span style="color: green;"&gt;180943&lt;/span&gt;</span>
+<span class="c">#      Endpoint policy               16384</span>
+<span class="c">#      Policy stats                  65534</span>
+<span class="c">#      Session affinity              65536</span>
+<span class="c">#      Sock reverse NAT              &lt;span style="color: green;"&gt;90475&lt;/span&gt;</span>
+</code></pre></div></div>
+
+<h5 id="kubernetes-api-server-improvements--v118-부터-cilium_client-가-k8s-api-서버-부하분산ha-연결-가능---blog">Kubernetes API server improvements : v1.18 부터 Cilium_client 가 K8S API 서버 부하분산/HA 연결 가능 - <a href="https://isovalent.com/blog/post/cilium-1-18/#operations">Blog</a>
+</h5>
+
+<ul>
+  <li>Cilium v1.18 부터는 Cilium-agent가 쿠버네티스 API 서버에 HA로 연결할 수 있습니다. (<code class="language-plaintext highlighter-rouge">--set k8s.apiServerURLs="https://172.21.0.4:6443 https://172.21.0.5:6443 https://172.21.0.6:6443"</code> 를 통해 지정가능합니다.)</li>
+  <li>v1.18 이전에는 단일 API 서버에만 연결할 수 있었습니다.</li>
+  <li>Cilium은 동작 중인 API 서버의 목록을 초기화 시점에 가져오고, 이후에는 주기적으로 API 서버의 상태를 확인하여, Heartbeat를 통해 연결 상태를 체크하고, 체크가 실패할 경우 다른 API 서버로 연결을 시도합니다.</li>
+  <li>일부 시나리오에서는 Kubernetes API 서버에서 정보를 검색하면 과부하가 걸리거나 API 서버의 가용성에 해로울 수 있습니다(특히 LIST 요청).</li>
+  <li>API 서버에 요청 시 exponential back-off 설정 가능.
+    <div class="language-yaml highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="na">k8sClientExponentialBackoff</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="kc">true</span>
+    <span class="na">backoffBaseSeconds</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">backoffMaxDurationSeconds</span><span class="pi">:</span> <span class="m">120</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="kubernetes-perf-tests">Kubernetes perf-tests</h3>
+
+<ul>
+  <li>이번에는 perf-tests를 사용하여 쿠버네티스 클러스터의 성능을 측정해봅니다.</li>
+  <li>Kube-burner와 거의 비슷합니다. 차이점은 perf-tests는 쿠버네티스의 공식 성능 테스트 도구라는 것입니다. <a href="https://github.com/kubernetes/perf-tests">GitHub</a>
+</li>
+  <li>perf-tests에는 CL2, DNS 등 다양한 성능 테스트가 포함되어 있습니다.</li>
+  <li>
+<strong>ClusterLoader2</strong> (CL2) : Kubernetes 부하 테스트 도구이자 공식 K8s 확장성 및 성능 테스트 프레임워크입니다. - <a href="https://github.com/kubernetes/perf-tests/tree/master/clusterloader2">Link</a>
+    <ul>
+      <li>테스트는 클러스터의 원하는 상태 집합(예: 10,000개의 포드, 2,000개의 클러스터 IP 서비스 또는 5개의 데몬 세트를 실행)을 정의하고 각 상태에 도달하는 속도(포드 처리량)를 지정합니다.</li>
+      <li>CL2는 또한 측정할 성능 특성을 정의합니다. ( 자세한 내용은 <a href="https://github.com/kubernetes/perf-tests/tree/master/clusterloader2#Measurement">측정 목록</a> 참조 ).</li>
+      <li>CL2는 <a href="https://github.com/kubernetes/perf-tests/tree/master/clusterloader2#prometheus-metrics">Prometheus를</a> 사용한 테스트 중에 클러스터에 대한 추가적인 관측성을 제공합니다.</li>
+      <li>
+        <p>사용 가능한 측정값</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>측정 항목</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>APIAvailabilityMeasurement</td>
+              <td>
+<code class="language-plaintext highlighter-rouge">/readyz</code> API 호출로 클러스터/호스트 가용성 측정, exec 서비스 필요</td>
+            </tr>
+            <tr>
+              <td>APIResponsivenessPrometheusSimple</td>
+              <td>Prometheus 기반, API 호출 지연/횟수 백분위수, SLO 충족 여부 확인, Prometheus 없으면 생략</td>
+            </tr>
+            <tr>
+              <td>APIResponsivenessPrometheus</td>
+              <td>Prometheus 기반, API 호출 지연/개수 요약, SLO 충족 여부 확인, Prometheus 없으면 생략</td>
+            </tr>
+            <tr>
+              <td>CPUProfile</td>
+              <td>pprof로 특정 컴포넌트의 CPU 사용 프로필 수집</td>
+            </tr>
+            <tr>
+              <td>EtcdMetrics</td>
+              <td>etcd 메트릭 및 DB 크기 수집</td>
+            </tr>
+            <tr>
+              <td>MemoryProfile</td>
+              <td>pprof로 특정 컴포넌트의 메모리 프로필 수집</td>
+            </tr>
+            <tr>
+              <td>MetricsForE2E</td>
+              <td>kube-apiserver, 컨트롤러, 스케줄러, kubelet 메트릭 수집</td>
+            </tr>
+            <tr>
+              <td>PodPeriodicCommand</td>
+              <td>지정 포드에서 주기적으로 명령 실행, 출력 수집</td>
+            </tr>
+            <tr>
+              <td>PodStartupLatency</td>
+              <td>Pod 시작 SLO 충족 여부 확인</td>
+            </tr>
+            <tr>
+              <td>ResourceUsageSummary</td>
+              <td>컴포넌트별 리소스 사용량 요약, 제약 조건 위반 시 오류</td>
+            </tr>
+            <tr>
+              <td>SchedulingMetrics</td>
+              <td>스케줄러 메트릭 세트 수집</td>
+            </tr>
+            <tr>
+              <td>SchedulingThroughput</td>
+              <td>스케줄링 처리량 수집</td>
+            </tr>
+            <tr>
+              <td>Timer</td>
+              <td>테스트 특정 부분 대기 시간 측정</td>
+            </tr>
+            <tr>
+              <td>WaitForControlledPodsRunning</td>
+              <td>제어 객체의 모든 포드 실행까지 대기, 시간 초과 시 오류 기록</td>
+            </tr>
+            <tr>
+              <td>WaitForRunningPods</td>
+              <td>필요한 수의 Pod 실행까지 대기, 시간 초과 시 오류 기록</td>
+            </tr>
+            <tr>
+              <td>Sleep</td>
+              <td>지정 시간만큼 대기</td>
+            </tr>
+            <tr>
+              <td>WaitForGenericK8sObjects</td>
+              <td>K8s 객체가 조건 충족할 때까지 대기, 시간 초과 시 오류 기록</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+      <li>kind 에서 1대 노드에서 간단 테스트 가이드 소개 - <a href="https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/docs/GETTING_STARTED.md">Guide</a>
+</li>
+      <li>100노드 규모 테스트 실행 - <a href="https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/docs/GETTING_STARTED.md">Guide</a> , <a href="https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load">LoadCode</a>
+        <ul>
+          <li>테스트 단계 : 객체 생성 → 원래 크기의 50%, 150% 사이로 개체 크기 조정 → 객체 삭제</li>
+          <li>
+<strong>100개 노드</strong>부터 <strong>최대 5,000개 노드</strong>까지 <strong>클러스터를 테스트</strong>하는 데 사용할 수 있습니다.</li>
+          <li>부하 테스트는 약 <strong>30개의 노드로 구성된 포드 객체를 생성합</strong>니다. 다음과 같은 객체가 생성됩니다.
+            <ul>
+              <li>deployments</li>
+              <li>jobs</li>
+              <li>statefulsets</li>
+              <li>services</li>
+              <li>secrets</li>
+              <li>configmaps</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>프로메테우스 측정 기준에 따라 다양한 측정이 가능합니다. 예를 들어,
+        <ul>
+          <li>API 응답성 - kube-apiserver에 대한 요청 지연 시간을 측정합니다.</li>
+          <li>스케줄링 처리량</li>
+          <li>NodeLocalDNS 대기 시간</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>DNS (CoreDNS, nodeLocal DNSCache)</strong> : DNS 성능 테스트를 실행하는 데 사용되는 스크립트 - <a href="https://github.com/kubernetes/perf-tests/tree/master/dns">Link</a>
+    <ul>
+      <li>단일 DNS 서버 인스턴스의 성능을 지정된 쿼리 워크로드로 벤치마킹합니다.</li>
+      <li>Benchmarking the cluster DNS : coredns 성능 측정 - <a href="https://perf-dash.k8s.io/#/?jobname=kube-dns%20benchmark&amp;metriccategoryname=dns&amp;metricname=Latency&amp;query_file=all-queries.txt&amp;run_length_seconds=600">결과</a>
+</li>
+      <li>Comparing cluster DNS and NodeLocal DNSCache : NodeLocal DNSCache 활성화 시 성능 비교 - <a href="https://perf-dash.k8s.io/#/?jobname=node-local-dns%20benchmark&amp;metriccategoryname=dns&amp;metricname=Latency&amp;query_file=all-queries.txt&amp;run_length_seconds=600">결과</a>
+</li>
+      <li>CoreDNS and kube-dns v1.5+ (image <code class="language-plaintext highlighter-rouge">registry.k8s.io/kubedns-amd64:1.9</code>) can export <a href="http://prometheus.io/">Prometheus</a> metrics.</li>
+    </ul>
+  </li>
+  <li>
+<strong>Benchmarking Kubernetes Networking Performance</strong> : Kubernetes 네트워킹 성능을 측정하는 표준화된 벤치마크 - <a href="https://github.com/kubernetes/perf-tests/tree/master/network/benchmarks/netperf">Link</a>
+    <ul>
+      <li>벤치마크는 단일 Go 바이너리 호출을 통해 실행할 수 있으며, 아래에서 볼 수 있듯이 오케스트레이터 및 워커 포드에 있는 모든 자동화 테스트를 트리거합니다.</li>
+      <li>테스트는 go 바이너리와 iperf3 및 기타 도구가 내장된 사용자 지정 도커 컨테이너를 사용합니다.</li>
+      <li>오케스트레이터 포드는 아래 설명된 5가지 시나리오에 대해 MTU(TCP의 경우 MSS 튜닝, UDP의 경우 직접 패킷 크기 튜닝)를 사용하여 직렬 순서로 테스트를 실행하도록 워커 포드를 조정합니다.</li>
+      <li>노드 레이블을 사용하여 워커 포드 1과 2는 동일한 쿠버네티스 노드에 배치되고, 워커 포드 3은 다른 노드에 배치됩니다.</li>
+      <li>모든 노드는 간단한 golang rpcs를 사용하여 오케스트레이터 포드 서비스와 통신하고 작업 항목을 요청합니다.</li>
+      <li>이 테스트에는 최소 두 개의 쿠버네티스 워커 노드가 필요합니다.</li>
+      <li>오케스트레이터와 워커 파드는 이니시에이터 스크립트와 독립적으로 실행되며, 오케스트레이터 파드는 테스트 케이스 일정이 완료될 때까지 워커들에게 작업 항목을 전송합니다.</li>
+      <li>모든 워커 노드의 <strong>iperf</strong> 출력(TCP 및 UDP 모드 모두)과 <strong>netperf TCP</strong> 출력은 오케스트레이터 파드에 업로드되어 필터링되고 그 결과는 netperf.csv에 기록됩니다.</li>
+      <li>그런 다음 실행 스크립트는 netperf.csv 파일을 추출하여 로컬 디스크에 기록합니다. csv 파일의 모든 단위는 Mbit/초입니다.</li>
+      <li>모든 쿠버네티스 엔티티는 “netperf” 네임스페이스 아래에 생성됩니다.</li>
+      <li>
+        <p>CSV 데이터 출력</p>
+
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  MSS                                          , Maximum, 96, 352, 608, 864, 1120, 1376,
+  1 iperf TCP. Same VM using Pod IP            ,35507.000000,33835,33430,35372,35220,35373,35507,
+  2 iperf TCP. Same VM using Virtual IP        ,32997.000000,32689,32997,32256,31995,31904,31830,
+  3 iperf TCP. Remote VM using Pod IP          ,10652.000000,8793,9836,10602,9959,9941,10652,
+  4 iperf TCP. Remote VM using Virtual IP      ,11046.000000,10429,11046,10064,10622,10528,10246,
+  5 iperf TCP. Hairpin Pod to own Virtual IP   ,32400.000000,31473,30253,32075,32058,32400,31734,
+  6 iperf UDP. Same VM using Pod IP            ,10642.000000,10642,
+  7 iperf UDP. Same VM using Virtual IP        ,8983.000000,8983,
+  8 iperf UDP. Remote VM using Pod IP          ,11143.000000,11143,
+  9 iperf UDP. Remote VM using Virtual IP      ,10836.000000,10836,
+  10 netperf. Same VM using Pod IP             ,11675.380000,11675.38,
+  11 netperf. Same VM using Virtual IP         ,0.000000,0.00,
+  12 netperf. Remote VM using Pod IP           ,6646.820000,6646.82,
+  13 netperf. Remote VM using Virtual IP       ,0.000000,0.00,
+</code></pre></div>        </div>
+      </li>
+      <li>CSV 데이터 그래프화
+        <ul>
+          <li>
+<strong>matplotlib</strong>을 사용하여 csv 데이터(및 호환성을 위해 PNG 및 JPG 파일)에서 그래프 SVG 파일을 생성합니다.
+            <ul>
+              <li>파이썬 Matplotlib 라인 차트</li>
+              <li>막대 차트</li>
+            </ul>
+          </li>
+          <li>MSS를 무시하고 최대 대역폭 수치를 사용하면 막대형 차트가 성능을 비교하는 데 더 나은 도구가 될 수 있습니다.</li>
+          <li>CSV 데이터를 <strong>Google 시트</strong>로 가져와서 <strong>그래프</strong>로 표현하는 것도 가능합니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>Network policy enforcement latency</strong> : Pod 및 네트워크 정책 변경에 대한 네트워크 정책 적용 지연 시간을 측정 - <a href="https://github.com/kubernetes/perf-tests/tree/master/network/tools/network-policy-enforcement-latency">Link</a>
+</li>
+  <li>
+<strong>Kubernetes Perfdash</strong> : 성능 지표를 수집하고 표시하는 웹 UI - <a href="https://github.com/kubernetes/perf-tests/tree/master/perfdash">Link</a> , <a href="https://perf-dash.k8s.io/#/?jobname=aws-100Nodes&amp;metriccategoryname=APIServer&amp;metricname=LoadInitEventsCount&amp;resource=configmaps&amp;group=">Demo</a>
+    <ul>
+      <li>성능 지표는 다양한 노드 수, 플랫폼 유형 및 플랫폼 버전에 대한 성능 테스트 결과를 기반으로 생성됩니다.</li>
+      <li>지원되는 메트릭
+        <ul>
+          <li>Responsiveness</li>
+          <li>Resources</li>
+          <li>PodStartup</li>
+          <li>TestPhaseTimer</li>
+          <li>RequestCount</li>
+          <li>RequestCountByClient</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+<strong>Kubernetes Performance SLO monitor</strong> : api 서버로 수집할 수 없는 성능 SLO()s 를 모니터링 및 메트릭 노출 - <a href="https://github.com/kubernetes/perf-tests/tree/master/slo-monitor">Link</a>
+    <ul>
+      <li>SLO 모니터는 간단한 Pod로, Pod들 및 이벤트를 읽을 수 있어야 합니다.</li>
+      <li>SLO 모니터는 다음과 같은 SLO를 측정합니다.
+        <ul>
+          <li>Pod startup latency</li>
+          <li>Pod scheduling latency</li>
+          <li>API server availability</li>
+          <li>Event processing latency</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<blockquote>
+  <p><img class="emoji" title=":bulb:" alt=":bulb:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a1.png" height="20" width="20" loading="lazy"> <strong>SLO(서비스 수준 목표, Service Level Objectives)</strong>는 고객에가 가용성을 보장하는 SLA를 만족하기 위해 내부적으로 설정하는 목표치를 의미합니다.</p>
+</blockquote>
+
+<h3 id="cilium-tuning-guide">Cilium Tuning Guide</h3>
+
+<h5 id="cilium-endpoint-slices-ces-beta---youtube">Cilium Endpoint Slices (CES) beta - <a href="https://www.youtube.com/watch?v=yKPNmhckJHY">Youtube</a>
+</h5>
+
+<ul>
+  <li>Cilium이 Endpoint가 많은 경우 watch update를 하면 엄청나게 많은 이벤트가 발생하기 때문에 성능 저하가 발생할 수 있습니다.</li>
+  <li>CES는 K8S의 EndpointSlice 처럼 Endpoint들을 Slice 단위로 묶어서 관리하여, Slice 단위로 watch update를 할 수 있도록 하여 성능을 개선합니다.</li>
+</ul>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_31.png" alt="img.png" class="image-center" loading="lazy" width="1225" height="665">
+<em class="image-caption">이전 방식과 Cilium Endpoint Slice 도입 후 비교</em></p>
+
+<ul>
+  <li>위의 그림과 같이 이전에는 모든 엔드포인트가 한꺼번에 관리되고 업데이트 되었지만, CES를 사용하면 엔드포인트가 여러 슬라이스로 나누어져 각 슬라이스가 독립적으로 관리되고 업데이트됩니다.</li>
+  <li>
+<strong>사전조건</strong>
+    <ul>
+      <li>CEP가 활성화 되어야 합니다. (<code class="language-plaintext highlighter-rouge">-disable-endpoint-crd</code>가 <code class="language-plaintext highlighter-rouge">true</code>가 아니어야 합니다.)</li>
+      <li>Egress Gateway는 CES와 호환되지 않기 때문에 사용되지 않아야 합니다.</li>
+    </ul>
+  </li>
+  <li><strong>CES 설정</strong></li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># CiliumEndpoint (CEP) per pod : All agents watch for all CEPs, Maps IP to Identity for policy.</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAMESPACE            NAME                                      SECURITY IDENTITY   ENDPOINT STATE   IPV4           IPV6</span>
+<span class="c">#    cilium-monitoring    grafana-5c69859d9-x2r9v                   48524               ready            10.244.2.71</span>
+<span class="c">#    cilium-monitoring    prometheus-6fc896bc5d-zwlkf               46171               ready            10.244.1.36</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-dt7dv                  32751               ready            10.244.2.250</span>
+<span class="c">#    kube-system          coredns-674b8bbfcf-khb4w                  32751               ready            10.244.1.48</span>
+<span class="c">#    kube-system          hubble-relay-fdd49b976-8mcq9              32342               ready            10.244.1.194</span>
+<span class="c">#    kube-system          hubble-ui-655f947f96-ccbxk                7784                ready            10.244.1.179</span>
+<span class="c">#    kube-system          metrics-server-5dd7b49d79-gx8jd           24994               ready            10.244.3.24</span>
+<span class="c">#    local-path-storage   local-path-provisioner-7dc846544d-phnjz   31623               ready            10.244.2.23</span>
+<span class="nv">$ </span>kubectl get ciliumendpoints.cilium.io <span class="nt">-A</span> | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt;        9</span>
+<span class="nv">$ </span>kubectl get crd
+<span class="c"># =&gt; ciliumcidrgroups.cilium.io                   2025-08-30T08:12:26Z</span>
+<span class="c">#    ciliumclusterwidenetworkpolicies.cilium.io   2025-08-30T08:12:25Z</span>
+<span class="c">#    ciliumendpoints.cilium.io                    2025-08-30T08:12:22Z</span>
+<span class="c">#    ciliumidentities.cilium.io                   2025-08-30T08:12:20Z</span>
+<span class="c">#    ...</span>
+
+<span class="c">#</span>
+<span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--version</span> 1.18.1 <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+  <span class="nt">--set</span> ciliumEndpointSlice.enabled<span class="o">=</span><span class="nb">true</span>
+
+<span class="nv">$ </span>kubectl rollout restart <span class="nt">-n</span> kube-system deployment cilium-operator
+<span class="c"># =&gt; deployment.apps/cilium-operator restarted</span>
+<span class="nv">$ </span>kubectl rollout restart <span class="nt">-n</span> kube-system ds/cilium 
+<span class="c"># =&gt; daemonset.apps/cilium restarted</span>
+
+<span class="c"># Bactches CEPs into CiliumEndpointSlice CRDs : Significantly fewer watch events.</span>
+<span class="nv">$ </span>kubectl get crd
+<span class="c"># =&gt; NAME                                         CREATED AT</span>
+<span class="c">#    ciliumcidrgroups.cilium.io                   2025-08-30T08:12:26Z</span>
+<span class="c">#    ciliumclusterwidenetworkpolicies.cilium.io   2025-08-30T08:12:25Z</span>
+<span class="c">#    ciliumendpoints.cilium.io                    2025-08-30T08:12:22Z</span>
+<span class="c">#    &lt;span style="color: green;"&gt;ciliumendpointslices.cilium.io               2025-08-30T15:03:31Z&lt;/span&gt; # 추가됨</span>
+<span class="c">#    ciliumidentities.cilium.io                   2025-08-30T08:12:20Z</span>
+<span class="c">#    ...</span>
+<span class="nv">$ </span>kubectl get ciliumendpointslices.cilium.io <span class="nt">-A</span> | <span class="nb">wc</span> <span class="nt">-l</span>
+<span class="c"># =&gt; 4</span>
+<span class="nv">$ </span>kubectl get ciliumendpointslices.cilium.io <span class="nt">-A</span>
+<span class="c"># =&gt; NAME                  AGE</span>
+<span class="c">#    ces-5vfjvlfnz-kt5mm   70s</span>
+<span class="c">#    ces-ltcdg4zdx-zmfrl   70s</span>
+<span class="c">#    ces-nzbjpdccd-bryjt   70s</span>
+</code></pre></div></div>
+
+<ul>
+  <li>적용 후 효과 : 1000개 노드 등이 있을때 API Latency가 87% 감소하였습니다.</li>
+</ul>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_32.png" alt="img.png" loading="lazy" width="1219" height="674"></p>
+
+<h5 id="ebpf-host-routing--netkit---youtube--youtube2">eBPF Host Routing , Netkit - <a href="https://www.youtube.com/watch?v=yKPNmhckJHY">Youtube</a> , <a href="https://www.youtube.com/watch?v=cKPW67D7X10">Youtube</a>2</h5>
+
+<ul>
+  <li>기존에 네트워크 트래픽이 파드의 네트워크 네임스페이스에서 호스트 네트워크 네임스페이스로 이동할 때 IP, netfilter, routing 등의 IP 스택을 걸쳐서 veth 페어를 통해 전달되었습니다. 이 과정에서 ingress와 egress 큐에 패킷이 대기하게 되어 지연이 발생할 수 있습니다.</li>
+  <li>
+<strong>eBPF Host Routing</strong> : bpf_redirect_peer 함수를 통해 호스트 NET NS 도착 시 → 바로 파드의 NET NS 로 전달하여 불필요한 IP 스택을 거치지 않도록 하고 성능을 향상시킵니다. 또한 CPU 큐잉 과정을 거치지 않습니다.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_33.png" alt="img.png" class="image-center" loading="lazy" width="1177" height="662">
+<em class="image-caption">기존 파드 네트워크 vs veth + BPF host routing vs host (base)</em>
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c">#</span>
+<span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">--</span> cilium status | <span class="nb">grep </span>Routing
+<span class="c"># =&gt; KubeProxyReplacement:    True   [eth0    172.20.0.2 fc00:f853:ccd:e793::2 fe80::42:acff:fe14:2 (Direct Routing)]</span>
+<span class="c">#    Routing:                 Network: Native   Host: BPF</span>
+</code></pre></div>    </div>
+    <ul>
+      <li>eBPF Host Routing 만으로는 egress시 호스트 네트워크 스택을 거치기 때문에 완전한 성능 향상을 기대하기 어렵습니다. 그래서 아래의 Netkit 방식을 사용하면 더 좋은 성능을 기대할 수 있습니다.</li>
+    </ul>
+  </li>
+  <li>
+<strong>Netkit devices</strong> : veth 와 유사(쌍), ingress + egress 큐(CPU) 대기 없이 모두 빠르게 전달 가능.
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_34.png" alt="img.png" class="image-center" loading="lazy" width="1229" height="619">
+<em class="image-caption">eBPF Host Routing에 Netkit까지 사용하면 host와 거의 동일한 성능을 발휘</em>
+    <ul>
+      <li>netkit 설정 시도 : 커널 6.8 이상 , eBPF host-routing이 필요합니다.
+        <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code>  <span class="c">#</span>
+  <span class="nv">$ </span>docker <span class="nb">exec</span> <span class="nt">-it</span> myk8s-control-plane <span class="nb">uname</span> <span class="nt">-r</span>
+  <span class="c"># =&gt; 6.10.14-linuxkit</span>
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--version</span> 1.18.1 <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+    <span class="nt">--set</span> bpf.datapathMode<span class="o">=</span>netkit
+      
+  <span class="nv">$ </span>kubectl rollout restart <span class="nt">-n</span> kube-system deployment cilium-operator
+  <span class="nv">$ </span>kubectl rollout restart <span class="nt">-n</span> kube-system ds/cilium 
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>kubectl logs <span class="nt">-n</span> kube-system cilium-k84hl
+  <span class="c"># =&gt; time=2025-08-24T09:33:36.486143842Z level=fatal source=/go/src/github.com/cilium/cilium/pkg/logging/slog.go:159 </span>
+  <span class="c">#    .. msg="netkit devices need kernel 6.7.0 or newer and CONFIG_NETKIT"</span>
+      
+  <span class="c">#</span>
+  <span class="nv">$ </span>helm upgrade cilium cilium/cilium <span class="nt">--version</span> 1.18.1 <span class="nt">--namespace</span> kube-system <span class="nt">--reuse-values</span> <span class="se">\</span>
+    <span class="nt">--set</span> bpf.datapathMode<span class="o">=</span>veth
+      
+  <span class="nv">$ </span>kubectl <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">-n</span> kube-system ds/cilium <span class="nt">--</span> cilium status | <span class="nb">grep</span> <span class="s1">'Device Mode'</span>
+  <span class="c"># =&gt; Device Mode:             veth      </span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="kubeshark">Kubeshark</h3>
+
+<ul>
+  <li>Kubernetes 내부/외부의 API 호출, 이동중인 데이터 등 모든 통신을 모니터링하고 분석할 수 있는 도구입니다. - <a href="https://www.kubeshark.co/">Home</a>, <a href="https://docs.kubeshark.co/en/introduction">Docs</a>, <a href="https://www.kubeshark.co/blog">Blog</a>, <a href="https://demo.kubeshark.co/">demo</a>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_35.png" alt="img.png" loading="lazy" width="2048" height="1898">
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_36.png" alt="img_1.png" loading="lazy" width="1275" height="700">
+</li>
+  <li>설치 - <a href="https://docs.kubeshark.co/en/install">Docs</a>
+</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># mac</span>
+<span class="nv">$ </span>brew <span class="nb">install </span>kubeshark
+<span class="c"># =&gt; ==&gt; Fetching downloads for: kubeshark</span>
+<span class="c">#    ==&gt; Downloading https://ghcr.io/v2/homebrew/core/kubeshark/manifests/52.8.1</span>
+<span class="c">#    ############################################################################################################################################################################ 100.0%</span>
+<span class="c">#    ==&gt; Fetching kubeshark</span>
+<span class="c">#    ==&gt; Downloading https://ghcr.io/v2/homebrew/core/kubeshark/blobs/sha256:d65e38045ff18f7fc6fc83df77cc9da945ec7e99033d43f91994f0768c2c2e99</span>
+<span class="c">#    ############################################################################################################################################################################ 100.0%</span>
+<span class="c">#    ==&gt; Pouring kubeshark--52.8.1.arm64_sequoia.bottle.tar.gz</span>
+<span class="c">#    🍺  /opt/homebrew/Cellar/kubeshark/52.8.1: 9 files, 65MB</span>
+<span class="c">#    ==&gt; Running `brew cleanup kubeshark`...</span>
+
+<span class="c"># 확인</span>
+<span class="nv">$ </span>kubeshark version
+<span class="c"># =&gt; v52.8.1</span>
+
+<span class="nv">$ </span>kubeshark <span class="nt">-h</span>
+<span class="c"># =&gt; Available Commands:</span>
+<span class="c">#      clean       Removes all Kubeshark resources</span>
+<span class="c">#      completion  Generate the autocompletion script for the specified shell</span>
+<span class="c">#      config      Generate Kubeshark config with default values</span>
+<span class="c">#      console     Stream the scripting console logs into shell</span>
+<span class="c">#      help        Help about any command</span>
+<span class="c">#      license     Print the license loaded string</span>
+<span class="c">#      logs        Create a ZIP file with logs for GitHub issues or troubleshooting</span>
+<span class="c">#      pcapdump    Store all captured traffic (including decrypted TLS) in a PCAP file.</span>
+<span class="c">#      pprof       Select a Kubeshark container and open the pprof web UI in the browser</span>
+<span class="c">#      proxy       Open the web UI (front-end) in the browser via proxy/port-forward</span>
+<span class="c">#      scripts     Watch the `scripting.source` and/or `scripting.sources` folders for changes and update the scripts</span>
+<span class="c">#      tap         Capture the network traffic in your Kubernetes cluster</span>
+<span class="c">#      version     Print version info</span>
+ 
+<span class="c"># Capture the network traffic in your Kubernetes cluster</span>
+<span class="nv">$ </span>kubeshark tap
+<span class="c"># =&gt; 2025-08-31T00:37:22+09:00 INF tapRunner.go:47 &gt; Using Docker: registry=docker.io/kubeshark tag=</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:51 &gt; Kubeshark will store the traffic up to a limit (per node). Oldest TCP/UDP streams will be removed once the limit is reached. limit=5Gi</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF versionCheck.go:23 &gt; Checking for a newer version...</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF common.go:69 &gt; Using kubeconfig: path=/Users/anonym/.kube/config</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:67 &gt; Telemetry enabled=true notice="Telemetry can be disabled by setting the flag: --telemetry-enabled=false"</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:69 &gt; Targeting pods in: namespaces=["cilium-monitoring","cilium-secrets","default","kube-node-lease","kube-public","kube-system","local-path-storage"]</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: grafana-5c69859d9-x2r9v</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: prometheus-6fc896bc5d-zwlkf</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: cilium-9qfx8</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: cilium-envoy-bwd6b</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: cilium-operator-6d667fff-krg69</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: coredns-674b8bbfcf-dt7dv</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: coredns-674b8bbfcf-khb4w</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: etcd-myk8s-control-plane</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: hubble-relay-fdd49b976-8mcq9</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: hubble-ui-655f947f96-ccbxk</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: kube-apiserver-myk8s-control-plane</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: kube-controller-manager-myk8s-control-plane</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: kube-scheduler-myk8s-control-plane</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: metrics-server-5dd7b49d79-gx8jd</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:136 &gt; Targeted pod: local-path-provisioner-7dc846544d-phnjz</span>
+<span class="c">#    2025-08-31T00:37:22+09:00 INF tapRunner.go:79 &gt; Waiting for the creation of Kubeshark resources...</span>
+<span class="c">#    2025-08-31T00:37:24+09:00 INF helm.go:128 &gt; Downloading Helm chart: repo-path=/Users/anonym/Library/Caches/helm/repository url=https://github.com/kubeshark/kubeshark.github.io/releases/download/kubeshark-52.8.1/kubeshark-52.8.1.tgz</span>
+<span class="c">#    2025-08-31T00:37:25+09:00 INF helm.go:147 &gt; Installing using Helm: kube-version="&gt;= 1.16.0-0" release=kubeshark source=["https://github.com/kubeshark/kubeshark/tree/master/helm-chart"] version=52.8.1</span>
+<span class="c">#    2025-08-31T00:37:25+09:00 INF helm.go:61 &gt; creating 21 resource(s)</span>
+<span class="c">#    2025-08-31T00:37:26+09:00 INF tapRunner.go:96 &gt; Installed the Helm release: kubeshark</span>
+<span class="c">#    2025-08-31T00:37:26+09:00 INF tapRunner.go:258 &gt; Added: pod=kubeshark-front</span>
+<span class="c">#    2025-08-31T00:37:26+09:00 INF tapRunner.go:167 &gt; Added: pod=kubeshark-hub</span>
+<span class="c">#    2025-08-31T00:37:52+09:00 INF tapRunner.go:192 &gt; Ready. pod=kubeshark-hub</span>
+<span class="c">#    2025-08-31T00:38:08+09:00 INF tapRunner.go:282 &gt; Ready. pod=kubeshark-front</span>
+<span class="c">#    2025-08-31T00:38:08+09:00 INF proxy.go:31 &gt; Starting proxy... namespace=default proxy-host=127.0.0.1 service=kubeshark-front src-port=8899</span>
+<span class="c">#    2025-08-31T00:38:13+09:00 INF tapRunner.go:417 &gt; Kubeshark is available at: url=&lt;span style="color: green;"&gt;http://127.0.0.1:8899&lt;/span&gt; # 👈 Web UI </span>
+<span class="c">#    2025-08-31T00:38:13+09:00 INF console.go:45 &gt; Starting scripting console ...</span>
+<span class="c">#    E0831 00:38:15.481130    2419 proxy_server.go:147] Error while proxying request: error dialing backend: context canceled</span>
+<span class="c">#    2025-08-31T00:38:18+09:00 INF console.go:61 &gt; Connecting to: host=127.0.0.1 url=http://127.0.0.1:8899/api</span>
+</code></pre></div></div>
+
+<p><img src="/assets/2025/cilium/w7/20250831_cilium_w7_37.png" alt="img.png" class="image-center" loading="lazy" width="1392" height="1122">
+<em class="image-caption">API Flow 뷰</em>
+<img src="/assets/2025/cilium/w7/20250831_cilium_w7_38.png" alt="img.png" class="image-center" loading="lazy" width="1392" height="1122">
+<em class="image-caption">Service Map 뷰</em></p>
+
+<ul>
+  <li>무료 버전에서는 3개 노드, 60개 파드의 제한이 있어서 간단한 테스트만 가능합니다.</li>
+  <li>(옵션) 폐쇄망 Air-Gapped 환경 : Enterprise Tier(Plan)에서만 가능 - <a href="https://www.kubeshark.co/pricing">Docs</a>
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># Make sure to disable internet connectivity:</span>
+<span class="nv">$ </span>internetConnectivity: <span class="nb">false</span>
+</code></pre></div>    </div>
+  </li>
+  <li>(참고) 삭제
+    <div class="language-bash highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><span class="c"># cleanup  </span>
+<span class="nv">$ </span>kubeshark clean  
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr>
+
+<h2 id="마치며">마치며</h2>
+
+<p>이번 포스트에서는 Kubernetes의 성능 측정 및 모니터링 방법과 튜닝방법, Cilium의 성능 측정 및 튜닝 방법에 대해서 알아보았습니다. 
+작은 규모의 클러스터만 사용해서 간과하고 있었는데, 규모가 커지면 다양한 문제가 발생할 수 있음을 알게 되어 유익한 시간이었습니다.
+정말 배우고 익혀야 하는것이 끝이 없다는 생각이 듭니다. <img class="emoji" title=":sweat_smile:" alt=":sweat_smile:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f605.png" height="20" width="20" loading="lazy"></p>
+
+<p>모든것을 다 알 수는 없지만, 스터디를 통해 많은 것을 알게되고 경험하게 되어 너무 좋습니다.
+기존 스터디도 블로그로 정리한 글을 실무에서 잘 활용하고 있는데,
+이번 스터디도 큰 도움이 될것 같습니다.
+스터디를 진행해주시는 가시다 님께 다시 한번 감사드립니다. <img class="emoji" title=":bow:" alt=":bow:" src="https://github.githubassets.com/images/icons/emoji/unicode/1f647.png" height="20" width="20" loading="lazy"></p>
+
+  </div>
+
+  <div id="toc-minimap" class="toc-minimap collapsed">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%EB%93%A4%EC%96%B4%EA%B0%80%EB%A9%B0">들어가며</a></li>
+<li class="toc-entry toc-h2">
+<a href="#k8s-performance">K8S Performance</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1">실습 환경 구성</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EB%B0%B0%ED%8F%AC">실습환경 배포</a></li>
+<li class="toc-entry toc-h3">
+<a href="#kube-burner">Kube-burner</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-1--%EB%94%94%ED%94%8C%EB%A1%9C%EC%9D%B4%EB%A8%BC%ED%8A%B8-1%EA%B0%9C%ED%8C%8C%EB%93%9C-1%EA%B0%9C-%EC%83%9D%EC%84%B1--%EC%82%AD%EC%A0%9C-jobiterations-qps-burst-%EC%9D%98%EB%AF%B8-%ED%99%95%EC%9D%B8">시나리오 1 : 디플로이먼트 1개(파드 1개) 생성 → 삭제, jobIterations qps burst 의미 확인</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-2--%EB%85%B8%EB%93%9C-1%EB%8C%80%EC%97%90-%EC%B5%9C%EB%8C%80-%ED%8C%8C%EB%93%9C150%EA%B0%9C-%EB%B0%B0%ED%8F%AC-%EC%8B%9C%EB%8F%84-1">시나리오 2 : 노드 1대에 최대 파드(150개) 배포 시도 1</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-3--%EB%85%B8%EB%93%9C-1%EB%8C%80%EC%97%90-%EC%B5%9C%EB%8C%80-%ED%8C%8C%EB%93%9C300%EA%B0%9C-%EB%B0%B0%ED%8F%AC-%EC%8B%9C%EB%8F%84-2">시나리오 3 : 노드 1대에 최대 파드(300개) 배포 시도 2</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3">
+<a href="#k8s-performance--tuning">K8S Performance &amp; Tuning</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#%EB%8C%80%EA%B7%9C%EB%AA%A8-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EA%B3%A0%EB%A0%A4%EC%82%AC%ED%95%AD">대규모 클러스터 고려사항</a></li>
+<li class="toc-entry toc-h4"><a href="#%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4-4-api-intensive---%ED%8C%8C%EB%93%9C%EB%A5%BC-%EC%83%9D%EC%84%B1configmap-secret-%ED%9B%84-%EC%82%AD%EC%A0%9C">시나리오 4. api-intensive - 파드를 생성(configmap, secret) 후 삭제</a></li>
+<li class="toc-entry toc-h4"><a href="#kubernetes-api-%EC%84%B1%EB%8A%A5-%EB%A9%94%ED%8A%B8%EB%A6%AD--%EC%98%88%EC%A0%9C%EC%99%80-best-practice---blog">Kubernetes API 성능 메트릭 : 예제와 Best Practice - Blog</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-entry toc-h2">
+<a href="#cilium-performance">Cilium Performance</a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#%EC%8B%A4%EC%8A%B5%ED%99%98%EA%B2%BD-%EC%A4%80%EB%B9%84">실습환경 준비</a></li>
+<li class="toc-entry toc-h3"><a href="#%EC%BF%A0%EB%B2%84%EB%84%A4%ED%8B%B0%EC%8A%A4-%ED%99%98%EA%B2%BD%EC%97%90%EC%84%9C-%EC%86%8D%EB%8F%84-%EC%B8%A1%EC%A0%95-%ED%85%8C%EC%8A%A4%ED%8A%B8">쿠버네티스 환경에서 속도 측정 테스트</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-%EC%A0%91%EC%86%8D-%EB%B0%8F-%EC%84%B1%EB%8A%A5-%ED%85%8C%EC%8A%A4%ED%8A%B8">Cilium 접속 및 성능 테스트</a></li>
+<li class="toc-entry toc-h3">
+<a href="#cilium-performance--tuning">Cilium Performance &amp; Tuning</a>
+<ul>
+<li class="toc-entry toc-h4"><a href="#deep-dive-into-cilium-resilient-architecture--apievent-%EC%99%80-cilium-agentstatedb-%EC%99%80-bpf-%EB%8F%99%EC%9E%91">Deep Dive Into Cilium Resilient Architecture : API(Event) 와 Cilium-Agent(StateDB) 와 BPF 동작</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h3"><a href="#kubernetes-perf-tests">Kubernetes perf-tests</a></li>
+<li class="toc-entry toc-h3"><a href="#cilium-tuning-guide">Cilium Tuning Guide</a></li>
+<li class="toc-entry toc-h3"><a href="#kubeshark">Kubeshark</a></li>
+</ul>
+</li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+  </div>
+<a class="u-url" href="/posts/2025-08-31-Cilium-Week7/" hidden></a>
+</article>
+
+
+
+<div class="PageNavigation">
+  
+  <a class="prev" href="/posts/2025-08-24-Cilium-Week6/">« [Cilium] Cilium ServiceMesh</a>
+  
+  
+</div>
+
+<div id="disqus_thread"></div>
+<script>
+var disqus_config = function () {
+this.page.url = "https://sweetlittlebird.github.io/posts/2025-08-31-Cilium-Week7/";
+this.page.identifier = "/posts/Cilium - Week7";
+};
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+</noscript>
+      </div>
+
+<!--      <div class="adsbygoogle-side">-->
+<!--        &lt;!&ndash; ad_side &ndash;&gt;-->
+<!--        <ins class="adsbygoogle "-->
+<!--             style="display: block"-->
+<!--             data-ad-client="ca-pub-6564723532026864"-->
+<!--             data-ad-slot="1339398797"-->
+<!--             data-ad-format="auto"-->
+<!--             data-full-width-responsive="true"></ins>-->
+<!--      </div>-->
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Sweet Little Bird</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Sweet Little Bird</li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list"><li><a href="https://github.com/sweetlittlebird"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">sweetlittlebird</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>공부 기록과 개발 이야기를 담은 블로그입니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <!-- Background of PhotoSwipe. 
+           It's a separate element as animating opacity is faster than rgba(). -->
+      <div class="pswp__bg"></div>
+      <!-- Slides wrapper with overflow:hidden. -->
+      <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <!--  Controls are self-explanatory. Order can be changed. -->
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+            <!-- element will get class pswp__preloader--active when preloader is running -->
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EWGY9N8QXY"></script>
+
+    
+    <script async src="/assets/dist/app.min.js"></script>
+    
+  
+    <a href="#" id="back-to-top"><span>Back to Top</span></a>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6564723532026864" crossorigin="anonymous"></script>
+    <!--<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>-->
+  </body>
+
+</html>
