@@ -2249,30 +2249,30 @@ server:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: 
+  name: {{ .Release.Name }}
 data:
   index.html: |
-</span><span class="no">
-EOF
+{{ .Values.indexHtml | indent 4 }}
+</span><span class="no">EOF
 
 </span><span class="nv">$ </span><span class="nb">cat</span> <span class="o">&gt;</span> templates/deployment.yaml <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: 
+  name: {{ .Release.Name }}
 spec:
-  replicas: 
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: 
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: 
+        app: {{ .Release.Name }}
     spec:
       containers:
       - name: nginx
-        image: :
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         ports:
         - containerPort: 80
         volumeMounts:
@@ -2282,17 +2282,17 @@ spec:
       volumes:
       - name: index-html
         configMap:
-          name: 
+          name: {{ .Release.Name }}
 </span><span class="no">EOF
 
 </span><span class="nv">$ </span><span class="nb">cat</span> <span class="o">&gt;</span> templates/service.yaml <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
 apiVersion: v1
 kind: Service
 metadata:
-  name: 
+  name: {{ .Release.Name }}
 spec:
   selector:
-    app: 
+    app: {{ .Release.Name }}
   ports:
   - protocol: TCP
     port: 80
